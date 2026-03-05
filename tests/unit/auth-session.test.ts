@@ -99,13 +99,13 @@ describe('Session Management', () => {
     it('should set HS256 algorithm in header', async () => {
       const { SignJWT } = await import('jose');
 
-      await encrypt({ test: 'data' });
+      await encrypt({ user: mockUser, accessToken: 'token' });
 
       expect(SignJWT).toHaveBeenCalled();
     });
 
     it('should set expiration time', async () => {
-      await encrypt({ test: 'data' });
+      await encrypt({ user: mockUser, accessToken: 'token' });
 
       // The mock chain should have been called
       expect(signCalls.length).toBeGreaterThan(0);

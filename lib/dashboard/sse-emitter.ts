@@ -13,6 +13,8 @@ type SSECallback = (event: RunEvent) => void;
 // Singleton SSE emitter
 class SSEEmitter {
   private subscribers: Map<string, Set<SSECallback>> = new Map();
+  private eventBuffer: Map<string, RunEvent[]> = new Map();
+  private static MAX_BUFFER_SIZE = 100;
 
   subscribe(runId: string, callback: SSECallback): () => void {
     if (!this.subscribers.has(runId)) {
@@ -33,7 +35,26 @@ class SSEEmitter {
     };
   }
 
+  getBufferedEvents(runId: string): RunEvent[] {
+    return this.eventBuffer.get(runId) || [];
+  }
+
+  clearBuffer(runId: string): void {
+    this.eventBuffer.delete(runId);
+  }
+
   emit(event: RunEvent): void {
+    // Buffer the event for late joiners
+    if (!this.eventBuffer.has(event.runId)) {
+      this.eventBuffer.set(event.runId, []);
+    }
+    const buffer = this.eventBuffer.get(event.runId)!;
+    buffer.push(event);
+    if (buffer.length > SSEEmitter.MAX_BUFFER_SIZE) {
+      buffer.shift();
+    }
+
+    // Notify current subscribers
     const callbacks = this.subscribers.get(event.runId);
     if (callbacks) {
       callbacks.forEach((callback) => callback(event));

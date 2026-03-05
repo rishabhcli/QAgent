@@ -28,7 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { NewRunDialog } from '@/components/dashboard/new-run-dialog';
 import { LearningIndicator } from '@/components/dashboard/learning-indicator';
-import { VoiceAssistant } from '@/components/voice/voice-assistant';
+
 import { useToast } from '@/components/ui/toaster';
 import { EmptyState } from '@/components/ui/empty-state';
 import { DashboardSkeleton } from '@/components/ui/skeleton';
@@ -537,7 +537,6 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      <VoiceAssistant />
     </div>
   );
 }

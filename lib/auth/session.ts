@@ -1,24 +1,25 @@
 import { cookies } from 'next/headers';
 import { SignJWT, jwtVerify } from 'jose';
-import type { Session, GitHubUser, GitHubRepo } from '@/lib/types';
+import type { Session, GitHubUser, GitHubRepo, SessionPayload } from '@/lib/types';
 
 const SESSION_COOKIE = 'qagent_session';
 const SECRET_KEY = process.env.SESSION_SECRET || 'default-dev-secret-do-not-use-in-prod';
 const key = new TextEncoder().encode(SECRET_KEY);
 
-export async function encrypt(payload: any) {
-  return await new SignJWT(payload)
+export async function encrypt(payload: SessionPayload): Promise<string> {
+  const jti = payload.jti || crypto.randomUUID();
+  return await new SignJWT({ ...payload, jti } as unknown as Record<string, unknown>)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('7d')
+    .setExpirationTime('24h')
     .sign(key);
 }
 
-export async function decrypt(input: string): Promise<any> {
+export async function decrypt(input: string): Promise<SessionPayload> {
   const { payload } = await jwtVerify(input, key, {
     algorithms: ['HS256'],
   });
-  return payload;
+  return payload as unknown as SessionPayload;
 }
 
 export async function getSession(): Promise<Session | null> {
@@ -30,11 +31,11 @@ export async function getSession(): Promise<Session | null> {
   try {
     const payload = await decrypt(sessionToken);
     return {
-      user: payload.user as GitHubUser,
-      accessToken: payload.accessToken as string,
-      repos: payload.repos as GitHubRepo[],
+      user: payload.user,
+      accessToken: payload.accessToken,
+      repos: payload.repos ?? [],
     };
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -44,8 +45,8 @@ export async function createSession(data: {
   user: GitHubUser;
   repos: GitHubRepo[];
 }): Promise<void> {
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const session = await encrypt({ ...data, expiresAt });
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const session = await encrypt({ ...data, expiresAt: expiresAt.toISOString() });
 
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, session, {

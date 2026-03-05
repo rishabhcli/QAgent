@@ -24,6 +24,16 @@ export async function GET(request: NextRequest) {
       const connectMessage = `data: ${JSON.stringify({ type: 'connected', runId })}\n\n`;
       controller.enqueue(encoder.encode(connectMessage));
 
+      // Replay buffered events for late joiners
+      const buffered = sseEmitter.getBufferedEvents(runId);
+      for (const event of buffered) {
+        try {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+        } catch {
+          break;
+        }
+      }
+
       // Subscribe to run events
       const unsubscribe = sseEmitter.subscribe(runId, (event: RunEvent) => {
         try {

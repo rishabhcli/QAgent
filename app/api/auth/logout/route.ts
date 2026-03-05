@@ -1,23 +1,46 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { decrypt } from '@/lib/auth/session';
+import { blacklistSession, revokeRefreshToken } from '@/lib/auth/token-store';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-export async function GET() {
-  const response = NextResponse.redirect(`${APP_URL}/`);
-  
-  // Clear all auth cookies
+async function revokeTokens(request: NextRequest): Promise<void> {
+  // Blacklist current JWT
+  const sessionToken = request.cookies.get('qagent_session')?.value;
+  if (sessionToken) {
+    try {
+      const payload = await decrypt(sessionToken);
+      if (payload.jti) {
+        await blacklistSession(payload.jti);
+      }
+    } catch {
+      // Token already invalid, nothing to blacklist
+    }
+  }
+
+  // Revoke refresh token
+  const refreshToken = request.cookies.get('qagent_refresh')?.value;
+  if (refreshToken) {
+    await revokeRefreshToken(refreshToken);
+  }
+}
+
+function clearCookies(response: NextResponse): void {
   response.cookies.delete('qagent_session');
+  response.cookies.delete('qagent_refresh');
   response.cookies.delete('github_oauth_state');
-  
+}
+
+export async function GET(request: NextRequest) {
+  await revokeTokens(request);
+  const response = NextResponse.redirect(`${APP_URL}/`);
+  clearCookies(response);
   return response;
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  await revokeTokens(request);
   const response = NextResponse.json({ success: true });
-  
-  // Clear all auth cookies
-  response.cookies.delete('qagent_session');
-  response.cookies.delete('github_oauth_state');
-  
+  clearCookies(response);
   return response;
 }

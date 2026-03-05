@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { exchangeCodeForToken, getGitHubUser } from '@/lib/auth/github';
 import { encrypt } from '@/lib/auth/session';
+import { createRefreshToken } from '@/lib/auth/token-store';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 const SESSION_COOKIE = 'qagent_session';
@@ -78,8 +79,12 @@ export async function GET(request: NextRequest) {
 
     // Create session token - ONLY store user and accessToken, NOT repos
     // This keeps the cookie small (under 4KB limit)
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    const sessionToken = await encrypt({ accessToken, user, expiresAt });
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const sessionToken = await encrypt({ accessToken, user, expiresAt: expiresAt.toISOString() });
+    const refreshToken = await createRefreshToken(
+      user.id,
+      JSON.stringify({ accessToken, user })
+    );
 
     if (mobileRedirect) {
       mobileRedirect.searchParams.set('token', sessionToken);
@@ -109,6 +114,14 @@ export async function GET(request: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       expires: expiresAt,
+      path: '/',
+    });
+
+    response.cookies.set('qagent_refresh', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60,
       path: '/',
     });
 

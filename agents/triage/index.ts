@@ -37,11 +37,20 @@ export class TriageAgent implements ITriageAgent {
    * Call LLM via Weave Inference for tracing and cost tracking
    */
   private async callLLM(prompt: string, jsonMode: boolean = false): Promise<string> {
-    return weaveInference(prompt, undefined, {
-      model: process.env.GOOGLE_API_KEY ? 'gemini-2.0-flash' : 'gpt-4o',
-      maxTokens: 500,
-      jsonMode,
-    });
+    const { withRetry } = await import('@/lib/utils/retry');
+    return withRetry(
+      () =>
+        weaveInference(prompt, undefined, {
+          model: process.env.GOOGLE_API_KEY ? 'gemini-2.0-flash' : 'gpt-4o',
+          maxTokens: 500,
+          jsonMode,
+        }),
+      {
+        maxRetries: 2,
+        initialDelayMs: 1000,
+        retryableErrors: [/rate limit/i, /timeout/i, /ECONNRESET/, /429/, /503/],
+      }
+    );
   }
 
   private async callLLMShort(prompt: string): Promise<string> {

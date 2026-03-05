@@ -14,6 +14,7 @@ import type {
   TestSpec,
   Patch,
   DiagnosisReport,
+  FailedAttempt,
   Orchestrator as IOrchestrator,
 } from '@/lib/types';
 import { TesterAgent } from '@/agents/tester';
@@ -23,6 +24,7 @@ import { VerifierAgent } from '@/agents/verifier';
 import { initWeave, op, isWeaveEnabled, getWeaveProjectUrl, weave } from '@/lib/weave';
 import { logRunMetrics, type RunMetrics } from '@/lib/weave/metrics';
 import { storeRunInDataset, type RunDatasetRow } from '@/lib/weave/datasets';
+import { isTraceTriageEnabled, isRedTeamEnabled } from '@/lib/config';
 
 // Callback for when patches are generated (used in cloud mode to create PRs)
 export type PatchGeneratedCallback = (patch: Patch, diagnosis: DiagnosisReport) => Promise<void>;
@@ -45,6 +47,7 @@ export interface OrchestratorOptions {
   targetUrl?: string;
   autoCommit?: boolean;
   onSessionStarted?: (sessionId: string) => void;
+  signal?: AbortSignal;
 }
 
 export class Orchestrator implements IOrchestrator {
@@ -55,6 +58,7 @@ export class Orchestrator implements IOrchestrator {
   private fixerAgent: FixerAgent;
   private verifierAgent: VerifierAgent;
   private lastSessionId: string | null = null;
+  private signal?: AbortSignal;
 
   // Optional callback for cloud mode - creates PRs when patches are generated
   public onPatchGenerated?: PatchGeneratedCallback;
@@ -84,6 +88,13 @@ export class Orchestrator implements IOrchestrator {
     this.verifierAgent.setTesterAgent(this.testerAgent);
 
     this.onSessionStarted = options.onSessionStarted;
+    this.signal = options.signal;
+  }
+
+  private checkAborted(): void {
+    if (this.signal?.aborted) {
+      throw new Error('Run cancelled');
+    }
   }
 
   /**
@@ -228,6 +239,21 @@ export class Orchestrator implements IOrchestrator {
         await storeRunInDataset(datasetRow);
       }
 
+      // Run TraceTriage analysis if enabled
+      if (isTraceTriageEnabled()) {
+        try {
+          const { TraceTriage } = await import('@/lib/tracetriage');
+          const traceTriage = new TraceTriage({ autoApplySafe: true });
+          traceTriage.startSession();
+          const session = traceTriage.endSession();
+          if (session) {
+            console.log(`\n🔬 TraceTriage: analyzed ${session.tracesAnalyzed} traces, found ${session.failuresFound} failures`);
+          }
+        } catch (err) {
+          console.log(`\n⚠️ TraceTriage analysis skipped: ${err instanceof Error ? err.message : 'unknown error'}`);
+        }
+      }
+
       // Log Weave project URL
       if (isWeaveEnabled()) {
         console.log(`\n📊 View traces at: ${getWeaveProjectUrl()}`);
@@ -267,8 +293,10 @@ export class Orchestrator implements IOrchestrator {
     maxIterations: number
   ): Promise<{ success: boolean; iterations: number; patches: Patch[] }> {
     const patches: Patch[] = [];
+    const failedAttempts: FailedAttempt[] = [];
 
     for (let iteration = 1; iteration <= maxIterations; iteration++) {
+      this.checkAborted();
       console.log(`\n--- Iteration ${iteration}/${maxIterations} ---`);
 
       // Step 1: Run test
@@ -299,7 +327,7 @@ export class Orchestrator implements IOrchestrator {
 
       // Step 3: Generate fix
       console.log('🔧 Generating fix...');
-      const patchResult = await this.fixerAgent.generatePatch(diagnosis);
+      const patchResult = await this.fixerAgent.generatePatch(diagnosis, failedAttempts);
 
       if (!patchResult.success || !patchResult.patch) {
         console.log(`⚠️ Could not generate fix: ${patchResult.error}`);
@@ -307,6 +335,20 @@ export class Orchestrator implements IOrchestrator {
       }
 
       console.log(`   Patch: ${patchResult.patch.description}`);
+
+      // Validate patch safety before applying
+      try {
+        const { validatePatch } = await import('@/lib/redteam');
+        const validation = validatePatch(patchResult.patch, this.projectRoot);
+        if (!validation.valid) {
+          const reasons = validation.errors.map((e: { message: string }) => e.message).join(', ');
+          console.log(`   Patch rejected (security): ${reasons}`);
+          continue;
+        }
+      } catch {
+        // RedTeam module may not be available, skip validation
+      }
+
       patches.push(patchResult.patch);
 
       // Call callback for cloud mode (creates PRs)
@@ -331,6 +373,13 @@ export class Orchestrator implements IOrchestrator {
       }
 
       console.log(`⚠️ Fix did not work: ${verifyResult.error}`);
+      failedAttempts.push({
+        patch: patchResult.patch,
+        diagnosis,
+        verificationError: verifyResult.error || 'Test still fails',
+        iteration,
+        timestamp: new Date(),
+      });
     }
 
     return { success: false, iterations: maxIterations, patches };

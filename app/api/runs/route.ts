@@ -33,13 +33,40 @@ import {
 } from '@/lib/git';
 import type { AgentType, Patch, DiagnosisReport, ClonedRepo } from '@/lib/types';
 
-// GET /api/runs - List all runs
-export async function GET() {
-  const runs = getAllRuns();
+// GET /api/runs - List all runs with optional pagination and filtering
+export async function GET(request: NextRequest) {
+  const { searchParams } = request.nextUrl;
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)));
+  const statusFilter = searchParams.get('status') as import('@/lib/types').RunStatus | null;
+  const repoIdFilter = searchParams.get('repoId');
+  const searchQuery = searchParams.get('search');
+
+  let runs = getAllRuns();
+
+  if (statusFilter) {
+    runs = runs.filter((r) => r.status === statusFilter);
+  }
+  if (repoIdFilter) {
+    runs = runs.filter((r) => r.repoId === repoIdFilter);
+  }
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    runs = runs.filter(
+      (r) =>
+        r.repoName.toLowerCase().includes(q) ||
+        r.id.toLowerCase().includes(q)
+    );
+  }
+
+  const total = runs.length;
+  const totalPages = Math.ceil(total / limit);
+  const offset = (page - 1) * limit;
+  const paginatedRuns = runs.slice(offset, offset + limit);
   const stats = getRunStats();
 
   return NextResponse.json({
-    runs: runs.map((run) => ({
+    runs: paginatedRuns.map((run) => ({
       id: run.id,
       repoId: run.repoId,
       repoName: run.repoName,
@@ -53,6 +80,14 @@ export async function GET() {
       startedAt: run.startedAt,
       completedAt: run.completedAt,
     })),
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+    },
     stats,
   });
 }

@@ -1,14 +1,18 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
+import type { SessionPayload } from '@/lib/types';
 
 const SESSION_COOKIE = 'qagent_session';
-const SECRET_KEY = process.env.SESSION_SECRET || 'default-dev-secret-do-not-use-in-prod';
-const key = new TextEncoder().encode(SECRET_KEY);
+const SECRET_KEY = process.env.SESSION_SECRET;
+if (!SECRET_KEY && process.env.NODE_ENV === 'production') {
+  throw new Error('SESSION_SECRET environment variable is required in production');
+}
+const key = new TextEncoder().encode(SECRET_KEY || 'default-dev-secret-do-not-use-in-prod');
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  
+
   // Public paths that don't require auth
   const publicPaths = [
     '/_next',
@@ -29,18 +33,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  console.log('=== Middleware ===');
-  console.log('Path:', path);
-  console.log('All cookies:', request.cookies.getAll().map(c => c.name));
-
-  // Verify session
   const sessionToken = request.cookies.get(SESSION_COOKIE)?.value;
 
-  console.log('Session token present:', !!sessionToken);
-  console.log('Session token length:', sessionToken?.length);
-
   if (!sessionToken) {
-    console.log('NO SESSION TOKEN - redirecting to /');
     if (path.startsWith('/api')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     } else {
@@ -49,12 +44,9 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    const verified = await jwtVerify(sessionToken, key, { algorithms: ['HS256'] });
-    console.log('JWT VERIFIED - user:', (verified.payload as any)?.user?.login);
+    await jwtVerify(sessionToken, key, { algorithms: ['HS256'] });
     return NextResponse.next();
-  } catch (error) {
-    console.log('JWT VERIFICATION FAILED:', error);
-    // Invalid token
+  } catch {
     if (path.startsWith('/api')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     } else {

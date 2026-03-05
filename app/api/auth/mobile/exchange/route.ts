@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { exchangeCodeForToken, getGitHubUser } from '@/lib/auth/github';
 import { encrypt } from '@/lib/auth/session';
+import { createRefreshToken } from '@/lib/auth/token-store';
 
 /**
  * Mobile OAuth code exchange endpoint
@@ -40,17 +41,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create session token
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days for mobile
+    // Create session token (24h) and refresh token (7d)
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const sessionToken = await encrypt({
       accessToken,
       user,
-      expiresAt,
-      mobile: true,
+      expiresAt: expiresAt.toISOString(),
     });
+    const refreshToken = await createRefreshToken(
+      user.id,
+      JSON.stringify({ accessToken, user })
+    );
 
     return NextResponse.json({
       token: sessionToken,
+      refreshToken,
       user: {
         id: user.id,
         login: user.login,

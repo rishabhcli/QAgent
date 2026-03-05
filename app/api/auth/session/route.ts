@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
         session = {
           user: payload.user,
           accessToken: payload.accessToken,
-          repos: payload.repos,
+          repos: payload.repos ?? [],
         };
       } catch {
         session = null;

@@ -169,7 +169,30 @@ export function addRunTestResult(runId: string, testResult: TestResult): void {
 }
 
 export function deleteRun(runId: string): boolean {
+  abortControllers.delete(runId);
   return runs.delete(runId);
+}
+
+// AbortController registry for active runs
+const abortControllers = new Map<string, AbortController>();
+
+export function registerAbortController(runId: string, controller: AbortController): void {
+  abortControllers.set(runId, controller);
+}
+
+export function cancelRun(runId: string): boolean {
+  const controller = abortControllers.get(runId);
+  if (controller) {
+    controller.abort();
+    abortControllers.delete(runId);
+    updateRunStatus(runId, 'cancelled');
+    return true;
+  }
+  return false;
+}
+
+export function getAbortController(runId: string): AbortController | undefined {
+  return abortControllers.get(runId);
 }
 
 // Get stats for dashboard

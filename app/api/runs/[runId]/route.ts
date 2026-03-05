@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRun, getRunAsync, updateRunStatus, deleteRun } from '@/lib/dashboard/run-store';
+import { getRunAsync, cancelRun, deleteRun } from '@/lib/dashboard/run-store';
 import { emitRunError } from '@/lib/dashboard/sse-emitter';
 
 // GET /api/runs/[runId] - Get run details
@@ -31,9 +31,9 @@ export async function DELETE(
     return NextResponse.json({ error: 'Run not found' }, { status: 404 });
   }
 
-  // If running, mark as cancelled
+  // If running, abort and mark as cancelled
   if (run.status === 'running' || run.status === 'pending') {
-    updateRunStatus(runId, 'cancelled');
+    cancelRun(runId);
     emitRunError(runId, 'Run cancelled by user');
     return NextResponse.json({ message: 'Run cancelled' });
   }

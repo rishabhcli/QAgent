@@ -14,6 +14,7 @@ import type {
   DiagnosisReport,
   Patch,
   PatchResult,
+  FailedAttempt,
   FixerAgent as IFixerAgent,
 } from '@/lib/types';
 import { getKnowledgeBase, isRedisAvailable } from '@/lib/redis';
@@ -44,11 +45,20 @@ export class FixerAgent implements IFixerAgent {
    * Call LLM via Weave Inference for tracing and cost tracking
    */
   private async callLLM(prompt: string): Promise<string> {
-    return weaveInference(prompt, undefined, {
-      model: process.env.GOOGLE_API_KEY ? 'gemini-2.0-flash' : 'gpt-4o',
-      maxTokens: 1000,
-      jsonMode: true,
-    });
+    const { withRetry } = await import('@/lib/utils/retry');
+    return withRetry(
+      () =>
+        weaveInference(prompt, undefined, {
+          model: process.env.GOOGLE_API_KEY ? 'gemini-2.0-flash' : 'gpt-4o',
+          maxTokens: 1000,
+          jsonMode: true,
+        }),
+      {
+        maxRetries: 2,
+        initialDelayMs: 1000,
+        retryableErrors: [/rate limit/i, /timeout/i, /ECONNRESET/, /429/, /503/],
+      }
+    );
   }
 
   /**
@@ -59,7 +69,7 @@ export class FixerAgent implements IFixerAgent {
     ? op(this._generatePatch.bind(this), { name: 'FixerAgent.generatePatch' })
     : this._generatePatch.bind(this);
 
-  private async _generatePatch(diagnosis: DiagnosisReport): Promise<PatchResult> {
+  private async _generatePatch(diagnosis: DiagnosisReport, failedAttempts?: FailedAttempt[]): Promise<PatchResult> {
     try {
       // 1. Read the source file
       const sourceCode = await this.readSourceFile(diagnosis.localization.file);
@@ -73,8 +83,18 @@ export class FixerAgent implements IFixerAgent {
       // 2. Get similar fixes from Redis knowledge base
       const similarFixes = await this.getSimilarFixes(diagnosis);
 
-      // 3. Generate patch with LLM
-      const llmPatch = await this.generateLLMPatch(diagnosis, sourceCode, similarFixes);
+      // 3. Generate patch with LLM (include failed attempts for learning)
+      const failedContext = failedAttempts && failedAttempts.length > 0
+        ? '\n\n## PREVIOUS FAILED FIXES (DO NOT repeat these approaches)\n' +
+          failedAttempts.map((a, i) =>
+            `### Failed Fix ${i + 1} (Iteration ${a.iteration})\n` +
+            `Description: ${a.patch.description}\n` +
+            `Error: ${a.verificationError}\n` +
+            `\`\`\`diff\n${a.patch.diff}\n\`\`\`\n` +
+            `IMPORTANT: This fix was tried and FAILED. Take a DIFFERENT approach.`
+          ).join('\n\n')
+        : '';
+      const llmPatch = await this.generateLLMPatch(diagnosis, sourceCode, similarFixes + failedContext);
       if (!llmPatch) {
         return {
           success: false,

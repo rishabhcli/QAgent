@@ -86,6 +86,14 @@ export interface SimilarIssue {
   diff?: string;
 }
 
+export interface FailedAttempt {
+  patch: Patch;
+  diagnosis: DiagnosisReport;
+  verificationError: string;
+  iteration: number;
+  timestamp: Date;
+}
+
 // ============================================================================
 // Patch Types
 // ============================================================================
@@ -250,6 +258,15 @@ export interface Session {
   user: GitHubUser | null;
   accessToken: string | null;
   repos: GitHubRepo[];
+}
+
+/** JWT payload shape for session tokens */
+export interface SessionPayload {
+  user: GitHubUser;
+  accessToken: string;
+  repos?: GitHubRepo[];
+  expiresAt?: string;
+  jti?: string;
 }
 
 // ============================================================================

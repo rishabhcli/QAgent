@@ -65,7 +65,12 @@ export class TesterAgent {
       verbose: process.env.DEBUG === 'true' ? 1 : 0,
     });
 
-    await this.stagehand.init();
+    const { withRetry } = await import('@/lib/utils/retry');
+    await withRetry(() => this.stagehand!.init(), {
+      maxRetries: 3,
+      initialDelayMs: 2000,
+      retryableErrors: [/session/i, /timeout/i, /ECONNREFUSED/, /ECONNRESET/],
+    });
     console.log('[TesterAgent] Stagehand initialized successfully');
 
     this.captureSessionId();

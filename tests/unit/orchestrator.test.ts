@@ -336,7 +336,8 @@ describe('Orchestrator', () => {
       await orchestrator.run(config);
 
       expect(mockFixerAgent.generatePatch).toHaveBeenCalledWith(
-        expect.objectContaining({ failureType: expect.any(String) })
+        expect.objectContaining({ failureType: expect.any(String) }),
+        expect.any(Array)
       );
     });
 
