@@ -26,7 +26,7 @@ vi.mock('fs', () => ({
 
 // Mock child_process
 vi.mock('child_process', () => ({
-  execSync: vi.fn(),
+  execFileSync: vi.fn(),
 }));
 
 // Mock TesterAgent
@@ -62,10 +62,10 @@ global.fetch = mockFetch;
 // Import after mocks
 import { VerifierAgent } from '@/agents/verifier';
 import * as fs from 'fs';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 
-// Get mocked execSync
-const mockExecSync = vi.mocked(execSync);
+// Get mocked execFileSync
+const mockExecFileSync = vi.mocked(execFileSync);
 
 describe('VerifierAgent', () => {
   let verifier: VerifierAgent;
@@ -396,12 +396,19 @@ describe('VerifierAgent', () => {
 
       const result = await agent.verify(patch, testSpec);
 
-      expect(mockExecSync).toHaveBeenCalledWith(
-        expect.stringContaining('git add'),
+      expect(mockExecFileSync).toHaveBeenCalledWith(
+        'git',
+        ['add', '--', expect.stringContaining('src/test.ts')],
         expect.any(Object)
       );
-      expect(mockExecSync).toHaveBeenCalledWith(
-        expect.stringContaining('git commit'),
+      expect(mockExecFileSync).toHaveBeenCalledWith(
+        'git',
+        ['commit', '-m', expect.stringContaining('fix:')],
+        expect.any(Object)
+      );
+      expect(mockExecFileSync).toHaveBeenCalledWith(
+        'git',
+        ['push'],
         expect.any(Object)
       );
       expect(result.deploymentUrl).toBe('https://test-deploy.vercel.app');
@@ -411,8 +418,11 @@ describe('VerifierAgent', () => {
       process.env.VERCEL_TOKEN = 'test-token';
       process.env.VERCEL_PROJECT_ID = 'test-project';
 
-      mockExecSync.mockImplementation(() => {
-        throw new Error('git push failed');
+      mockExecFileSync.mockImplementation((command, args) => {
+        if (command === 'git' && Array.isArray(args) && args[0] === 'push') {
+          throw new Error('git push failed');
+        }
+        return Buffer.from('');
       });
 
       const agent = new VerifierAgent('/test', { useRedis: false });

@@ -217,7 +217,7 @@ export class VerifierAgent implements IVerifierAgent {
   }
 
   private async deploy(): Promise<string> {
-    execSync('git push', {
+    execFileSync('git', ['push'], {
       cwd: this.projectRoot,
       stdio: 'pipe',
     });
