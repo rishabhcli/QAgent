@@ -113,7 +113,10 @@ export async function installDependencies(
   const pm = detectPackageManager(repoPath);
   console.log(`[GitClone] Installing dependencies with ${pm}...`);
 
-  const installCommand = pm === 'npm' ? 'npm install' : `${pm} install`;
+  const installCommand =
+    pm === 'npm'
+      ? 'npm install --ignore-scripts'
+      : `${pm} install --ignore-scripts`;
 
   try {
     execSync(installCommand, {
