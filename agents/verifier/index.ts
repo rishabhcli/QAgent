@@ -9,7 +9,7 @@
  * Instrumented with W&B Weave for observability.
  */
 
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import type {
@@ -37,6 +37,8 @@ export class VerifierAgent implements IVerifierAgent {
   private targetUrl: string;
   private autoCommit: boolean;
   private currentFailureReport?: FailureReport;
+
+  private static readonly COMMIT_MESSAGE_MAX_LENGTH = 200;
 
   constructor(projectRoot: string = process.cwd(), options: VerifierOptions = {}) {
     this.projectRoot = projectRoot;
@@ -177,9 +179,14 @@ export class VerifierAgent implements IVerifierAgent {
    */
   private async commitFix(patch: Patch): Promise<void> {
     try {
-      const commitMessage = `fix: ${patch.description}\n\nApplied by QAgent`;
-      execSync(`git add ${patch.file}`, { cwd: this.projectRoot, stdio: 'pipe' });
-      execSync(`git commit -m "${commitMessage}"`, {
+      const safeFilePath = this.getValidatedFilePath(patch.file);
+      const commitMessage = `fix: ${this.sanitizeCommitDescription(patch.description)}\n\nApplied by QAgent`;
+
+      execFileSync('git', ['add', '--', safeFilePath], {
+        cwd: this.projectRoot,
+        stdio: 'pipe',
+      });
+      execFileSync('git', ['commit', '-m', commitMessage], {
         cwd: this.projectRoot,
         stdio: 'pipe',
       });
@@ -195,7 +202,7 @@ export class VerifierAgent implements IVerifierAgent {
    */
   private async applyPatch(patch: Patch): Promise<boolean> {
     try {
-      const fullPath = path.join(this.projectRoot, patch.file);
+      const fullPath = this.getValidatedFilePath(patch.file);
       const sourceCode = fs.readFileSync(fullPath, 'utf-8');
 
       // Parse the diff to get the change details
@@ -242,7 +249,7 @@ export class VerifierAgent implements IVerifierAgent {
    * Create a backup of a file
    */
   private async backupFile(filePath: string): Promise<string> {
-    const fullPath = path.join(this.projectRoot, filePath);
+    const fullPath = this.getValidatedFilePath(filePath);
     const backupPath = `${fullPath}.backup.${Date.now()}`;
     fs.copyFileSync(fullPath, backupPath);
     return backupPath;
@@ -252,7 +259,7 @@ export class VerifierAgent implements IVerifierAgent {
    * Restore a file from backup
    */
   private async restoreFile(filePath: string, backupPath: string): Promise<void> {
-    const fullPath = path.join(this.projectRoot, filePath);
+    const fullPath = this.getValidatedFilePath(filePath);
     fs.copyFileSync(backupPath, fullPath);
     this.cleanupBackup(backupPath);
   }
@@ -273,7 +280,7 @@ export class VerifierAgent implements IVerifierAgent {
    */
   private async validateSyntax(filePath: string): Promise<boolean> {
     try {
-      const fullPath = path.join(this.projectRoot, filePath);
+      const fullPath = this.getValidatedFilePath(filePath);
       const content = fs.readFileSync(fullPath, 'utf-8');
 
       // Basic bracket balance check
@@ -300,7 +307,7 @@ export class VerifierAgent implements IVerifierAgent {
       // Try to run TypeScript check using project config
       try {
         // Use project's tsconfig to ensure JSX and other settings are applied
-        execSync(`npx tsc --noEmit --project tsconfig.json 2>&1`, {
+        execFileSync('npx', ['tsc', '--noEmit', '--project', 'tsconfig.json'], {
           cwd: this.projectRoot,
           stdio: 'pipe',
         });
@@ -369,6 +376,41 @@ export class VerifierAgent implements IVerifierAgent {
     } catch (error) {
       console.error('Error recording fix in knowledge base:', error);
     }
+  }
+
+  /**
+   * Resolve and validate that patch file paths stay within the repository.
+   */
+  private getValidatedFilePath(filePath: string): string {
+    if (!filePath || typeof filePath !== 'string') {
+      throw new Error('Invalid patch file path');
+    }
+
+    const normalizedPath = path.normalize(filePath);
+    if (path.isAbsolute(normalizedPath)) {
+      throw new Error('Absolute file paths are not allowed in patches');
+    }
+
+    const resolvedPath = path.resolve(this.projectRoot, normalizedPath);
+    const rootPath = path.resolve(this.projectRoot);
+
+    if (resolvedPath !== rootPath && !resolvedPath.startsWith(`${rootPath}${path.sep}`)) {
+      throw new Error('Patch file path resolves outside project root');
+    }
+
+    return resolvedPath;
+  }
+
+  /**
+   * Keep commit subjects safe, readable, and bounded.
+   */
+  private sanitizeCommitDescription(description: string): string {
+    const fallback = 'Bug fix';
+    const normalized = description.trim().replace(/[\r\n]+/g, ' ');
+    if (!normalized) {
+      return fallback;
+    }
+    return normalized.slice(0, VerifierAgent.COMMIT_MESSAGE_MAX_LENGTH);
   }
 }
 
