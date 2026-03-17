@@ -1,22 +1,9 @@
 import { cookies } from 'next/headers';
 import { SignJWT, jwtVerify } from 'jose';
 import type { Session, GitHubUser, GitHubRepo, SessionPayload } from '@/lib/types';
+import { getSessionSecret } from '@/lib/auth/session-secret';
 
 const SESSION_COOKIE = 'qagent_session';
-const TEST_FALLBACK_SECRET = 'test-session-secret';
-
-function getSessionSecret(): string {
-  const secret = process.env.SESSION_SECRET;
-  if (secret) {
-    return secret;
-  }
-
-  if (process.env.NODE_ENV === 'test') {
-    return TEST_FALLBACK_SECRET;
-  }
-
-  throw new Error('SESSION_SECRET environment variable is required');
-}
 
 export function getSessionKey(): Uint8Array {
   return new TextEncoder().encode(getSessionSecret());

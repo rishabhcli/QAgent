@@ -15,7 +15,14 @@ export function getGitHubAuthUrl(state: string): string {
   return `https://github.com/login/oauth/authorize?${params.toString()}`;
 }
 
-export async function exchangeCodeForToken(code: string): Promise<string> {
+export async function exchangeCodeForToken(
+  params: string | { code: string; redirectUri?: string; codeVerifier?: string; state?: string }
+): Promise<string> {
+  const requestParams =
+    typeof params === 'string'
+      ? { code: params }
+      : params;
+
   const response = await fetch('https://github.com/login/oauth/access_token', {
     method: 'POST',
     headers: {
@@ -25,7 +32,10 @@ export async function exchangeCodeForToken(code: string): Promise<string> {
     body: JSON.stringify({
       client_id: GITHUB_CLIENT_ID,
       client_secret: GITHUB_CLIENT_SECRET,
-      code,
+      code: requestParams.code,
+      ...(requestParams.redirectUri ? { redirect_uri: requestParams.redirectUri } : {}),
+      ...(requestParams.codeVerifier ? { code_verifier: requestParams.codeVerifier } : {}),
+      ...(requestParams.state ? { state: requestParams.state } : {}),
     }),
   });
 

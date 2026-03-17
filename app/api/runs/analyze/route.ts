@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     const run = createRun({
+      ownerId: session?.user?.id,
       repoId: repoId || repoName,
       repoName,
       testSpecs: [],

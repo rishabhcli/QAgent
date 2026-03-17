@@ -40,9 +40,11 @@ export interface AnalysisResult {
 
 export class CodeAnalyzerAgent {
   private projectRoot: string;
+  private allowBuildScripts: boolean;
 
-  constructor(projectRoot: string) {
+  constructor(projectRoot: string, allowBuildScripts: boolean = true) {
     this.projectRoot = projectRoot;
+    this.allowBuildScripts = allowBuildScripts;
   }
 
   /**
@@ -63,8 +65,12 @@ export class CodeAnalyzerAgent {
     issues.push(...eslintIssues);
 
     // 3. Build check
-    const buildIssues = await this.runBuildCheck();
-    issues.push(...buildIssues);
+    if (this.allowBuildScripts) {
+      const buildIssues = await this.runBuildCheck();
+      issues.push(...buildIssues);
+    } else {
+      console.log('[CodeAnalyzer] Build check skipped for untrusted repository');
+    }
 
     const errors = issues.filter(i => i.severity === 'error').length;
     const warnings = issues.filter(i => i.severity === 'warning').length;

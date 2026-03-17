@@ -61,13 +61,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Handle OAuth response
   useEffect(() => {
     if (response?.type === 'success') {
-      const { code } = response.params;
-      exchangeCodeForToken(code);
+      const { code, state } = response.params;
+
+      if (!request?.codeVerifier || !request?.state || state !== request.state) {
+        console.error('OAuth state/PKCE validation failed');
+        setIsLoading(false);
+        return;
+      }
+
+      exchangeCodeForToken(code, request.codeVerifier, request.state);
     } else if (response?.type === 'error') {
       console.error('OAuth error:', response.error);
       setIsLoading(false);
     }
-  }, [response]);
+  }, [request, response]);
 
   const loadStoredSession = async () => {
     try {
@@ -103,7 +110,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const exchangeCodeForToken = async (code: string) => {
+  const exchangeCodeForToken = async (
+    code: string,
+    codeVerifier: string,
+    state: string
+  ) => {
     try {
       setIsLoading(true);
 
@@ -111,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await fetch(`${API_URL}/api/auth/mobile/exchange`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, redirectUri }),
+        body: JSON.stringify({ code, redirectUri, codeVerifier, state }),
       });
 
       if (!res.ok) {

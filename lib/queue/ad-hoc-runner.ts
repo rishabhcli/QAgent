@@ -138,7 +138,7 @@ async function runCodeFirst(
     emitAgentStarted(runId, 'tester');
     updateRunAgent(runId, 'tester');
 
-    const analyzer = new CodeAnalyzerAgent(clonedRepo.repoPath);
+    const analyzer = new CodeAnalyzerAgent(clonedRepo.repoPath, false);
     const analysisResult = await analyzer.analyze();
 
     emitAgentCompleted(runId, 'tester');
