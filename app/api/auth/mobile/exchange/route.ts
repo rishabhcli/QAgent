@@ -12,17 +12,30 @@ import { createRefreshToken } from '@/lib/auth/token-store';
  */
 export async function POST(request: NextRequest) {
   try {
-    const { code, redirectUri } = await request.json();
+    const { code, redirectUri, codeVerifier, state } = await request.json();
 
-    if (!code) {
+    if (!code || !redirectUri || !codeVerifier || !state) {
       return NextResponse.json(
-        { error: 'Missing authorization code' },
+        { error: 'Missing required OAuth parameters' },
+        { status: 400 }
+      );
+    }
+
+    const parsedRedirectUri = new URL(redirectUri);
+    if (parsedRedirectUri.protocol !== 'qagent:') {
+      return NextResponse.json(
+        { error: 'Invalid redirect URI' },
         { status: 400 }
       );
     }
 
     // Exchange code for GitHub access token
-    const accessToken = await exchangeCodeForToken(code);
+    const accessToken = await exchangeCodeForToken({
+      code,
+      redirectUri,
+      codeVerifier,
+      state,
+    });
     
     if (!accessToken) {
       return NextResponse.json(
