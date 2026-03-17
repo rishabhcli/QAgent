@@ -1,10 +1,10 @@
 import { cookies } from 'next/headers';
 import { SignJWT, jwtVerify } from 'jose';
 import type { Session, GitHubUser, GitHubRepo, SessionPayload } from '@/lib/types';
+import { getSessionSecret } from '@/lib/auth/session-secret';
 
 const SESSION_COOKIE = 'qagent_session';
-const SECRET_KEY = process.env.SESSION_SECRET || 'default-dev-secret-do-not-use-in-prod';
-const key = new TextEncoder().encode(SECRET_KEY);
+const key = new TextEncoder().encode(getSessionSecret());
 
 export async function encrypt(payload: SessionPayload): Promise<string> {
   const jti = payload.jti || crypto.randomUUID();
