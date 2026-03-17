@@ -13,6 +13,9 @@ import { executeAdHocRun } from '@/lib/queue/ad-hoc-runner';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  const session = await getSession();
+  const userId = session?.user?.id;
+
   const { searchParams } = request.nextUrl;
   const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
   const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)));
@@ -21,6 +24,10 @@ export async function GET(request: NextRequest) {
   const searchQuery = searchParams.get('search');
 
   let runs = await getAllRunsAsync();
+
+  if (userId !== undefined) {
+    runs = runs.filter((r) => r.ownerId === userId);
+  }
 
   if (statusFilter) {
     runs = runs.filter((run) => run.status === statusFilter);
@@ -86,12 +93,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Repository is required' }, { status: 400 });
     }
 
-    const session = cloudMode ? await getSession() : null;
-    const githubToken = session?.accessToken || undefined;
+    const session = await getSession();
+    const githubToken = cloudMode ? session?.accessToken || undefined : undefined;
+
+    if (cloudMode && !githubToken) {
+      return NextResponse.json({ error: 'GitHub authentication required' }, { status: 401 });
+    }
 
     const resolvedRepoId = repoId || (cloudMode ? repoName : 'local');
     const resolvedRepoName = repoName || 'Demo App';
     const run = createRun({
+      ownerId: session?.user?.id,
       repoId: resolvedRepoId,
       repoName: resolvedRepoName,
       testSpecs,
