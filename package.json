@@ -57,7 +57,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/node": "^20.11.0",
     "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
+    "@types/react-dom": "^19.2.3",
     "@types/react-window": "^2.0.0",
     "@types/uuid": "^11.0.0",
     "autoprefixer": "^10.4.18",
