@@ -1,30 +1,32 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Search,
-  LayoutDashboard,
-  Play,
-  TestTube2,
-  GitBranch,
-  Settings,
-  Plus,
-  Brain,
-  Radio,
-  Command,
   ArrowRight,
-  Clock,
-  Sparkles,
-  X,
-  HelpCircle,
-  Moon,
-  Sun,
+  BookOpen,
+  Brain,
   ExternalLink,
+  GitBranch,
   Github,
+  HelpCircle,
   Keyboard,
+  LayoutDashboard,
+  Monitor,
+  Moon,
+  Play,
+  Radio,
+  Search,
+  Settings,
+  Sparkles,
+  Sun,
+  TestTube2,
+  Wrench,
+  X,
 } from 'lucide-react';
+import { useTheme } from '@/lib/providers/theme-provider';
+import { cn } from '@/lib/utils/cn';
 
 interface CommandItem {
   id: string;
@@ -42,28 +44,37 @@ interface RecentCommand {
   timestamp: number;
 }
 
-const RECENT_COMMANDS_KEY = 'qagent_recent_commands';
+const GITHUB_REPO_URL = 'https://github.com/rishabhcli/weavehacks';
+const README_URL = `${GITHUB_REPO_URL}#readme`;
+const DEMO_URL = `${GITHUB_REPO_URL}/blob/main/docs/DEMO_SCRIPT.md`;
+const RECENT_COMMANDS_KEY = 'patchpilot_recent_commands';
 const MAX_RECENT_COMMANDS = 5;
 
 function useRecentCommands() {
   const [recentCommands, setRecentCommands] = useState<RecentCommand[]>([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem(RECENT_COMMANDS_KEY);
-    if (stored) {
-      try {
+    try {
+      const stored = localStorage.getItem(RECENT_COMMANDS_KEY);
+      if (stored) {
         setRecentCommands(JSON.parse(stored));
-      } catch {
-        // Ignore parse errors
       }
+    } catch {
+      // Ignore storage failures.
     }
   }, []);
 
   const addRecentCommand = useCallback((id: string) => {
     setRecentCommands((prev) => {
-      const filtered = prev.filter((cmd) => cmd.id !== id);
+      const filtered = prev.filter((command) => command.id !== id);
       const updated = [{ id, timestamp: Date.now() }, ...filtered].slice(0, MAX_RECENT_COMMANDS);
-      localStorage.setItem(RECENT_COMMANDS_KEY, JSON.stringify(updated));
+
+      try {
+        localStorage.setItem(RECENT_COMMANDS_KEY, JSON.stringify(updated));
+      } catch {
+        // Ignore storage failures.
+      }
+
       return updated;
     });
   }, []);
@@ -71,31 +82,25 @@ function useRecentCommands() {
   return { recentCommands, addRecentCommand };
 }
 
-// Fuzzy search implementation
-function fuzzyMatch(str: string, pattern: string): number {
-  const strLower = str.toLowerCase();
-  const patternLower = pattern.toLowerCase();
-  
-  // Exact match gets highest score
-  if (strLower === patternLower) return 1000;
-  
-  // Starts with gets high score
-  if (strLower.startsWith(patternLower)) return 100;
-  
-  // Contains gets medium score
-  if (strLower.includes(patternLower)) return 10;
-  
-  // Fuzzy match gets lowest score
-  let patternIdx = 0;
+function fuzzyMatch(value: string, pattern: string): number {
+  const source = value.toLowerCase();
+  const query = pattern.toLowerCase();
+
+  if (source === query) return 1000;
+  if (source.startsWith(query)) return 100;
+  if (source.includes(query)) return 10;
+
+  let queryIndex = 0;
   let score = 0;
-  for (let i = 0; i < strLower.length && patternIdx < patternLower.length; i++) {
-    if (strLower[i] === patternLower[patternIdx]) {
-      score++;
-      patternIdx++;
+
+  for (let index = 0; index < source.length && queryIndex < query.length; index += 1) {
+    if (source[index] === query[queryIndex]) {
+      score += 1;
+      queryIndex += 1;
     }
   }
-  
-  return patternIdx === patternLower.length ? score : 0;
+
+  return queryIndex === query.length ? score : 0;
 }
 
 export function CommandPalette() {
@@ -106,206 +111,263 @@ export function CommandPalette() {
   const router = useRouter();
   const pathname = usePathname();
   const { recentCommands, addRecentCommand } = useRecentCommands();
-  const [isDark, setIsDark] = useState(true);
+  const { theme, resolvedTheme, setTheme } = useTheme();
 
-  const commands: CommandItem[] = useMemo(() => [
-    // Navigation
-    { 
-      id: 'nav-overview', 
-      label: 'Go to Dashboard', 
-      description: 'Dashboard overview',
-      icon: LayoutDashboard, 
-      action: () => router.push('/dashboard'), 
-      category: 'navigation',
-      shortcut: 'G then O',
-      keywords: ['home', 'dashboard', 'main']
-    },
-    { 
-      id: 'nav-runs', 
-      label: 'Go to Runs', 
-      description: 'View all test runs',
-      icon: Play, 
-      action: () => router.push('/dashboard/runs'), 
-      category: 'navigation',
-      shortcut: 'G then R',
-      keywords: ['tests', 'runs', 'executions']
-    },
-    { 
-      id: 'nav-tests', 
-      label: 'Go to Tests', 
-      description: 'Manage test specs',
-      icon: TestTube2, 
-      action: () => router.push('/dashboard/tests'), 
-      category: 'navigation',
-      shortcut: 'G then T',
-      keywords: ['specs', 'test cases', 'scenarios']
-    },
-    { 
-      id: 'nav-learning', 
-      label: 'Go to Learning', 
-      description: 'View knowledge base',
-      icon: Brain, 
-      action: () => router.push('/dashboard/learning'), 
-      category: 'navigation',
-      shortcut: 'G then L',
-      keywords: ['knowledge', 'ai', 'patterns']
-    },
-    { 
-      id: 'nav-monitoring', 
-      label: 'Go to Monitoring', 
-      description: 'Real-time status',
-      icon: Radio, 
-      action: () => router.push('/dashboard/monitoring'), 
-      category: 'navigation',
-      shortcut: 'G then M',
-      keywords: ['status', 'alerts', 'realtime']
-    },
-    { 
-      id: 'nav-patches', 
-      label: 'Go to Patches', 
-      description: 'Applied fixes',
-      icon: GitBranch, 
-      action: () => router.push('/dashboard/patches'), 
-      category: 'navigation',
-      shortcut: 'G then P',
-      keywords: ['fixes', 'pr', 'pull requests']
-    },
-    { 
-      id: 'nav-settings', 
-      label: 'Go to Settings', 
-      description: 'Configure QAgent',
-      icon: Settings, 
-      action: () => router.push('/dashboard/settings'), 
-      category: 'navigation',
-      shortcut: 'G then S',
-      keywords: ['config', 'preferences', 'account']
-    },
-    // Actions
-    { 
-      id: 'action-new-run', 
-      label: 'New Test Run', 
-      description: 'Start a new test run',
-      icon: Plus, 
-      action: () => router.push('/dashboard'), 
-      category: 'action',
-      shortcut: 'N then R',
-      keywords: ['create', 'start', 'run']
-    },
-    { 
-      id: 'action-new-test', 
-      label: 'Create Test Spec', 
-      description: 'Add a new test specification',
-      icon: Plus, 
-      action: () => router.push('/dashboard/tests/new'), 
-      category: 'action',
-      shortcut: 'N then T',
-      keywords: ['create', 'add', 'spec']
-    },
-    { 
-      id: 'action-toggle-theme', 
-      label: 'Toggle Theme', 
-      description: 'Switch between light and dark mode',
-      icon: isDark ? Sun : Moon, 
-      action: () => {
-        setIsDark(!isDark);
-        document.documentElement.classList.toggle('dark');
-      }, 
-      category: 'action',
-      shortcut: '⌘/Ctrl + Shift + L',
-      keywords: ['theme', 'dark', 'light', 'mode']
-    },
-    // Help
-    { 
-      id: 'help-shortcuts', 
-      label: 'Keyboard Shortcuts', 
-      description: 'View all available shortcuts',
-      icon: Keyboard, 
-      action: () => setShowShortcuts(true), 
-      category: 'help',
-      keywords: ['shortcuts', 'hotkeys', 'cheatsheet']
-    },
-    { 
-      id: 'help-demo', 
-      label: 'View Demo App', 
-      description: 'Open the demo e-commerce store',
-      icon: ExternalLink, 
-      action: () => router.push('/demo'), 
-      category: 'help',
-      keywords: ['demo', 'example', 'store']
-    },
-    { 
-      id: 'help-github', 
-      label: 'GitHub Repository', 
-      description: 'View source code on GitHub',
-      icon: Github, 
-      action: () => window.open('https://github.com', '_blank'), 
-      category: 'help',
-      keywords: ['github', 'source', 'code']
-    },
-  ], [router, isDark]);
+  const commands: CommandItem[] = useMemo(
+    () => [
+      {
+        id: 'nav-dashboard',
+        label: 'Go to Dashboard',
+        description: 'View your operational overview',
+        icon: LayoutDashboard,
+        action: () => router.push('/dashboard'),
+        category: 'navigation',
+        shortcut: 'G then D',
+        keywords: ['home', 'overview', 'dashboard'],
+      },
+      {
+        id: 'nav-runs',
+        label: 'Go to Runs',
+        description: 'Inspect runs and live status',
+        icon: Play,
+        action: () => router.push('/dashboard/runs'),
+        category: 'navigation',
+        shortcut: 'G then R',
+        keywords: ['runs', 'executions', 'activity'],
+      },
+      {
+        id: 'nav-tests',
+        label: 'Go to Tests',
+        description: 'Manage test specifications',
+        icon: TestTube2,
+        action: () => router.push('/dashboard/tests'),
+        category: 'navigation',
+        shortcut: 'G then T',
+        keywords: ['tests', 'specs', 'flows'],
+      },
+      {
+        id: 'nav-patches',
+        label: 'Go to Patches',
+        description: 'Review generated patches and PRs',
+        icon: GitBranch,
+        action: () => router.push('/dashboard/patches'),
+        category: 'navigation',
+        shortcut: 'G then P',
+        keywords: ['patches', 'pull requests', 'merge'],
+      },
+      {
+        id: 'nav-learning',
+        label: 'Go to Learning',
+        description: 'Review self-improvement metrics',
+        icon: Brain,
+        action: () => router.push('/dashboard/learning'),
+        category: 'navigation',
+        shortcut: 'G then L',
+        keywords: ['learning', 'knowledge', 'patterns'],
+      },
+      {
+        id: 'nav-monitoring',
+        label: 'Go to Monitoring',
+        description: 'Check continuous monitoring health',
+        icon: Radio,
+        action: () => router.push('/dashboard/monitoring'),
+        category: 'navigation',
+        shortcut: 'G then M',
+        keywords: ['monitoring', 'status', 'webhooks'],
+      },
+      {
+        id: 'nav-settings',
+        label: 'Go to Settings',
+        description: 'Manage integrations and repositories',
+        icon: Settings,
+        action: () => router.push('/dashboard/settings'),
+        category: 'navigation',
+        shortcut: 'G then S',
+        keywords: ['settings', 'account', 'integrations'],
+      },
+      {
+        id: 'action-new-run',
+        label: 'Start New Run',
+        description: 'Open the new run flow from the dashboard',
+        icon: Sparkles,
+        action: () => router.push('/dashboard'),
+        category: 'action',
+        shortcut: 'N then R',
+        keywords: ['create', 'run', 'analyze'],
+      },
+      {
+        id: 'action-new-test',
+        label: 'Create Test Spec',
+        description: 'Add a new manual test specification',
+        icon: TestTube2,
+        action: () => router.push('/dashboard/tests/new'),
+        category: 'action',
+        shortcut: 'N then T',
+        keywords: ['create test', 'new test', 'spec'],
+      },
+      {
+        id: 'action-theme-light',
+        label: 'Use Light Theme',
+        description: 'Switch the workspace to light mode',
+        icon: Sun,
+        action: () => setTheme('light'),
+        category: 'action',
+        keywords: ['light', 'theme', 'appearance'],
+      },
+      {
+        id: 'action-theme-dark',
+        label: 'Use Dark Theme',
+        description: 'Switch the workspace to dark mode',
+        icon: Moon,
+        action: () => setTheme('dark'),
+        category: 'action',
+        keywords: ['dark', 'theme', 'appearance'],
+      },
+      {
+        id: 'action-theme-system',
+        label: 'Use System Theme',
+        description: 'Follow your operating system theme',
+        icon: Monitor,
+        action: () => setTheme('system'),
+        category: 'action',
+        keywords: ['system', 'theme', 'appearance'],
+      },
+      {
+        id: 'help-shortcuts',
+        label: 'Keyboard Shortcuts',
+        description: 'Open the shortcut cheat sheet',
+        icon: Keyboard,
+        action: () => setShowShortcuts(true),
+        category: 'help',
+        keywords: ['keyboard', 'shortcuts', 'help'],
+      },
+      {
+        id: 'help-docs',
+        label: 'Open Documentation',
+        description: 'View the PatchPilot README',
+        icon: BookOpen,
+        action: () => window.open(README_URL, '_blank', 'noopener,noreferrer'),
+        category: 'help',
+        keywords: ['docs', 'readme', 'documentation'],
+      },
+      {
+        id: 'help-demo',
+        label: 'Open Demo Script',
+        description: 'Review the demo flow and talk track',
+        icon: ExternalLink,
+        action: () => window.open(DEMO_URL, '_blank', 'noopener,noreferrer'),
+        category: 'help',
+        keywords: ['demo', 'script', 'presentation'],
+      },
+      {
+        id: 'help-github',
+        label: 'Open GitHub Repository',
+        description: 'View the source code and open issues',
+        icon: Github,
+        action: () => window.open(GITHUB_REPO_URL, '_blank', 'noopener,noreferrer'),
+        category: 'help',
+        keywords: ['github', 'repository', 'source'],
+      },
+    ],
+    [router, setTheme]
+  );
 
-  // Sort and filter commands using fuzzy search
   const filteredCommands = useMemo(() => {
     if (!search.trim()) {
-      // Show recent commands first when no search
-      const recentIds = new Set(recentCommands.map(r => r.id));
+      const recentIds = new Set(recentCommands.map((command) => command.id));
       const recent = recentCommands
-        .map(r => commands.find(c => c.id === r.id))
+        .map((command) => commands.find((item) => item.id === command.id))
         .filter(Boolean) as CommandItem[];
-      const others = commands.filter(c => !recentIds.has(c.id));
-      return [...recent.map(c => ({ ...c, category: 'recent' as const })), ...others];
+      const others = commands.filter((command) => !recentIds.has(command.id));
+      return [...recent.map((command) => ({ ...command, category: 'recent' as const })), ...others];
     }
 
     return commands
-      .map(cmd => ({
-        ...cmd,
+      .map((command) => ({
+        ...command,
         score: Math.max(
-          fuzzyMatch(cmd.label, search),
-          fuzzyMatch(cmd.description || '', search),
-          ...(cmd.keywords?.map(k => fuzzyMatch(k, search)) || [0])
+          fuzzyMatch(command.label, search),
+          fuzzyMatch(command.description || '', search),
+          ...(command.keywords?.map((keyword) => fuzzyMatch(keyword, search)) || [0])
         ),
       }))
-      .filter(cmd => cmd.score > 0)
+      .filter((command) => command.score > 0)
       .sort((a, b) => b.score - a.score);
-  }, [search, commands, recentCommands]);
+  }, [commands, recentCommands, search]);
+
+  const groupedCommands = useMemo(() => {
+    if (search.trim()) {
+      return { 'Search Results': filteredCommands };
+    }
+
+    const groups: Record<string, CommandItem[]> = {
+      Recent: [],
+      Navigation: [],
+      Actions: [],
+      Help: [],
+    };
+
+    filteredCommands.forEach((command) => {
+      const group =
+        command.category === 'recent'
+          ? 'Recent'
+          : command.category === 'navigation'
+            ? 'Navigation'
+            : command.category === 'action'
+              ? 'Actions'
+              : 'Help';
+      groups[group].push(command);
+    });
+
+    return Object.fromEntries(Object.entries(groups).filter(([, items]) => items.length > 0));
+  }, [filteredCommands, search]);
+
+  const runCommand = useCallback(
+    (command: CommandItem) => {
+      command.action();
+      addRecentCommand(command.id);
+      setIsOpen(false);
+      setSearch('');
+      setShowShortcuts(false);
+    },
+    [addRecentCommand]
+  );
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
-      // Toggle palette
-      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
-        setIsOpen((prev) => !prev);
+        setIsOpen((previous) => !previous);
         setSearch('');
         setSelectedIndex(0);
         setShowShortcuts(false);
+        return;
       }
 
-      // Toggle theme
-      if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'l') {
+      if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === 'l') {
         event.preventDefault();
-        setIsDark(!isDark);
-        document.documentElement.classList.toggle('dark');
+        const nextTheme = resolvedTheme === 'dark' ? 'light' : 'dark';
+        setTheme(nextTheme);
+        return;
       }
 
-      if (!isOpen) return;
+      if (!isOpen) {
+        return;
+      }
 
       switch (event.key) {
         case 'ArrowDown':
           event.preventDefault();
-          setSelectedIndex((prev) => (prev + 1) % filteredCommands.length);
+          setSelectedIndex((previous) => (previous + 1) % filteredCommands.length);
           break;
         case 'ArrowUp':
           event.preventDefault();
-          setSelectedIndex((prev) => (prev - 1 + filteredCommands.length) % filteredCommands.length);
+          setSelectedIndex((previous) => (previous - 1 + filteredCommands.length) % filteredCommands.length);
           break;
         case 'Enter':
           event.preventDefault();
           if (filteredCommands[selectedIndex]) {
-            filteredCommands[selectedIndex].action();
-            addRecentCommand(filteredCommands[selectedIndex].id);
-            setIsOpen(false);
-            setSearch('');
-            setShowShortcuts(false);
+            runCommand(filteredCommands[selectedIndex]);
           }
           break;
         case 'Escape':
@@ -319,183 +381,150 @@ export function CommandPalette() {
           break;
       }
     },
-    [isOpen, filteredCommands, selectedIndex, addRecentCommand, showShortcuts, isDark]
+    [filteredCommands, isOpen, resolvedTheme, runCommand, selectedIndex, setTheme, showShortcuts]
   );
 
   useEffect(() => {
+    const handleOpen = (event: Event) => {
+      const detail = 'detail' in event ? (event as CustomEvent<{ mode?: 'search' | 'shortcuts' }>).detail : undefined;
+      setIsOpen(true);
+      setSearch('');
+      setSelectedIndex(0);
+      setShowShortcuts(detail?.mode === 'shortcuts');
+    };
+
+    document.addEventListener('patchpilot:open-command-palette', handleOpen);
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('patchpilot:open-command-palette', handleOpen);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [handleKeyDown]);
 
   useEffect(() => {
     setSelectedIndex(0);
   }, [search]);
 
-  // Close on route change
   useEffect(() => {
     setIsOpen(false);
+    setShowShortcuts(false);
   }, [pathname]);
 
-  const groupedCommands = useMemo(() => {
-    if (search.trim()) {
-      return { 'Search Results': filteredCommands };
-    }
-    
-    const groups: Record<string, CommandItem[]> = {
-      'Recent': [],
-      'Navigation': [],
-      'Actions': [],
-      'Help': [],
-    };
-    
-    filteredCommands.forEach(cmd => {
-      const category = cmd.category === 'recent' ? 'Recent' :
-                      cmd.category === 'navigation' ? 'Navigation' :
-                      cmd.category === 'action' ? 'Actions' : 'Help';
-      groups[category].push(cmd);
-    });
-    
-    return Object.fromEntries(Object.entries(groups).filter(([, items]) => items.length > 0));
-  }, [filteredCommands, search]);
-
   return (
-    <>
-      {/* Command Palette Trigger Button - Visible in header */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className="relative hidden md:flex items-center gap-2 h-9 w-64 px-3 rounded-lg bg-secondary text-sm text-muted-foreground hover:bg-secondary/80 transition-colors"
-      >
-        <Search className="h-4 w-4" />
-        <span>Search...</span>
-        <kbd className="ml-auto flex items-center gap-0.5 rounded bg-background/50 px-1.5 py-0.5 text-xs">
-          <Command className="h-3 w-3" />
-          <span>K</span>
-        </kbd>
-      </button>
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.button
+            type="button"
+            aria-label="Close command palette"
+            className="fixed inset-0 z-[100] bg-background/70 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsOpen(false)}
+          />
 
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
-            />
+          <motion.div
+            className="fixed inset-x-4 top-[10vh] z-[101] mx-auto max-w-2xl"
+            initial={{ opacity: 0, scale: 0.96, y: -10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: -10 }}
+            transition={{ duration: 0.16 }}
+          >
+            <div className="overflow-hidden rounded-[1.5rem] border border-border/80 bg-card/95 shadow-[0_30px_120px_-40px_rgba(15,23,42,0.55)] backdrop-blur-xl">
+              <div className="flex items-center gap-3 border-b border-border/80 px-5 py-4">
+                {showShortcuts ? <Keyboard className="h-5 w-5 text-primary" /> : <Search className="h-5 w-5 text-primary" />}
+                <input
+                  type="text"
+                  placeholder={showShortcuts ? 'Keyboard shortcuts' : 'Search commands, routes, and actions'}
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  className="flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground"
+                  autoFocus
+                  readOnly={showShortcuts}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (showShortcuts) {
+                      setShowShortcuts(false);
+                    } else {
+                      setIsOpen(false);
+                    }
+                  }}
+                  className="rounded-xl border border-border/70 bg-background/80 p-2 text-muted-foreground transition-colors hover:text-foreground"
+                  aria-label="Close command palette"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
 
-            {/* Command Palette */}
-            <motion.div
-              className="fixed inset-x-4 top-[15vh] z-[101] mx-auto max-w-2xl"
-              initial={{ opacity: 0, scale: 0.95, y: -10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: -10 }}
-              transition={{ duration: 0.15 }}
-            >
-              <div className="overflow-hidden rounded-2xl border border-white/10 bg-card/95 backdrop-blur-xl shadow-2xl">
-                {/* Search Input */}
-                <div className="flex items-center gap-3 border-b border-white/10 px-4 py-4">
-                  {showShortcuts ? (
-                    <Keyboard className="h-5 w-5 text-muted-foreground" />
-                  ) : (
-                    <Search className="h-5 w-5 text-muted-foreground" />
-                  )}
-                  <input
-                    type="text"
-                    placeholder={showShortcuts ? "Keyboard Shortcuts" : "Type a command or search..."}
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground outline-none text-base"
-                    autoFocus
-                    readOnly={showShortcuts}
-                  />
-                  <button
-                    onClick={() => {
-                      if (showShortcuts) {
-                        setShowShortcuts(false);
-                      } else {
-                        setIsOpen(false);
-                      }
-                    }}
-                    className="p-1.5 rounded-md hover:bg-secondary transition-colors"
-                  >
-                    <kbd className="flex items-center gap-1 rounded bg-secondary px-2 py-1 text-xs text-muted-foreground">
-                      <span>ESC</span>
-                    </kbd>
-                  </button>
-                </div>
-
-                {/* Content */}
-                <div className="max-h-[50vh] overflow-y-auto p-2">
-                  {showShortcuts ? (
-                    <ShortcutsView onClose={() => setShowShortcuts(false)} />
-                  ) : filteredCommands.length === 0 ? (
-                    <div className="py-12 text-center">
-                      <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-muted/50 flex items-center justify-center">
-                        <Search className="h-8 w-8 text-muted-foreground" />
-                      </div>
-                      <p className="text-muted-foreground font-medium">No results found</p>
-                      <p className="text-sm text-muted-foreground/70 mt-1">
-                        Try a different search term
-                      </p>
+              <div className="max-h-[55vh] overflow-y-auto p-3">
+                {showShortcuts ? (
+                  <ShortcutsView theme={theme} resolvedTheme={resolvedTheme} />
+                ) : filteredCommands.length === 0 ? (
+                  <div className="py-14 text-center">
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-primary/10 text-primary">
+                      <Search className="h-7 w-7" />
                     </div>
-                  ) : (
-                    Object.entries(groupedCommands).map(([category, items]) => (
-                      <div key={category} className="mb-2">
-                        <p className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                          {category}
-                        </p>
-                        {items.map((cmd, index) => {
-                          const globalIndex = filteredCommands.indexOf(cmd);
+                    <p className="font-medium text-foreground">No results found</p>
+                    <p className="mt-1 text-sm text-muted-foreground">Try a different search term.</p>
+                  </div>
+                ) : (
+                  Object.entries(groupedCommands).map(([group, items]) => (
+                    <div key={group} className="mb-4 last:mb-0">
+                      <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        {group}
+                      </p>
+                      <div className="space-y-1">
+                        {items.map((command) => {
+                          const globalIndex = filteredCommands.indexOf(command);
+
                           return (
                             <CommandRow
-                              key={cmd.id}
-                              command={cmd}
+                              key={command.id}
+                              command={command}
                               isSelected={globalIndex === selectedIndex}
-                              onClick={() => {
-                                cmd.action();
-                                addRecentCommand(cmd.id);
-                                setIsOpen(false);
-                                setSearch('');
-                              }}
+                              onClick={() => runCommand(command)}
                             />
                           );
                         })}
                       </div>
-                    ))
-                  )}
-                </div>
-
-                {/* Footer */}
-                {!showShortcuts && (
-                  <div className="flex items-center justify-between border-t border-white/10 px-4 py-3 text-xs text-muted-foreground bg-muted/20">
-                    <div className="flex items-center gap-4">
-                      <span className="flex items-center gap-1">
-                        <kbd className="rounded bg-secondary px-1.5 py-0.5">↑</kbd>
-                        <kbd className="rounded bg-secondary px-1.5 py-0.5">↓</kbd>
-                        <span className="ml-1">navigate</span>
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <kbd className="rounded bg-secondary px-1.5 py-0.5">↵</kbd>
-                        <span>select</span>
-                      </span>
                     </div>
-                    <button
-                      onClick={() => setShowShortcuts(true)}
-                      className="flex items-center gap-1 hover:text-foreground transition-colors"
-                    >
-                      <HelpCircle className="h-3.5 w-3.5" />
-                      <span>Shortcuts</span>
-                    </button>
-                  </div>
+                  ))
                 )}
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </>
+
+              {!showShortcuts && (
+                <div className="flex items-center justify-between border-t border-border/80 bg-muted/20 px-5 py-3 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-4">
+                    <span className="flex items-center gap-1">
+                      <kbd className="rounded-lg border border-border/70 bg-background/80 px-2 py-1">↑</kbd>
+                      <kbd className="rounded-lg border border-border/70 bg-background/80 px-2 py-1">↓</kbd>
+                      <span className="ml-1">navigate</span>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <kbd className="rounded-lg border border-border/70 bg-background/80 px-2 py-1">↵</kbd>
+                      <span>select</span>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 transition-colors hover:text-foreground"
+                    onClick={() => setShowShortcuts(true)}
+                    data-help-trigger
+                  >
+                    <HelpCircle className="h-3.5 w-3.5" />
+                    <span>Shortcuts</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -510,108 +539,82 @@ function CommandRow({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors group ${
+      className={cn(
+        'flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left transition-colors',
         isSelected
-          ? 'bg-primary/20 text-foreground'
-          : 'text-foreground/80 hover:bg-secondary/50'
-      }`}
+          ? 'border-primary/20 bg-primary/10 text-foreground'
+          : 'border-transparent text-foreground/90 hover:border-border hover:bg-accent/50'
+      )}
     >
-      <div className={`p-1.5 rounded-md transition-colors ${isSelected ? 'bg-primary/30' : 'bg-secondary group-hover:bg-secondary/80'}`}>
+      <div
+        className={cn(
+          'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
+          isSelected ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'
+        )}
+      >
         <command.icon className="h-4 w-4" />
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="font-medium truncate">{command.label}</p>
-          {command.shortcut && (
-            <kbd className={`hidden sm:inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] ${
-              isSelected ? 'bg-primary/30 text-primary-foreground' : 'bg-secondary text-muted-foreground'
-            }`}>
-              {command.shortcut}
-            </kbd>
-          )}
-        </div>
-        {command.description && (
-          <p className="text-xs text-muted-foreground truncate">{command.description}</p>
-        )}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{command.label}</p>
+        {command.description && <p className="truncate text-xs text-muted-foreground">{command.description}</p>}
       </div>
-      {isSelected && <ArrowRight className="h-4 w-4 text-primary flex-shrink-0" />}
+      <div className="flex items-center gap-3">
+        {command.shortcut && (
+          <span className="hidden rounded-lg border border-border/70 bg-background/80 px-2 py-1 text-[11px] text-muted-foreground sm:inline-flex">
+            {command.shortcut}
+          </span>
+        )}
+        <ArrowRight className={cn('h-4 w-4', isSelected ? 'text-primary' : 'text-muted-foreground')} />
+      </div>
     </button>
   );
 }
 
-function ShortcutsView({ onClose }: { onClose: () => void }) {
-  const shortcuts = [
-    { category: 'Navigation', items: [
-      { keys: ['⌘/Ctrl', 'K'], description: 'Open command palette' },
-      { keys: ['G', 'then', 'D'], description: 'Go to Dashboard' },
-      { keys: ['G', 'then', 'R'], description: 'Go to Runs' },
-      { keys: ['G', 'then', 'T'], description: 'Go to Tests' },
-      { keys: ['G', 'then', 'S'], description: 'Go to Settings' },
-    ]},
-    { category: 'Actions', items: [
-      { keys: ['N', 'then', 'R'], description: 'New test run' },
-      { keys: ['N', 'then', 'T'], description: 'Create test spec' },
-      { keys: ['⌘/Ctrl', 'Shift', 'L'], description: 'Toggle theme' },
-    ]},
-    { category: 'Command Palette', items: [
-      { keys: ['↑', '↓'], description: 'Navigate items' },
-      { keys: ['↵'], description: 'Select item' },
-      { keys: ['Esc'], description: 'Close palette' },
-    ]},
+function ShortcutsView({
+  theme,
+  resolvedTheme,
+}: {
+  theme: 'light' | 'dark' | 'system';
+  resolvedTheme: 'light' | 'dark';
+}) {
+  const groups = [
+    {
+      title: 'Navigation',
+      items: [
+        ['⌘/Ctrl + K', 'Open command palette'],
+        ['↑ / ↓', 'Move through results'],
+        ['Enter', 'Run selected command'],
+        ['Esc', 'Close palette or shortcuts'],
+      ],
+    },
+    {
+      title: 'Appearance',
+      items: [
+        ['⌘/Ctrl + Shift + L', `Toggle light/dark (current: ${resolvedTheme})`],
+        ['Theme menu', `Theme preference is ${theme}`],
+      ],
+    },
   ];
 
   return (
-    <div className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-          <Keyboard className="h-5 w-5 text-primary" />
-          Keyboard Shortcuts
-        </h3>
-        <button
-          onClick={onClose}
-          className="p-2 rounded-lg hover:bg-secondary transition-colors"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-      
-      <div className="space-y-6">
-        {shortcuts.map((group) => (
-          <div key={group.category}>
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-              {group.category}
-            </h4>
-            <div className="space-y-2">
-              {group.items.map((shortcut, index) => (
-                <div key={index} className="flex items-center justify-between py-2">
-                  <span className="text-sm text-foreground">{shortcut.description}</span>
-                  <div className="flex items-center gap-1">
-                    {shortcut.keys.map((key, keyIndex) => (
-                      <kbd
-                        key={keyIndex}
-                        className={`px-2 py-1 rounded text-xs ${
-                          key === 'then'
-                            ? 'text-muted-foreground bg-transparent'
-                            : 'bg-secondary text-foreground font-medium'
-                        }`}
-                      >
-                        {key}
-                      </kbd>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+    <div className="space-y-4 p-2">
+      {groups.map((group) => (
+        <div key={group.title} className="rounded-2xl border border-border/80 bg-muted/20 p-4">
+          <p className="text-sm font-semibold text-foreground">{group.title}</p>
+          <div className="mt-3 space-y-2">
+            {group.items.map(([shortcut, description]) => (
+              <div key={shortcut} className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-muted-foreground">{description}</span>
+                <kbd className="rounded-lg border border-border/70 bg-background/80 px-2 py-1 text-[11px] text-foreground">
+                  {shortcut}
+                </kbd>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      
-      <div className="mt-6 pt-4 border-t border-white/10">
-        <p className="text-xs text-muted-foreground text-center">
-          Press <kbd className="px-1.5 py-0.5 rounded bg-secondary">Esc</kbd> to close
-        </p>
-      </div>
+        </div>
+      ))}
     </div>
   );
 }

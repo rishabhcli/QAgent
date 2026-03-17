@@ -26,7 +26,7 @@ interface OnboardingStep {
 const steps: OnboardingStep[] = [
   {
     id: 'welcome',
-    title: 'Welcome to QAgent',
+    title: 'Welcome to PatchPilot',
     description: 'Your AI-powered QA agent that automatically tests, detects bugs, and fixes them. Let\'s take a quick tour!',
     icon: Zap,
     gradient: 'from-violet-500 to-purple-600',
@@ -34,14 +34,14 @@ const steps: OnboardingStep[] = [
   {
     id: 'tests',
     title: 'Define Test Specs',
-    description: 'Create test specifications using natural language. Describe what to test and QAgent will run them against your app.',
+    description: 'Create test specifications using natural language. Describe what to test and PatchPilot will run them against your app.',
     icon: TestTube2,
     gradient: 'from-emerald-500 to-teal-600',
   },
   {
     id: 'runs',
     title: 'Start Test Runs',
-    description: 'Launch a run to trigger the agent loop. QAgent will test your app, detect failures, and generate fixes automatically.',
+    description: 'Launch a run to trigger the agent loop. PatchPilot will test your app, detect failures, and generate fixes automatically.',
     icon: Rocket,
     gradient: 'from-blue-500 to-cyan-600',
   },
@@ -55,7 +55,7 @@ const steps: OnboardingStep[] = [
   {
     id: 'ready',
     title: 'You\'re All Set!',
-    description: 'Start by connecting your GitHub repository and creating your first test spec. QAgent is ready to heal your codebase.',
+    description: 'Start by connecting your GitHub repository and creating your first test spec. PatchPilot is ready to heal your codebase.',
     icon: Sparkles,
     gradient: 'from-pink-500 to-rose-600',
   },

@@ -277,6 +277,7 @@ export async function deleteStoredRun(runId: string): Promise<boolean> {
  * Create a new run and store it in Redis
  */
 export async function createStoredRun(data: {
+  id?: string;
   repoId: string;
   repoName: string;
   testSpecs: TestSpec[];
@@ -289,7 +290,7 @@ export async function createStoredRun(data: {
   };
 }): Promise<Run> {
   const run: Run = {
-    id: crypto.randomUUID(),
+    id: data.id || crypto.randomUUID(),
     repoId: data.repoId,
     repoName: data.repoName,
     status: 'pending',

@@ -31,26 +31,26 @@ const agentConfig: Record<
   tester: {
     label: 'Tester',
     icon: TestTube2,
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/20',
+    color: 'text-sky-600 dark:text-sky-400',
+    bgColor: 'bg-sky-500/15',
   },
   triage: {
     label: 'Triage',
     icon: Search,
-    color: 'text-yellow-400',
-    bgColor: 'bg-yellow-500/20',
+    color: 'text-amber-600 dark:text-amber-400',
+    bgColor: 'bg-amber-500/15',
   },
   fixer: {
     label: 'Fixer',
     icon: Wrench,
-    color: 'text-purple-400',
-    bgColor: 'bg-purple-500/20',
+    color: 'text-violet-600 dark:text-violet-400',
+    bgColor: 'bg-violet-500/15',
   },
   verifier: {
     label: 'Verifier',
     icon: ShieldCheck,
-    color: 'text-green-400',
-    bgColor: 'bg-green-500/20',
+    color: 'text-emerald-600 dark:text-emerald-400',
+    bgColor: 'bg-emerald-500/15',
   },
 };
 
@@ -90,8 +90,8 @@ export function AgentNode({ state, isLast = false, className }: AgentNodeProps) 
             className={cn(
               'w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300 relative',
               isRunning && 'bg-primary/20 ring-2 ring-primary shadow-lg shadow-primary/25',
-              isCompleted && 'bg-emerald-500/20 ring-2 ring-emerald-500/50',
-              isFailed && 'bg-red-500/20 ring-2 ring-red-500/50',
+              isCompleted && 'bg-emerald-500/15 ring-2 ring-emerald-500/40',
+              isFailed && 'bg-destructive/10 ring-2 ring-destructive/40',
               isIdle && 'bg-muted/50'
             )}
           >
@@ -101,8 +101,8 @@ export function AgentNode({ state, isLast = false, className }: AgentNodeProps) 
               <Icon
                 className={cn(
                   'h-7 w-7 transition-colors',
-                  isCompleted && 'text-emerald-400',
-                  isFailed && 'text-red-400',
+                  isCompleted && 'text-emerald-600 dark:text-emerald-400',
+                  isFailed && 'text-destructive',
                   isIdle && config.color
                 )}
               />
@@ -122,7 +122,7 @@ export function AgentNode({ state, isLast = false, className }: AgentNodeProps) 
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center shadow-lg"
+                className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-destructive shadow-lg"
               >
                 <XCircle className="h-4 w-4 text-white" />
               </motion.div>
@@ -147,8 +147,8 @@ export function AgentNode({ state, isLast = false, className }: AgentNodeProps) 
             className={cn(
               'text-sm font-medium',
               isRunning && 'text-primary',
-              isCompleted && 'text-emerald-400',
-              isFailed && 'text-red-400'
+              isCompleted && 'text-emerald-600 dark:text-emerald-400',
+              isFailed && 'text-destructive'
             )}
           >
             {config.label}
@@ -191,7 +191,7 @@ export function AgentNode({ state, isLast = false, className }: AgentNodeProps) 
               isCompleted
                 ? 'bg-gradient-to-r from-emerald-500 to-emerald-500/50'
                 : isFailed
-                  ? 'bg-gradient-to-r from-red-500 to-red-500/50'
+                  ? 'bg-gradient-to-r from-destructive to-destructive/50'
                   : 'bg-muted/30'
             )}
           />

@@ -20,6 +20,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { EmptyState } from '@/components/ui/empty-state';
+import { useToast } from '@/components/ui/toaster';
 
 interface PatchDiagnosis {
   type: string;
@@ -38,15 +40,31 @@ interface Patch {
   runId: string;
   createdAt: string;
   prUrl?: string;
+  prNumber?: number;
+  merged?: boolean;
+  mergeMethod?: string;
+  mergeCommitSha?: string;
+  mergeError?: string;
   diagnosis?: PatchDiagnosis;
 }
 
 const statusConfig = {
-  applied: { label: 'Applied', variant: 'success' as const, icon: CheckCircle },
+  applied: { label: 'Merged', variant: 'success' as const, icon: CheckCircle },
   pending: { label: 'Pending', variant: 'secondary' as const, icon: Clock },
 };
 
+function getPatchStatusLabel(patch: Patch): string {
+  if (patch.merged) {
+    return 'Merged';
+  }
+  if (patch.prUrl) {
+    return patch.mergeError ? 'PR Open' : 'PR Created';
+  }
+  return statusConfig[patch.status].label;
+}
+
 export default function PatchesPage() {
+  const { error: showError } = useToast();
   const [patches, setPatches] = useState<Patch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -59,15 +77,16 @@ export default function PatchesPage() {
       if (res.ok) {
         const data = await res.json();
         setPatches(data.patches || []);
+      } else {
+        showError('Failed to load patches', 'PatchPilot could not fetch patch history.');
       }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to fetch patches:', error);
+    } catch {
+      showError('Failed to load patches', 'Check your connection and try again.');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [showError]);
 
   useEffect(() => {
     fetchPatches();
@@ -102,15 +121,18 @@ export default function PatchesPage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       <Header title="Patches" />
 
-      <div className="p-6 space-y-6">
+      <div className="mx-auto max-w-7xl space-y-6 p-6 lg:p-8">
         {/* Actions Bar */}
-        <div className="flex items-center justify-between">
-          <p className="text-muted-foreground">
-            View all auto-generated patches and their application status.
-          </p>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-sm font-medium text-foreground">Patch delivery</p>
+            <p className="text-sm text-muted-foreground">
+              Review generated diffs, pull requests, merge outcomes, and any policy blocks that need attention.
+            </p>
+          </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
               <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -133,22 +155,23 @@ export default function PatchesPage() {
         </div>
 
         {/* Patches List */}
-        <Card>
+        <Card className="border-border/80 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">All Patches ({patches.length})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {filteredPatches.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
-                    <Wrench className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-lg font-medium mb-2">No patches yet</h3>
-                  <p className="text-muted-foreground">
-                    Patches will appear here after runs generate fixes.
-                  </p>
-                </div>
+                <EmptyState
+                  variant={filter === 'all' ? 'no-data' : 'search'}
+                  title={filter === 'all' ? 'No patches yet' : 'No patches match this filter'}
+                  description={
+                    filter === 'all'
+                      ? 'Patches appear here after a run generates or merges a fix.'
+                      : 'Try a different filter or refresh once more patch data is available.'
+                  }
+                  compact
+                />
               ) : (
                 filteredPatches.map((patch) => {
                   const config = statusConfig[patch.status] || statusConfig.pending;
@@ -156,7 +179,7 @@ export default function PatchesPage() {
                   return (
                     <div
                       key={patch.id}
-                      className="flex items-center justify-between p-4 rounded-lg bg-secondary/30 border border-border/50 hover:bg-secondary/50 transition-colors"
+                      className="flex items-center justify-between rounded-2xl border border-border/70 bg-card/80 p-4 transition-all hover:border-primary/20 hover:bg-accent/40"
                     >
                       <div className="flex items-center gap-4">
                         <div className="p-2.5 rounded-lg bg-primary/10">
@@ -173,13 +196,23 @@ export default function PatchesPage() {
                             <span className="text-muted-foreground">
                               Run #{patch.runId?.slice(0, 8)} · {formatDate(patch.createdAt)}
                             </span>
+                            {patch.prUrl && (
+                              <span className="text-muted-foreground">
+                                {patch.merged ? 'Merged to default branch' : 'PR awaiting merge'}
+                              </span>
+                            )}
                           </div>
+                          {patch.mergeError && (
+                            <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                              Auto-merge blocked: {patch.mergeError}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <Badge variant={config.variant}>
                           <StatusIcon className="mr-1 h-3 w-3" />
-                          {config.label}
+                          {getPatchStatusLabel(patch)}
                         </Badge>
                         <Button
                           variant="outline"
@@ -226,6 +259,29 @@ export default function PatchesPage() {
                     </span>
                   </div>
                   <p className="text-muted-foreground">{selectedPatch.diagnosis.rootCause}</p>
+                </div>
+              </div>
+            )}
+
+            {(selectedPatch?.prUrl || selectedPatch?.mergeError) && (
+              <div className="p-4 rounded-lg bg-secondary/50">
+                <h4 className="text-sm font-medium mb-2">GitHub Status</h4>
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  {selectedPatch?.prUrl && (
+                    <p>
+                      Pull request #{selectedPatch.prNumber ?? 'unknown'}{' '}
+                      {selectedPatch.merged ? 'was merged' : 'has been created'}.
+                    </p>
+                  )}
+                  {selectedPatch?.mergeMethod && (
+                    <p>Merge method: {selectedPatch.mergeMethod}</p>
+                  )}
+                  {selectedPatch?.mergeCommitSha && (
+                    <p>Merge commit: {selectedPatch.mergeCommitSha}</p>
+                  )}
+                  {selectedPatch?.mergeError && (
+                    <p className="text-amber-600 dark:text-amber-400">Auto-merge blocked: {selectedPatch.mergeError}</p>
+                  )}
                 </div>
               </div>
             )}

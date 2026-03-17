@@ -16,10 +16,10 @@ interface AgentTerminalProps {
 }
 
 const agentColors: Record<AgentType, string> = {
-  tester: 'text-blue-400',
-  triage: 'text-yellow-400',
-  fixer: 'text-purple-400',
-  verifier: 'text-emerald-400',
+  tester: 'text-sky-600 dark:text-sky-400',
+  triage: 'text-amber-600 dark:text-amber-400',
+  fixer: 'text-violet-600 dark:text-violet-400',
+  verifier: 'text-emerald-600 dark:text-emerald-400',
 };
 
 const agentLabels: Record<AgentType, string> = {
@@ -53,32 +53,36 @@ function TerminalLine({ entry }: TerminalLineProps) {
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.15 }}
     >
-      <span className="text-gray-500 shrink-0 select-none">
+      <span className="shrink-0 select-none text-muted-foreground">
         [{formatTimestamp(entry.timestamp)}]
       </span>
       <span className={cn('shrink-0 font-semibold', color)}>
         [{label}]
       </span>
-      <span className="text-gray-200">
+      <span className="text-foreground">
         {entry.message}
         {entry.details?.url && (
-          <span className="text-cyan-400 ml-1">({entry.details.url})</span>
+          <span className="ml-1 text-primary">({entry.details.url})</span>
         )}
         {entry.details?.llmCall && (
-          <span className="text-gray-500 ml-1">
+          <span className="ml-1 text-muted-foreground">
             [{entry.details.llmCall.tokens} tokens, {entry.details.llmCall.duration}ms]
           </span>
         )}
         {entry.details?.testStep?.passed !== undefined && (
-          <span className={cn(
-            'ml-1',
-            entry.details.testStep.passed ? 'text-emerald-400' : 'text-red-400'
-          )}>
+          <span
+            className={cn(
+              'ml-1',
+              entry.details.testStep.passed
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : 'text-destructive'
+            )}
+          >
             {entry.details.testStep.passed ? '  PASS' : '  FAIL'}
           </span>
         )}
         {entry.details?.error && (
-          <span className="text-red-400 ml-1">
+          <span className="ml-1 text-destructive">
             Error: {entry.details.error.message}
           </span>
         )}
@@ -108,11 +112,11 @@ export function AgentTerminal({ entries, isLive = true, className }: AgentTermin
   }, []);
 
   return (
-    <Card className={cn('flex flex-col bg-[#0d1117] border-gray-800 overflow-hidden', className)}>
-      <CardHeader className="pb-2 pt-3 px-4 border-b border-gray-800 bg-[#161b22]">
+    <Card className={cn('flex flex-col overflow-hidden border-border/80 bg-card/95 shadow-sm', className)}>
+      <CardHeader className="border-b border-border/70 bg-muted/25 px-4 pb-2 pt-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm flex items-center gap-2 text-gray-200">
-            <Terminal className="h-4 w-4 text-gray-400" />
+          <CardTitle className="flex items-center gap-2 text-sm text-foreground">
+            <Terminal className="h-4 w-4 text-muted-foreground" />
             Agent Terminal
             {isLive && !isPaused && (
               <span className="relative flex h-2 w-2">
@@ -125,7 +129,7 @@ export function AgentTerminal({ entries, isLive = true, className }: AgentTermin
             variant="ghost"
             size="sm"
             onClick={() => setIsPaused(!isPaused)}
-            className="h-7 px-2 text-gray-400 hover:text-gray-200 hover:bg-gray-800"
+            className="h-8 px-2 text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             {isPaused ? (
               <>
@@ -151,7 +155,7 @@ export function AgentTerminal({ entries, isLive = true, className }: AgentTermin
           <div className="p-3">
             {entries.length === 0 ? (
               <div className="flex items-center justify-center h-full py-12">
-                <p className="text-sm text-gray-500 font-mono">Waiting for agent activity...</p>
+                <p className="font-mono text-sm text-muted-foreground">Waiting for agent activity...</p>
               </div>
             ) : (
               <AnimatePresence initial={false}>
@@ -179,7 +183,7 @@ export function AgentTerminal({ entries, isLive = true, className }: AgentTermin
                   scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
                 }
               }}
-              className="h-7 text-xs bg-gray-900/90 border-gray-700 text-gray-300 hover:bg-gray-800"
+              className="h-8 border-border/70 bg-background/90 text-xs text-foreground hover:bg-accent"
             >
               <ChevronDown className="h-3 w-3 mr-1" />
               New output
@@ -189,10 +193,10 @@ export function AgentTerminal({ entries, isLive = true, className }: AgentTermin
       </CardContent>
 
       {/* Terminal prompt line */}
-      <div className="px-3 py-2 border-t border-gray-800 bg-[#161b22]">
+      <div className="border-t border-border/70 bg-muted/25 px-3 py-2">
         <div className="flex items-center gap-2 font-mono text-sm">
-          <span className="text-emerald-400">$</span>
-          <span className="text-gray-500">
+          <span className="text-emerald-600 dark:text-emerald-400">$</span>
+          <span className="text-muted-foreground">
             {isLive && !isPaused ? (
               <motion.span
                 animate={{ opacity: [1, 0] }}

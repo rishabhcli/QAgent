@@ -163,6 +163,9 @@ export function createMockOctokit(overrides: Record<string, unknown> = {}) {
       create: vi.fn().mockResolvedValue({
         data: { html_url: 'https://github.com/owner/repo/pull/1', number: 1 },
       }),
+      merge: vi.fn().mockResolvedValue({
+        data: { merged: true, sha: 'merge123', message: 'Pull Request successfully merged' },
+      }),
     },
     ...overrides,
   };

@@ -7,6 +7,7 @@ interface SessionResponse {
   authenticated: boolean;
   user?: GitHubUser;
   repos?: GitHubRepo[];
+  selectedRepoIds?: number[];
 }
 
 const fetcher = async (url: string) => {
@@ -27,6 +28,13 @@ export function useSession() {
   );
 
   const isAuthenticated = Boolean(data?.authenticated && data?.user);
+  const repos = data?.repos ?? [];
+  const selectedRepoIds = data?.selectedRepoIds ?? [];
+  const selectedRepos =
+    selectedRepoIds.length > 0
+      ? repos.filter((repo) => selectedRepoIds.includes(repo.id))
+      : repos;
+  const primaryRepo = selectedRepos[0] ?? repos[0] ?? null;
 
   const disconnect = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -36,7 +44,10 @@ export function useSession() {
   return {
     isAuthenticated,
     user: data?.user ?? null,
-    repos: data?.repos ?? [],
+    repos,
+    selectedRepoIds,
+    selectedRepos,
+    primaryRepo,
     isLoading,
     error,
     mutate,

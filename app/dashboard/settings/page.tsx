@@ -3,12 +3,12 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import { Github, Check, AlertCircle, Link2, Unlink, RefreshCw, Loader2 } from 'lucide-react';
+import { Github, Check, AlertCircle, Link2, Unlink, RefreshCw, Loader2, ShieldCheck, Wand2 } from 'lucide-react';
 import { Header } from '@/components/dashboard/header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/toaster';
 
 interface GitHubUser {
   id: number;
@@ -29,6 +29,7 @@ interface SessionData {
   authenticated: boolean;
   user?: GitHubUser;
   repos?: GitHubRepo[];
+  selectedRepoIds?: number[];
 }
 
 export default function SettingsPage() {
@@ -52,10 +53,10 @@ function SettingsPageSkeleton() {
 
 function SettingsPageContent() {
   const searchParams = useSearchParams();
+  const { success, error: showError, info } = useToast();
   const [session, setSession] = useState<SessionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedRepos, setSelectedRepos] = useState<Set<number>>(new Set());
-  const [targetUrl, setTargetUrl] = useState('http://localhost:3000');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
@@ -84,19 +85,19 @@ function SettingsPageContent() {
       const data = await res.json();
       setSession(data);
       if (data.repos?.length > 0) {
-        // Auto-select first repo
-        const firstRepoId = data.repos[0].id;
-        setSelectedRepos(new Set([firstRepoId]));
-        
-        // Auto-save to sessionStorage so NewRunDialog can access repos
-        const selectedReposList = [{
-          id: String(firstRepoId),
-          name: data.repos[0].name,
-          fullName: data.repos[0].fullName,
-          url: data.repos[0].url,
-          active: true,
-        }];
-        sessionStorage.setItem('qagent_repos', JSON.stringify(selectedReposList));
+        const selection = Array.isArray(data.selectedRepoIds) && data.selectedRepoIds.length > 0
+          ? data.selectedRepoIds
+          : [data.repos[0].id];
+
+        setSelectedRepos(new Set(selection));
+
+        if (!data.selectedRepoIds || data.selectedRepoIds.length === 0) {
+          await fetch('/api/auth/session', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ selectedRepoIds: selection }),
+          });
+        }
       }
     } catch {
       setSession({ authenticated: false });
@@ -116,10 +117,11 @@ function SettingsPageContent() {
       setMessage({ type: 'success', text: 'GitHub account disconnected.' });
     } catch {
       setMessage({ type: 'error', text: 'Failed to disconnect.' });
+      showError('Failed to disconnect', 'PatchPilot could not clear the GitHub session.');
     }
   };
 
-  const toggleRepo = (repoId: number) => {
+  const toggleRepo = async (repoId: number) => {
     const newSelected = new Set(selectedRepos);
     if (newSelected.has(repoId)) {
       newSelected.delete(repoId);
@@ -128,26 +130,34 @@ function SettingsPageContent() {
     }
     setSelectedRepos(newSelected);
 
-    // Save selected repos to sessionStorage for NewRunDialog
-    if (session?.repos) {
-      const selectedReposList = session.repos.filter(r => newSelected.has(r.id)).map(r => ({
-        id: String(r.id),
-        name: r.name,
-        fullName: r.fullName,
-        url: r.url,
-        active: true,
-      }));
-      sessionStorage.setItem('qagent_repos', JSON.stringify(selectedReposList));
+    try {
+      await fetch('/api/auth/session', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ selectedRepoIds: Array.from(newSelected) }),
+      });
+      setSession((current) =>
+        current
+          ? {
+              ...current,
+              selectedRepoIds: Array.from(newSelected),
+            }
+          : current
+      );
+      success('Repository selection updated');
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to save repository selection.' });
+      showError('Failed to save selection', 'PatchPilot could not update the selected repositories.');
     }
   };
 
   const isConnected = session?.authenticated && session?.user;
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       <Header title="Settings" />
 
-      <div className="p-6 space-y-6 max-w-3xl">
+      <div className="mx-auto max-w-4xl space-y-6 p-6 lg:p-8">
         {/* Status Message */}
         {message && (
           <div
@@ -169,7 +179,7 @@ function SettingsPageContent() {
         )}
 
         {/* GitHub Connection */}
-        <Card>
+        <Card className="border-border/80 shadow-sm">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -296,70 +306,62 @@ function SettingsPageContent() {
         </Card>
 
         {/* Target URL Configuration */}
-        <Card>
+        <Card className="border-border/80 shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Link2 className="h-5 w-5" />
-              Target Application
+              Validation target
             </CardTitle>
             <CardDescription>
-              The URL where QAgent will run tests
+              Choose live environment validation on a per-run basis.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="targetUrl" className="text-sm font-medium">
-                  Target URL
-                </label>
-                <Input
-                  id="targetUrl"
-                  value={targetUrl}
-                  onChange={(e) => setTargetUrl(e.target.value)}
-                  placeholder="http://localhost:3000"
-                />
-                <p className="text-xs text-muted-foreground">
-                  This is the base URL that will be used for all test runs.
-                </p>
+            <div className="rounded-2xl border border-border/80 bg-muted/30 p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <Wand2 className="h-4 w-4" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-foreground">Set the deployed URL when launching a run</p>
+                  <p className="text-sm text-muted-foreground">
+                    PatchPilot validates code first. If you provide a public deployment URL in the new-run dialog, it will also run Browserbase validation against that environment.
+                  </p>
+                </div>
               </div>
-              <Button variant="outline">Save Changes</Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* API Keys */}
-        <Card>
+        <Card className="border-border/80 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg">API Configuration</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5" />
+              Environment prerequisites
+            </CardTitle>
             <CardDescription>
-              Configure API keys for external services
+              These integrations are configured through environment variables, not this UI.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="browserbaseKey" className="text-sm font-medium">
-                  Browserbase API Key
-                </label>
-                <Input
-                  id="browserbaseKey"
-                  type="password"
-                  placeholder="bb_live_..."
-                  defaultValue="••••••••••••••••"
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="openaiKey" className="text-sm font-medium">
-                  OpenAI API Key
-                </label>
-                <Input
-                  id="openaiKey"
-                  type="password"
-                  placeholder="sk-..."
-                  defaultValue="••••••••••••••••"
-                />
-              </div>
-              <Button variant="outline">Update Keys</Button>
+            <div className="space-y-3">
+              {[
+                'GitHub OAuth for repository selection and pull request creation',
+                'OpenAI for diagnosis and patch generation',
+                'Browserbase when live browser validation is required',
+                'Redis, Vercel, and Weave for persistence, deployment, and observability',
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-3 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
+                  <Check className="mt-0.5 h-4 w-4 text-primary" />
+                  <span className="text-sm text-muted-foreground">{item}</span>
+                </div>
+              ))}
+              <Button
+                variant="outline"
+                onClick={() => info('Environment setup', 'Review .env.example and deployment settings to update integrations.')}
+              >
+                View setup guidance
+              </Button>
             </div>
           </CardContent>
         </Card>

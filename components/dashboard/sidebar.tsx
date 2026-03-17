@@ -1,62 +1,47 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-  LayoutDashboard,
-  Play,
-  TestTube2,
-  GitBranch,
-  Settings,
-  Github,
-  Zap,
-  Radio,
   Brain,
-  Menu,
-  X,
-  Loader2,
   ChevronLeft,
   ChevronRight,
+  Github,
+  LayoutDashboard,
+  Loader2,
+  Menu,
+  Play,
+  Radio,
+  Settings,
+  TestTube2,
+  Wrench,
+  X,
+  Zap,
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils/cn';
 import { useSession } from '@/lib/hooks/use-session';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Runs', href: '/dashboard/runs', icon: Play },
+  { name: 'Tests', href: '/dashboard/tests', icon: TestTube2 },
+  { name: 'Patches', href: '/dashboard/patches', icon: Wrench },
   { name: 'Learning', href: '/dashboard/learning', icon: Brain },
   { name: 'Monitoring', href: '/dashboard/monitoring', icon: Radio },
-  { name: 'Patches', href: '/dashboard/patches', icon: GitBranch },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 
-interface StoredRepo {
-  id: string;
-  name: string;
-  fullName: string;
-  active?: boolean;
-}
-
-function getStoredRepoName(): string | null {
-  if (typeof window === 'undefined') return null;
-
-  try {
-    const stored = sessionStorage.getItem('qagent_repos');
-    if (!stored) return null;
-    const repos = JSON.parse(stored) as StoredRepo[];
-    const activeRepo = repos.find((repo) => repo.active) ?? repos[0];
-    return activeRepo?.fullName || activeRepo?.name || null;
-  } catch {
-    // sessionStorage not available or invalid data
-    return null;
-  }
-}
+const COLLAPSED_WIDTH = 88;
+const EXPANDED_WIDTH = 284;
 
 function getStoredCollapsedState(): boolean {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
   try {
     return localStorage.getItem('sidebar_collapsed') === 'true';
   } catch {
@@ -64,38 +49,34 @@ function getStoredCollapsedState(): boolean {
   }
 }
 
+function setSidebarWidth(width: number) {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  document.documentElement.style.setProperty('--dashboard-sidebar-width', `${width}px`);
+}
+
 export function Sidebar() {
   const pathname = usePathname();
-  const { isAuthenticated, user, repos, isLoading } = useSession();
+  const { isAuthenticated, user, isLoading, primaryRepo } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [selectedRepoName, setSelectedRepoName] = useState<string | null>(null);
 
   useEffect(() => {
-    setIsCollapsed(getStoredCollapsedState());
+    const collapsed = getStoredCollapsedState();
+    setIsCollapsed(collapsed);
+    setSidebarWidth(collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH);
   }, []);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      setSelectedRepoName(null);
-      return;
-    }
-
-    const storedRepo = getStoredRepoName();
-    if (storedRepo) {
-      setSelectedRepoName(storedRepo);
-      return;
-    }
-
-    if (repos.length > 0) {
-      setSelectedRepoName(repos[0].fullName || repos[0].name);
-    } else {
-      setSelectedRepoName(null);
-    }
-  }, [isAuthenticated, repos, pathname]);
+    setSidebarWidth(isCollapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH);
+  }, [isCollapsed]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      return;
+    }
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -108,90 +89,115 @@ export function Sidebar() {
   }, [isOpen]);
 
   const toggleCollapsed = () => {
-    const newState = !isCollapsed;
-    setIsCollapsed(newState);
+    const nextState = !isCollapsed;
+    setIsCollapsed(nextState);
+
     try {
-      localStorage.setItem('sidebar_collapsed', String(newState));
+      localStorage.setItem('sidebar_collapsed', String(nextState));
     } catch {
-      // localStorage not available
+      // Ignore storage failures.
     }
   };
 
-  const connectionStatus = isLoading
-    ? 'Checking connection...'
-    : isAuthenticated
-      ? 'Connected'
-      : 'Not connected';
-  const accountLabel = isLoading
-    ? 'Loading account...'
-    : isAuthenticated && user?.login
-      ? `@${user.login}`
-      : 'Connect GitHub';
-  const repoLabel = isLoading
-    ? 'Loading repository...'
-    : selectedRepoName || 'No repo selected';
+  const connectionStatus = isLoading ? 'Syncing GitHub' : isAuthenticated ? 'Connected' : 'Not connected';
+  const accountLabel = isLoading ? 'Loading account…' : isAuthenticated && user?.login ? `@${user.login}` : 'Connect GitHub';
+  const repoLabel = isLoading ? 'Loading repository…' : primaryRepo?.fullName || primaryRepo?.name || 'No repo selected';
+  const currentWidth = isCollapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
+
+  const footerContent = useMemo(
+    () => (
+      <div className="rounded-2xl border border-border/80 bg-card/80 p-3 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Github className="h-4 w-4" />}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              GitHub
+            </p>
+            <p className="mt-1 text-sm font-semibold text-foreground">{connectionStatus}</p>
+            <p className="truncate text-sm text-muted-foreground">{accountLabel}</p>
+            <p className="truncate text-xs text-muted-foreground">{repoLabel}</p>
+          </div>
+        </div>
+      </div>
+    ),
+    [accountLabel, connectionStatus, isLoading, repoLabel]
+  );
 
   return (
-    <TooltipProvider delayDuration={100}>
+    <TooltipProvider delayDuration={120}>
       <>
         <button
           type="button"
           aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
           onClick={() => setIsOpen((prev) => !prev)}
-          className="lg:hidden fixed left-4 top-4 z-[60] inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-background shadow-sm"
+          className="fixed left-4 top-4 z-[60] inline-flex h-11 w-11 items-center justify-center rounded-xl border border-border/80 bg-background/95 shadow-lg backdrop-blur md:hidden"
         >
           {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
 
         {isOpen && (
-          <div
-            className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
+          <button
+            type="button"
+            aria-label="Close navigation overlay"
+            className="fixed inset-0 z-40 bg-background/70 backdrop-blur-sm md:hidden"
             onClick={() => setIsOpen(false)}
           />
         )}
 
         <motion.aside
           className={cn(
-            'fixed inset-y-0 left-0 z-50 flex flex-col transition-all duration-200 ease-in-out',
-            'bg-sidebar/80 backdrop-blur-xl border-r border-neon-cyan/20',
-            'shadow-[inset_-1px_0_20px_hsl(var(--neon-cyan)/0.05),0_0_30px_hsl(var(--neon-cyan)/0.05)]',
+            'fixed inset-y-0 left-0 z-50 flex flex-col border-r border-border/80 bg-background/90 backdrop-blur-xl',
+            'shadow-[0_24px_80px_-32px_rgba(15,23,42,0.45)]',
             isOpen ? 'translate-x-0' : '-translate-x-full',
-            'lg:translate-x-0'
+            'md:translate-x-0'
           )}
-          animate={{ width: isCollapsed ? 72 : 256 }}
-          transition={{ duration: 0.2 }}
+          animate={{ width: currentWidth }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
         >
-          {/* Logo */}
-          <div className={cn(
-            "flex h-16 items-center gap-2 border-b border-neon-cyan/20",
-            isCollapsed ? "justify-center px-2" : "px-6"
-          )}>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-neon-cyan to-neon-magenta flex-shrink-0 shadow-[0_0_15px_hsl(var(--neon-cyan)/0.4)]">
-              <Zap className="h-4 w-4 text-white" />
-            </div>
-            <AnimatePresence>
-              {!isCollapsed && (
-                <motion.span
-                  className="text-lg font-semibold bg-gradient-to-r from-neon-cyan via-neon-magenta to-neon-pink bg-clip-text text-transparent whitespace-nowrap overflow-hidden"
-                  initial={{ opacity: 0, width: 0 }}
-                  animate={{ opacity: 1, width: 'auto' }}
-                  exit={{ opacity: 0, width: 0 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  QAgent
-                </motion.span>
-              )}
-            </AnimatePresence>
+          <div
+            className={cn(
+              'flex h-16 items-center border-b border-border/70',
+              isCollapsed ? 'justify-center px-3' : 'justify-between px-5'
+            )}
+          >
+            <Link href="/dashboard" className="flex min-w-0 items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,hsl(var(--primary)),hsl(var(--primary)/0.7))] text-primary-foreground shadow-lg">
+                <Zap className="h-5 w-5" />
+              </div>
+              <AnimatePresence initial={false}>
+                {!isCollapsed && (
+                  <motion.div
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: 'auto' }}
+                    exit={{ opacity: 0, width: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="min-w-0 overflow-hidden"
+                  >
+                    <p className="truncate text-sm font-semibold text-foreground">PatchPilot</p>
+                    <p className="truncate text-xs text-muted-foreground">Self-healing QA operations</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Link>
+
+            {!isCollapsed && (
+              <button
+                type="button"
+                onClick={toggleCollapsed}
+                className="hidden rounded-xl border border-transparent p-2 text-muted-foreground transition-colors hover:border-border hover:bg-muted/70 hover:text-foreground md:inline-flex"
+                aria-label="Collapse sidebar"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            )}
           </div>
 
-          {/* Navigation */}
-          <nav className={cn(
-            "flex-1 space-y-1 py-4",
-            isCollapsed ? "px-2" : "px-3"
-          )}>
+          <nav className={cn('flex-1 space-y-1 overflow-y-auto py-4', isCollapsed ? 'px-3' : 'px-4')}>
             {navigation.map((item) => {
-              const isActive = pathname === item.href ||
-                (item.href !== '/dashboard' && pathname.startsWith(item.href));
+              const isActive =
+                pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
 
               const navItem = (
                 <Link
@@ -199,25 +205,22 @@ export function Sidebar() {
                   href={item.href}
                   onClick={() => setIsOpen(false)}
                   className={cn(
-                    'flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-all duration-200 relative',
-                    isCollapsed ? 'justify-center px-2' : 'px-3',
+                    'group flex items-center gap-3 rounded-2xl border px-3 py-3 text-sm font-medium transition-all',
+                    isCollapsed ? 'justify-center px-2' : '',
                     isActive
-                      ? 'bg-neon-cyan/10 text-neon-cyan border-l-2 border-neon-cyan shadow-[inset_0_0_20px_hsl(var(--neon-cyan)/0.1)]'
-                      : 'text-sidebar-foreground/70 hover:bg-neon-cyan/5 hover:text-neon-cyan/90 border-l-2 border-transparent'
+                      ? 'border-primary/25 bg-primary/10 text-foreground shadow-sm'
+                      : 'border-transparent text-muted-foreground hover:border-border hover:bg-muted/60 hover:text-foreground'
                   )}
                 >
-                  <item.icon className={cn(
-                    "h-4 w-4 flex-shrink-0 transition-all duration-200",
-                    isActive && "drop-shadow-[0_0_6px_hsl(var(--neon-cyan)/0.8)]"
-                  )} />
-                  <AnimatePresence>
+                  <item.icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground')} />
+                  <AnimatePresence initial={false}>
                     {!isCollapsed && (
                       <motion.span
                         initial={{ opacity: 0, width: 0 }}
                         animate={{ opacity: 1, width: 'auto' }}
                         exit={{ opacity: 0, width: 0 }}
                         transition={{ duration: 0.15 }}
-                        className="whitespace-nowrap overflow-hidden"
+                        className="overflow-hidden whitespace-nowrap"
                       >
                         {item.name}
                       </motion.span>
@@ -229,12 +232,8 @@ export function Sidebar() {
               if (isCollapsed) {
                 return (
                   <Tooltip key={item.name}>
-                    <TooltipTrigger asChild>
-                      {navItem}
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                      {item.name}
-                    </TooltipContent>
+                    <TooltipTrigger asChild>{navItem}</TooltipTrigger>
+                    <TooltipContent side="right">{item.name}</TooltipContent>
                   </Tooltip>
                 );
               }
@@ -243,75 +242,51 @@ export function Sidebar() {
             })}
           </nav>
 
-          {/* Collapse Toggle */}
-          <div className="hidden lg:flex justify-center py-2 border-t border-neon-cyan/20">
-            <button
-              onClick={toggleCollapsed}
-              className="p-2 rounded-lg text-muted-foreground hover:bg-neon-cyan/10 hover:text-neon-cyan transition-all duration-200"
-              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              {isCollapsed ? (
-                <ChevronRight className="h-4 w-4" />
+          <div className="border-t border-border/70 p-4">
+            <AnimatePresence initial={false}>
+              {!isCollapsed ? (
+                <motion.div
+                  key="expanded-footer"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="overflow-hidden"
+                >
+                  {footerContent}
+                </motion.div>
               ) : (
-                <ChevronLeft className="h-4 w-4" />
+                <motion.div
+                  key="collapsed-footer"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex flex-col items-center gap-3"
+                >
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-border/80 bg-card text-primary shadow-sm">
+                        {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Github className="h-4 w-4" />}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p className="font-medium">{connectionStatus}</p>
+                      <p className="text-xs text-muted-foreground">{accountLabel}</p>
+                      <p className="text-xs text-muted-foreground">{repoLabel}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <button
+                    type="button"
+                    onClick={toggleCollapsed}
+                    className="hidden rounded-xl border border-transparent p-2 text-muted-foreground transition-colors hover:border-border hover:bg-muted/70 hover:text-foreground md:inline-flex"
+                    aria-label="Expand sidebar"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </motion.div>
               )}
-            </button>
+            </AnimatePresence>
           </div>
-
-          {/* Footer */}
-          <AnimatePresence>
-            {!isCollapsed && (
-              <motion.div
-                className="border-t border-neon-cyan/20 p-4"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-              >
-                <div className="flex items-start gap-3 rounded-lg bg-neon-cyan/5 border border-neon-cyan/10 px-3 py-2">
-                  <div className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-md bg-neon-cyan/10 flex-shrink-0">
-                    {isLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin text-neon-cyan" />
-                    ) : (
-                      <Github className="h-4 w-4 text-neon-cyan" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0 space-y-0.5">
-                    <p className="text-xs font-medium text-neon-cyan truncate">
-                      {connectionStatus}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {accountLabel}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {repoLabel}
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Collapsed Footer */}
-          {isCollapsed && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex justify-center p-4 border-t border-neon-cyan/20">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-neon-cyan/10 border border-neon-cyan/20">
-                    {isLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin text-neon-cyan" />
-                    ) : (
-                      <Github className="h-4 w-4 text-neon-cyan" />
-                    )}
-                  </div>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <p className="font-medium">{connectionStatus}</p>
-                <p className="text-xs text-muted-foreground">{accountLabel}</p>
-              </TooltipContent>
-            </Tooltip>
-          )}
         </motion.aside>
       </>
     </TooltipProvider>

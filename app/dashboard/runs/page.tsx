@@ -15,6 +15,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { NewRunDialog } from '@/components/dashboard/new-run-dialog';
+import { EmptyState } from '@/components/ui/empty-state';
+import { useToast } from '@/components/ui/toaster';
 
 interface Run {
   id: string;
@@ -41,6 +43,7 @@ const statusConfig = {
 
 export default function RunsPage() {
   const router = useRouter();
+  const { error: showError } = useToast();
   const [filter, setFilter] = useState<string>('all');
   const [runs, setRuns] = useState<Run[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,15 +55,16 @@ export default function RunsPage() {
       if (response.ok) {
         const data = await response.json();
         setRuns(data.runs || []);
+      } else {
+        showError('Failed to load runs', 'PatchPilot could not fetch the run history.');
       }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to fetch runs:', error);
+    } catch {
+      showError('Failed to load runs', 'Check your connection and try again.');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [showError]);
 
   useEffect(() => {
     fetchRuns();
@@ -110,13 +114,19 @@ export default function RunsPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       <Header title="Runs" />
 
-      <div className="p-6 space-y-6">
+      <div className="mx-auto max-w-7xl space-y-6 p-6 lg:p-8">
         {/* Actions Bar */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-sm font-medium text-foreground">Operational runs</p>
+            <p className="text-sm text-muted-foreground">
+              Track active remediation loops, review completed runs, and inspect failures quickly.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -140,7 +150,7 @@ export default function RunsPage() {
         </div>
 
         {/* Runs List */}
-        <Card>
+        <Card className="border-border/80 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">All Runs</CardTitle>
           </CardHeader>
@@ -152,16 +162,21 @@ export default function RunsPage() {
             ) : (
               <div className="space-y-2">
                 {filteredRuns.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="text-muted-foreground mb-4">
-                      {filter === 'all' 
-                        ? 'No runs yet. Start your first run to see QAgent in action!'
-                        : 'No runs found matching the current filter.'}
-                    </div>
-                    {filter === 'all' && (
-                      <NewRunDialog onRunCreated={handleRunCreated} />
-                    )}
-                  </div>
+                  <EmptyState
+                    variant={filter === 'all' ? 'default' : 'search'}
+                    title={filter === 'all' ? 'No runs yet' : 'No runs match this filter'}
+                    description={
+                      filter === 'all'
+                        ? 'Launch your first run to start testing, patching, and verification.'
+                        : 'Try a different status filter or refresh the run history.'
+                    }
+                    action={
+                      filter === 'all'
+                        ? { label: 'Start your first run', onClick: () => document.querySelector<HTMLButtonElement>('[data-new-run-trigger]')?.click() }
+                        : undefined
+                    }
+                    compact
+                  />
                 ) : (
                   filteredRuns.map((run) => {
                     const config = statusConfig[run.status];
@@ -174,8 +189,8 @@ export default function RunsPage() {
                       <Link
                         key={run.id}
                         href={`/dashboard/runs/${run.id}`}
-                        className="flex items-center justify-between p-4 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors border border-border/50"
-                      >
+                          className="flex items-center justify-between rounded-2xl border border-border/70 bg-card/80 p-4 transition-all hover:border-primary/20 hover:bg-accent/40"
+                        >
                         <div className="flex items-center gap-4">
                           <div
                             className={`p-2.5 rounded-lg ${

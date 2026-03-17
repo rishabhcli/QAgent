@@ -1,9 +1,11 @@
 import type { Run, RunStatus, AgentType, TestSpec, Patch, TestResult } from '@/lib/types';
+import { addPatchFromRun } from '@/lib/dashboard/patch-store';
 import {
   storeRun as storeRedisRun,
   getStoredRun,
-  updateStoredRun,
   getAllStoredRuns,
+  deleteStoredRun,
+  getStoredRunStats,
 } from '@/lib/redis/runs-store';
 
 // Store runs in globalThis to survive HMR in development
@@ -14,6 +16,18 @@ const globalForRuns = globalThis as unknown as {
 // In-memory store for runs with HMR persistence
 const runs = globalForRuns.runsMap ?? new Map<string, Run>();
 globalForRuns.runsMap = runs;
+
+function cacheRun(run: Run): Run {
+  runs.set(run.id, run);
+  return run;
+}
+
+function persistRun(run: Run): void {
+  cacheRun(run);
+  storeRedisRun(run).catch((err) => {
+    console.warn('Failed to store run in Redis:', err.message);
+  });
+}
 
 export function createRun(data: {
   repoId: string;
@@ -35,13 +49,7 @@ export function createRun(data: {
     startedAt: new Date(),
   };
 
-  runs.set(run.id, run);
-
-  // Also store in Redis for persistence (async, don't wait)
-  storeRedisRun(run).catch((err) => {
-    console.warn('Failed to store run in Redis:', err.message);
-  });
-
+  persistRun(run);
   return run;
 }
 
@@ -67,7 +75,7 @@ export async function getRunAsync(runId: string): Promise<Run | null> {
     const stored = await getStoredRun(runId);
     if (stored) {
       // Restore to in-memory cache
-      runs.set(runId, stored);
+      cacheRun(stored);
       return stored;
     }
   } catch (err) {
@@ -122,8 +130,7 @@ export function updateRunStatus(runId: string, status: RunStatus): void {
       run.completedAt = new Date();
     }
 
-    // Sync to Redis (async, don't wait)
-    storeRedisRun(run).catch(() => {});
+    persistRun(run);
   }
 }
 
@@ -131,8 +138,7 @@ export function updateRunAgent(runId: string, agent: AgentType | null): void {
   const run = runs.get(runId);
   if (run) {
     run.currentAgent = agent;
-    // Sync to Redis (async, don't wait)
-    storeRedisRun(run).catch(() => {});
+    persistRun(run);
   }
 }
 
@@ -140,8 +146,7 @@ export function updateRunSession(runId: string, sessionId: string): void {
   const run = runs.get(runId);
   if (run) {
     run.sessionId = sessionId;
-    // Sync to Redis (async, don't wait)
-    storeRedisRun(run).catch(() => {});
+    persistRun(run);
   }
 }
 
@@ -149,6 +154,7 @@ export function incrementRunIteration(runId: string): void {
   const run = runs.get(runId);
   if (run) {
     run.iteration += 1;
+    persistRun(run);
   }
 }
 
@@ -156,8 +162,10 @@ export function addRunPatch(runId: string, patch: Patch): void {
   const run = runs.get(runId);
   if (run) {
     run.patches.push(patch);
-    // Sync to Redis (async, don't wait)
-    storeRedisRun(run).catch(() => {});
+    persistRun(run);
+    addPatchFromRun(runId, patch).catch((err) => {
+      console.warn('Failed to store patch details:', err);
+    });
   }
 }
 
@@ -165,12 +173,17 @@ export function addRunTestResult(runId: string, testResult: TestResult): void {
   const run = runs.get(runId);
   if (run) {
     run.testResults.push(testResult);
+    persistRun(run);
   }
 }
 
 export function deleteRun(runId: string): boolean {
   abortControllers.delete(runId);
-  return runs.delete(runId);
+  const deleted = runs.delete(runId);
+  deleteStoredRun(runId).catch((err) => {
+    console.warn('Failed to delete run from Redis:', err);
+  });
+  return deleted;
 }
 
 // AbortController registry for active runs
@@ -223,4 +236,18 @@ export function getRunStats(): {
     patchesApplied: totalPatches,
     avgIterations: totalIterations / allRuns.length,
   };
+}
+
+export async function getRunStatsAsync(repoId?: string): Promise<{
+  totalRuns: number;
+  passRate: number;
+  patchesApplied: number;
+  avgIterations: number;
+}> {
+  try {
+    return await getStoredRunStats(repoId);
+  } catch (err) {
+    console.warn('Failed to get run stats from Redis:', err);
+    return getRunStats();
+  }
 }

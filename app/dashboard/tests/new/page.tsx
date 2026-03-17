@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, Trash2, GripVertical, Save } from 'lucide-react';
 import { Header } from '@/components/dashboard/header';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils/cn';
+import { useToast } from '@/components/ui/toaster';
 
 interface TestStep {
   id: string;
@@ -17,6 +19,8 @@ interface TestStep {
 }
 
 export default function NewTestPage() {
+  const router = useRouter();
+  const { error: showError, success } = useToast();
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
   const [steps, setSteps] = useState<TestStep[]>([
@@ -64,23 +68,23 @@ export default function NewTestPage() {
       });
 
       if (response.ok) {
-        // Redirect to tests list
-        window.location.href = '/dashboard/tests';
+        success('Test spec saved');
+        router.push('/dashboard/tests');
       } else {
-        console.error('Failed to save test spec');
+        showError('Failed to save test spec');
       }
-    } catch (error) {
-      console.error('Error saving test spec:', error);
+    } catch {
+      showError('Failed to save test spec');
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       <Header />
 
-      <div className="p-6 space-y-6 max-w-3xl mx-auto">
+      <div className="mx-auto max-w-4xl space-y-6 p-6 lg:p-8">
         {/* Back button and title */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -107,7 +111,7 @@ export default function NewTestPage() {
         </div>
 
         {/* Basic Info */}
-        <Card>
+        <Card className="border-border/80 shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg">Basic Information</CardTitle>
           </CardHeader>
@@ -138,7 +142,7 @@ export default function NewTestPage() {
         </Card>
 
         {/* Test Steps */}
-        <Card>
+        <Card className="border-border/80 shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg">Test Steps</CardTitle>
             <CardDescription>
@@ -204,7 +208,7 @@ export default function NewTestPage() {
         </Card>
 
         {/* Tips */}
-        <Card className="bg-primary/5 border-primary/20">
+        <Card className="border-primary/20 bg-primary/5 shadow-sm">
           <CardContent className="pt-6">
             <h4 className="font-medium mb-2">Tips for writing test steps</h4>
             <ul className="text-sm text-muted-foreground space-y-1">

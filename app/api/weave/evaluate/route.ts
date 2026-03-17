@@ -7,36 +7,42 @@
 
 import { NextResponse } from 'next/server';
 import { isWeaveEnabled, getWeaveProjectUrl } from '@/lib/weave';
+import { getAllRunsAsync } from '@/lib/dashboard/run-store';
 import {
   runEvaluation,
   createDatasetFromRuns,
   generateEvaluationReport,
-  type EvaluationRow,
 } from '@/lib/weave/evaluations';
 
 export const dynamic = 'force-dynamic';
 
-// Mock data for demonstration - in production, this would come from the database
-const mockHistoricalRuns = [
-  {
-    testSpec: { id: 'test-1', name: 'Checkout Flow' },
-    failureReport: { testId: 'test-1', error: { message: 'Button not clickable' } },
-    success: true,
-    iterations: 2,
-  },
-  {
-    testSpec: { id: 'test-2', name: 'Signup Flow' },
-    failureReport: { testId: 'test-2', error: { message: 'Null reference' } },
-    success: true,
-    iterations: 1,
-  },
-  {
-    testSpec: { id: 'test-3', name: 'Cart Flow' },
-    failureReport: { testId: 'test-3', error: { message: 'API error' } },
-    success: false,
-    iterations: 5,
-  },
-];
+async function getHistoricalRuns() {
+  const runs = await getAllRunsAsync();
+
+  return runs.flatMap((run) =>
+    run.testSpecs.map((testSpec, index) => {
+      const testResult = run.testResults[index];
+
+      return {
+        testSpec: {
+          ...testSpec,
+          id: `${run.id}:${testSpec.id}`,
+        },
+        failureReport: testResult?.failureReport,
+        success: testResult?.passed ?? run.status === 'completed',
+        iterations: run.iteration || 1,
+        durationMs: testResult?.duration ?? 0,
+        usedSimilarFix: false,
+        patch: run.patches[index],
+        diagnosis: run.patches[index]
+          ? {
+              confidence: 0,
+            }
+          : undefined,
+      };
+    })
+  );
+}
 
 /**
  * GET /api/weave/evaluate
@@ -54,20 +60,31 @@ export async function GET() {
       });
     }
 
-    // Create dataset from mock runs
-    const dataset = createDatasetFromRuns(mockHistoricalRuns);
+    const historicalRuns = await getHistoricalRuns();
+    if (historicalRuns.length === 0) {
+      return NextResponse.json({
+        enabled: true,
+        results: null,
+        message: 'No historical run data available yet.',
+        projectUrl: getWeaveProjectUrl(),
+        timestamp: new Date().toISOString(),
+      });
+    }
 
-    // Create a simple mock model for evaluation
+    const dataset = createDatasetFromRuns(historicalRuns);
+
     const mockModel = async (input: unknown): Promise<Record<string, unknown>> => {
       const typedInput = input as { testSpec?: { id?: string } };
-      const run = mockHistoricalRuns.find(
+      const run = historicalRuns.find(
         (r) => r.testSpec.id === typedInput.testSpec?.id
       );
       return {
         success: run?.success ?? false,
         iterations: run?.iterations ?? 1,
-        durationMs: Math.random() * 30000,
-        usedSimilarFix: Math.random() > 0.5,
+        durationMs: run?.durationMs ?? 0,
+        usedSimilarFix: run?.usedSimilarFix ?? false,
+        patch: run?.patch,
+        diagnosis: run?.diagnosis,
       };
     };
 

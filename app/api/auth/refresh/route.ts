@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { encrypt } from '@/lib/auth/session';
+import { decrypt, encrypt } from '@/lib/auth/session';
 import {
   validateRefreshToken,
   revokeRefreshToken,
@@ -26,6 +26,12 @@ export async function POST(request: NextRequest) {
 
   try {
     const sessionData = JSON.parse(tokenData.sessionData);
+    const currentSessionToken = request.cookies.get(SESSION_COOKIE)?.value;
+    const selectedRepoIds = currentSessionToken
+      ? await decrypt(currentSessionToken)
+          .then((payload) => payload.selectedRepoIds ?? [])
+          .catch(() => [])
+      : [];
 
     // Rotate: revoke old, create new
     await revokeRefreshToken(refreshToken);
@@ -39,6 +45,7 @@ export async function POST(request: NextRequest) {
     const sessionToken = await encrypt({
       accessToken: sessionData.accessToken,
       user: sessionData.user,
+      selectedRepoIds,
       expiresAt: expiresAt.toISOString(),
     });
 

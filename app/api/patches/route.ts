@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getAllPatches } from '@/lib/dashboard/patch-store';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/patches - List all patches
 export async function GET() {
-  const allPatches = getAllPatches();
+  const allPatches = await getAllPatches();
 
   return NextResponse.json({
     patches: allPatches.map((p) => ({
@@ -17,6 +19,11 @@ export async function GET() {
       runId: p.runId,
       createdAt: p.createdAt,
       prUrl: p.prUrl,
+      prNumber: p.prNumber,
+      merged: p.merged,
+      mergeMethod: p.mergeMethod,
+      mergeCommitSha: p.mergeCommitSha,
+      mergeError: p.mergeError,
       diagnosis: p.diagnosis,
     })),
   });

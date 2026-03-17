@@ -114,12 +114,12 @@ export function AgentNodeDetails({ state, className }: AgentNodeDetailsProps): R
   const renderError = (): React.ReactNode => {
     if (!state.error) return null;
     return (
-      <div className="pt-2 border-t border-red-500/20">
-        <div className="flex items-center gap-2 text-xs text-red-400 mb-2">
+      <div className="border-t border-destructive/20 pt-2">
+        <div className="mb-2 flex items-center gap-2 text-xs text-destructive">
           <AlertTriangle className="h-3 w-3" />
           <span>Error</span>
         </div>
-        <p className="text-xs text-red-400/80">{state.error}</p>
+        <p className="text-xs text-destructive/80">{state.error}</p>
       </div>
     );
   };
@@ -130,7 +130,7 @@ export function AgentNodeDetails({ state, className }: AgentNodeDetailsProps): R
         'p-4 rounded-xl border bg-card/50 space-y-4',
         isRunning && 'border-primary/30 bg-primary/5',
         isCompleted && 'border-emerald-500/30 bg-emerald-500/5',
-        isFailed && 'border-red-500/30 bg-red-500/5',
+        isFailed && 'border-destructive/30 bg-destructive/5',
         className
       )}
     >
@@ -150,14 +150,16 @@ export function AgentNodeDetails({ state, className }: AgentNodeDetailsProps): R
           )}
           {isCompleted && (
             <>
-              <CheckCircle className="h-4 w-4 text-emerald-400" />
-              <span className="text-sm text-emerald-400 font-medium">Completed</span>
+              <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                Completed
+              </span>
             </>
           )}
           {isFailed && (
             <>
-              <XCircle className="h-4 w-4 text-red-400" />
-              <span className="text-sm text-red-400 font-medium">Failed</span>
+              <XCircle className="h-4 w-4 text-destructive" />
+              <span className="text-sm font-medium text-destructive">Failed</span>
             </>
           )}
           {state.status === 'idle' && (

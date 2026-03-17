@@ -28,12 +28,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { NewRunDialog } from '@/components/dashboard/new-run-dialog';
 import { LearningIndicator } from '@/components/dashboard/learning-indicator';
-
 import { useToast } from '@/components/ui/toaster';
 import { EmptyState } from '@/components/ui/empty-state';
 import { DashboardSkeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
+import { useSession } from '@/lib/hooks/use-session';
 
 interface RunStats {
   totalRuns: number;
@@ -64,6 +64,9 @@ interface Patch {
   status: 'applied' | 'pending';
   runId: string;
   createdAt: string;
+  prUrl?: string;
+  merged?: boolean;
+  mergeError?: string;
 }
 
 interface LearningMetrics {
@@ -91,6 +94,7 @@ const statusConfig = {
 export default function DashboardPage() {
   const router = useRouter();
   const { success, error: showError } = useToast();
+  const { primaryRepo } = useSession();
   const [runs, setRuns] = useState<Run[]>([]);
   const [patches, setPatches] = useState<Patch[]>([]);
   const [learningMetrics, setLearningMetrics] = useState<LearningMetrics | null>(null);
@@ -209,27 +213,38 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-background">
       <Header title="Dashboard" />
 
-      <main className="p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
+      <main className="mx-auto max-w-7xl space-y-8 p-6 lg:p-8">
         {/* Welcome Section */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="rounded-2xl border bg-card p-6 lg:p-8"
+          className="overflow-hidden rounded-[1.75rem] border border-border/80 bg-card p-6 shadow-[0_32px_100px_-48px_rgba(15,23,42,0.55)] lg:p-8"
         >
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[linear-gradient(135deg,hsl(var(--primary)/0.18),transparent_60%)]" />
+          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <div className="flex items-center gap-3 mb-3">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
                   <Sparkles className="h-3 w-3" />
                   Self-Healing QA Agent
                 </div>
                 <LearningIndicator variant="compact" />
               </div>
-              <h1 className="text-2xl lg:text-3xl font-bold mb-2">Welcome to QAgent</h1>
-              <p className="text-muted-foreground max-w-xl">
-                Your unified dashboard for automated testing, bug detection, and self-healing fixes.
+              <h1 className="mb-2 text-2xl font-bold tracking-tight lg:text-3xl">
+                Operate the full test-fix-verify loop from one place
+              </h1>
+              <p className="max-w-2xl text-muted-foreground">
+                Monitor repository health, launch repair runs, and review patches and pull requests without leaving the PatchPilot workspace.
               </p>
+              <div className="mt-4 flex flex-wrap gap-2 text-sm text-muted-foreground">
+                <span className="rounded-full border border-border/80 bg-muted/40 px-3 py-1">
+                  Primary repo: {primaryRepo?.fullName || 'Not selected'}
+                </span>
+                <span className="rounded-full border border-border/80 bg-muted/40 px-3 py-1">
+                  {hasActiveRun ? 'Live activity in progress' : 'No active runs right now'}
+                </span>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <NewRunDialog onRunCreated={handleRunCreated} />
@@ -240,7 +255,7 @@ export default function DashboardPage() {
           </div>
 
           {hasActiveRun && (
-            <div className="mt-6 pt-6 border-t flex items-center gap-3 text-sm">
+            <div className="mt-6 flex items-center gap-3 border-t pt-6 text-sm">
               <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
               <span className="text-muted-foreground">A test run is currently in progress</span>
               <Link href="/dashboard/runs" className="text-primary hover:underline ml-auto">
@@ -263,7 +278,6 @@ export default function DashboardPage() {
             description="Test runs executed"
             icon={Rocket}
             href="/dashboard/runs"
-            trend={stats.totalRuns > 0 ? { value: 12, isPositive: true } : undefined}
           />
           <StatCard
             title="Pass Rate"
@@ -271,7 +285,6 @@ export default function DashboardPage() {
             description="Tests passing after fixes"
             icon={TrendingUp}
             href="/dashboard/runs"
-            trend={stats.passRate > 0 ? { value: 7, isPositive: true } : undefined}
           />
           <StatCard
             title="Patches Applied"
@@ -319,7 +332,7 @@ export default function DashboardPage() {
                   <EmptyState
                     variant="default"
                     title="No runs yet"
-                    description="Start your first run to see QAgent in action"
+                    description="Start your first run to see PatchPilot in action"
                     action={{ label: 'Start First Run', onClick: () => document.querySelector<HTMLButtonElement>('[data-new-run-trigger]')?.click() }}
                     compact
                   />
@@ -393,15 +406,18 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 {patches.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No patches generated yet. Patches will appear here after runs generate fixes.
-                  </div>
+                  <EmptyState
+                    variant="no-data"
+                    title="No patches yet"
+                    description="Patch activity appears here after a run generates or merges a fix."
+                    compact
+                  />
                 ) : (
                   <div className="space-y-3">
                     {patches.slice(0, 3).map((patch) => (
                       <div
                         key={patch.id}
-                        className="flex items-center justify-between p-3 rounded-lg border bg-secondary/30"
+                        className="flex items-center justify-between rounded-xl border border-border/70 bg-secondary/20 p-3"
                       >
                         <div className="flex items-center gap-3">
                           <GitBranch className="h-4 w-4 text-primary" />
@@ -410,8 +426,8 @@ export default function DashboardPage() {
                             <p className="text-xs text-muted-foreground">{patch.description}</p>
                           </div>
                         </div>
-                        <Badge variant={patch.status === 'applied' ? 'default' : 'secondary'}>
-                          {patch.status}
+                        <Badge variant={patch.merged || patch.status === 'applied' ? 'default' : patch.mergeError ? 'warning' : 'secondary'}>
+                          {patch.merged ? 'Merged' : patch.prUrl ? patch.mergeError ? 'PR Open' : 'PR Created' : patch.status}
                         </Badge>
                       </div>
                     ))}
@@ -536,7 +552,6 @@ export default function DashboardPage() {
           </motion.section>
         </div>
       </main>
-
     </div>
   );
 }
@@ -559,9 +574,9 @@ function StatCard({
 }) {
   return (
     <Link href={href}>
-      <div className="rounded-xl border bg-card p-5 hover:shadow-md transition-shadow cursor-pointer h-full">
+      <div className="h-full cursor-pointer rounded-2xl border border-border/80 bg-card p-5 transition-all hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-lg">
         <div className="flex items-start justify-between">
-          <div className="p-2 rounded-lg bg-primary/10">
+          <div className="rounded-xl bg-primary/10 p-2">
             <Icon className="h-4 w-4 text-primary" />
           </div>
           {trend && (
@@ -571,10 +586,10 @@ function StatCard({
           )}
         </div>
         <div className="mt-3">
-          <p className="text-2xl font-bold tabular-nums">{value}</p>
+          <p className="tabular-nums text-2xl font-bold">{value}</p>
           <p className="text-sm text-muted-foreground">{title}</p>
         </div>
-        <p className="text-xs text-muted-foreground mt-1">{description}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{description}</p>
       </div>
     </Link>
   );
@@ -595,9 +610,9 @@ function QuickActionButton({
   return (
     <Link
       href={href}
-      className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors group"
+      className="group flex items-center gap-3 rounded-2xl border border-border/80 p-3 transition-colors hover:bg-accent"
     >
-      <div className="p-2 rounded-md bg-primary/10">
+      <div className="rounded-xl bg-primary/10 p-2">
         <Icon className="h-4 w-4 text-primary" />
       </div>
       <div className="flex-1 min-w-0">

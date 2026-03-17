@@ -24,19 +24,22 @@ import { extractJSON } from '@/lib/utils/json-repair';
 export class TriageAgent implements ITriageAgent {
   private projectRoot: string;
   private useRedis: boolean = true;
+  private llmEnabled: boolean;
 
   constructor(projectRoot: string = process.cwd(), useRedis: boolean = true) {
-    if (!process.env.GOOGLE_API_KEY && !process.env.OPENAI_API_KEY) {
-      throw new Error('Either GOOGLE_API_KEY or OPENAI_API_KEY environment variable is required');
-    }
     this.projectRoot = projectRoot;
     this.useRedis = useRedis;
+    this.llmEnabled = Boolean(process.env.GOOGLE_API_KEY || process.env.OPENAI_API_KEY);
   }
 
   /**
    * Call LLM via Weave Inference for tracing and cost tracking
    */
   private async callLLM(prompt: string, jsonMode: boolean = false): Promise<string> {
+    if (!this.llmEnabled) {
+      throw new Error('LLM credentials are not configured');
+    }
+
     const { withRetry } = await import('@/lib/utils/retry');
     return withRetry(
       () =>
@@ -54,6 +57,10 @@ export class TriageAgent implements ITriageAgent {
   }
 
   private async callLLMShort(prompt: string): Promise<string> {
+    if (!this.llmEnabled) {
+      return '1';
+    }
+
     return weaveInference(prompt, undefined, {
       model: process.env.GOOGLE_API_KEY ? 'gemini-2.0-flash' : 'gpt-4o-mini',
       maxTokens: 10,
@@ -337,6 +344,10 @@ What line number contains the bug? Just respond with a number.`;
     failureType: FailureType,
     localization: { file: string; line: number; snippet: string }
   ): Promise<{ rootCause: string; suggestedFix: string; confidence: number }> {
+    if (!this.llmEnabled) {
+      return this.buildHeuristicAnalysis(failure, failureType, localization.file);
+    }
+
     const basePrompt = `You are a senior developer debugging a web application failure.
 
 ## Failure Information
@@ -417,6 +428,45 @@ IMPORTANT: Respond with ONLY a valid JSON object, no markdown code blocks or ext
       suggestedFix: 'Manual investigation required',
       confidence: 0.3,
     };
+  }
+
+  private buildHeuristicAnalysis(
+    failure: FailureReport,
+    failureType: FailureType,
+    file: string
+  ): { rootCause: string; suggestedFix: string; confidence: number } {
+    switch (failureType) {
+      case 'UI_BUG':
+        return {
+          rootCause: `UI interaction failure around ${file || 'the current page'}: ${failure.error.message}`,
+          suggestedFix: 'Check the referenced component for missing event handlers, disabled controls, or incorrect element selectors.',
+          confidence: 0.55,
+        };
+      case 'BACKEND_ERROR':
+        return {
+          rootCause: `Backend request failure triggered by ${failure.testId}: ${failure.error.message}`,
+          suggestedFix: 'Inspect the API route, request URL, and response handling for missing endpoints or unhandled errors.',
+          confidence: 0.6,
+        };
+      case 'DATA_ERROR':
+        return {
+          rootCause: `Data access failure near ${file || 'the failing code path'}: ${failure.error.message}`,
+          suggestedFix: 'Guard nullish values before property access and ensure required data is initialized before rendering.',
+          confidence: 0.65,
+        };
+      case 'TEST_FLAKY':
+        return {
+          rootCause: `Timing-sensitive failure detected: ${failure.error.message}`,
+          suggestedFix: 'Add deterministic waits or retry-safe assertions around the unstable interaction.',
+          confidence: 0.45,
+        };
+      default:
+        return {
+          rootCause: `Unable to run LLM analysis, falling back to heuristics: ${failure.error.message}`,
+          suggestedFix: 'Inspect the localized file and surrounding logs for the failing interaction.',
+          confidence: 0.35,
+        };
+    }
   }
 }
 

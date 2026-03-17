@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRunAsync, cancelRun, deleteRun } from '@/lib/dashboard/run-store';
+import { getRunAsync, cancelRun, deleteRun, updateRunStatus } from '@/lib/dashboard/run-store';
 import { emitRunError } from '@/lib/dashboard/sse-emitter';
+import { cancelQueuedRunByActualRunId } from '@/lib/redis/queue';
 
 // GET /api/runs/[runId] - Get run details
 export async function GET(
@@ -33,7 +34,11 @@ export async function DELETE(
 
   // If running, abort and mark as cancelled
   if (run.status === 'running' || run.status === 'pending') {
-    cancelRun(runId);
+    const cancelled = cancelRun(runId) || await cancelQueuedRunByActualRunId(runId);
+    if (!cancelled) {
+      return NextResponse.json({ error: 'Run could not be cancelled' }, { status: 409 });
+    }
+    updateRunStatus(runId, 'cancelled');
     emitRunError(runId, 'Run cancelled by user');
     return NextResponse.json({ message: 'Run cancelled' });
   }

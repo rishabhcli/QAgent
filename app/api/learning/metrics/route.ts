@@ -23,6 +23,11 @@ export async function GET() {
         ? (previous.successfulPatches / previous.totalRuns) * 100
         : 0;
 
+    const knowledgeReuseRate =
+      kbStats.totalFailures > 0
+        ? (kbStats.successfulFixes / kbStats.totalFailures) * 100
+        : 0;
+
     return NextResponse.json({
       passRate: current?.passRate ?? 0,
       previousPassRate: previous?.passRate ?? 0,
@@ -30,8 +35,8 @@ export async function GET() {
       previousAvgTimeToFix: (previous?.avgTimeToFix ?? 0) / 1000,
       firstTryRate: currentFirstTry,
       previousFirstTryRate: previousFirstTry,
-      knowledgeReuseRate: 45,
-      previousKnowledgeReuseRate: 30,
+      knowledgeReuseRate,
+      previousKnowledgeReuseRate: 0,
       improvementPercent: comparison?.changes?.passRate ?? 0,
     });
   } catch (error) {

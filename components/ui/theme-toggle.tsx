@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Sun, Moon, Monitor } from 'lucide-react';
 import { useTheme } from '@/lib/providers/theme-provider';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import {
 
 export function ThemeToggle() {
   const { theme, setTheme, resolvedTheme } = useTheme();
+  const reduceMotion = useReducedMotion();
 
   return (
     <DropdownMenu>
@@ -20,10 +21,10 @@ export function ThemeToggle() {
         <Button variant="ghost" size="icon" className="relative" aria-label="Toggle theme">
           <motion.div
             key={resolvedTheme}
-            initial={{ scale: 0, rotate: -90 }}
-            animate={{ scale: 1, rotate: 0 }}
-            exit={{ scale: 0, rotate: 90 }}
-            transition={{ duration: 0.2 }}
+            initial={reduceMotion ? false : { scale: 0.9, rotate: -60 }}
+            animate={reduceMotion ? undefined : { scale: 1, rotate: 0 }}
+            exit={reduceMotion ? undefined : { scale: 0.9, rotate: 60 }}
+            transition={{ duration: 0.18 }}
           >
             {resolvedTheme === 'dark' ? (
               <Moon className="h-4 w-4" />
@@ -33,7 +34,7 @@ export function ThemeToggle() {
           </motion.div>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="min-w-40">
         <DropdownMenuItem onClick={() => setTheme('light')} className="gap-2">
           <Sun className="h-4 w-4" />
           Light

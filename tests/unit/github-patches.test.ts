@@ -28,6 +28,7 @@ import {
   applyPatchToContent,
   commitPatch,
   createPullRequest,
+  mergePullRequest,
   createPatchPR,
   getVercelPreviewUrl,
   triggerVercelDeployment,
@@ -53,6 +54,9 @@ describe('GitHub Patches', () => {
     mockOctokit.git.createRef.mockResolvedValue({});
     mockOctokit.pulls.create.mockResolvedValue({
       data: { html_url: 'https://github.com/owner/repo/pull/1', number: 1 },
+    });
+    mockOctokit.pulls.merge.mockResolvedValue({
+      data: { merged: true, sha: 'merge123', message: 'Pull Request successfully merged' },
     });
   });
 
@@ -304,6 +308,27 @@ export default x;`;
     });
   });
 
+  describe('mergePullRequest()', () => {
+    it('should merge a PR with the requested method', async () => {
+      const result = await mergePullRequest(
+        mockOctokit as any,
+        'owner',
+        'repo',
+        1,
+        'squash'
+      );
+
+      expect(result.merged).toBe(true);
+      expect(result.sha).toBe('merge123');
+      expect(mockOctokit.pulls.merge).toHaveBeenCalledWith({
+        owner: 'owner',
+        repo: 'repo',
+        pull_number: 1,
+        merge_method: 'squash',
+      });
+    });
+  });
+
   describe('createPatchPR() - Full Workflow', () => {
     it('should complete full PR creation workflow', async () => {
       const patch = createMockPatch({
@@ -317,13 +342,17 @@ export default x;`;
         suggestedFix: 'Add handler',
       };
 
-      const result = await createPatchPR('token', 'owner/repo', patch, diagnosis);
+      const result = await createPatchPR('token', 'owner/repo', patch, diagnosis, {
+        autoMerge: true,
+      });
 
       expect(result).toHaveProperty('branchName');
       expect(result).toHaveProperty('commitSha');
       expect(result).toHaveProperty('prUrl');
       expect(result).toHaveProperty('prNumber');
-      expect(result.branchName).toContain('qagent');
+      expect(result.merged).toBe(true);
+      expect(result.mergeCommitSha).toBe('merge123');
+      expect(result.branchName).toContain('patchpilot');
     });
 
     it('should handle errors at any step', async () => {
@@ -335,6 +364,21 @@ export default x;`;
       await expect(createPatchPR('token', 'owner/repo', patch, diagnosis)).rejects.toThrow(
         'API Error'
       );
+    });
+
+    it('should keep the PR open when merge fails', async () => {
+      mockOctokit.pulls.merge.mockRejectedValueOnce(new Error('Branch protection blocked merge'));
+
+      const patch = createMockPatch();
+      const diagnosis = { rootCause: 'test', confidence: 0.5, suggestedFix: 'fix' };
+
+      const result = await createPatchPR('token', 'owner/repo', patch, diagnosis, {
+        autoMerge: true,
+      });
+
+      expect(result.prUrl).toBe('https://github.com/owner/repo/pull/1');
+      expect(result.merged).toBe(false);
+      expect(result.mergeError).toContain('Branch protection blocked merge');
     });
   });
 

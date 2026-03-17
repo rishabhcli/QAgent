@@ -14,10 +14,10 @@ interface ActivityLogFiltersProps {
 }
 
 const agentConfig: Record<AgentType, { label: string; icon: typeof TestTube2; color: string }> = {
-  tester: { label: 'Tester', icon: TestTube2, color: 'text-blue-400 bg-blue-500/20 border-blue-500/30' },
-  triage: { label: 'Triage', icon: Search, color: 'text-yellow-400 bg-yellow-500/20 border-yellow-500/30' },
-  fixer: { label: 'Fixer', icon: Wrench, color: 'text-purple-400 bg-purple-500/20 border-purple-500/30' },
-  verifier: { label: 'Verifier', icon: ShieldCheck, color: 'text-green-400 bg-green-500/20 border-green-500/30' },
+  tester: { label: 'Tester', icon: TestTube2, color: 'border-sky-500/30 bg-sky-500/15 text-sky-600 dark:text-sky-400' },
+  triage: { label: 'Triage', icon: Search, color: 'border-amber-500/30 bg-amber-500/15 text-amber-600 dark:text-amber-400' },
+  fixer: { label: 'Fixer', icon: Wrench, color: 'border-violet-500/30 bg-violet-500/15 text-violet-600 dark:text-violet-400' },
+  verifier: { label: 'Verifier', icon: ShieldCheck, color: 'border-emerald-500/30 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' },
 };
 
 const actionTypes: { action: ActivityAction; label: string }[] = [
@@ -92,7 +92,7 @@ export function ActivityLogFilters({
               className={cn(
                 'px-2.5 py-1 rounded-full text-xs font-medium border transition-all',
                 isSelected
-                  ? 'bg-primary/20 text-primary border-primary/30'
+                  ? 'border-primary/30 bg-primary/10 text-primary'
                   : 'bg-muted/50 text-muted-foreground border-border hover:bg-muted'
               )}
             >

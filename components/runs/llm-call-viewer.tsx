@@ -21,8 +21,8 @@ export function LLMCallViewer({ llmCall, className }: LLMCallViewerProps) {
         className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors rounded-lg"
       >
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
-            <Cpu className="h-4 w-4 text-purple-400" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+            <Cpu className="h-4 w-4 text-primary" />
           </div>
           <div className="text-left">
             <p className="text-sm font-medium">LLM Call</p>

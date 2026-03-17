@@ -9,27 +9,47 @@ import type { TestSpec } from '@/lib/types';
 
 const BASE_URL = process.env.TARGET_URL || 'http://localhost:3000';
 
-/**
- * Example test spec - Replace with your actual tests
- */
-export const exampleTest: TestSpec = {
-  id: 'test-example-001',
-  name: 'Example Test Flow',
+export const landingSmokeSpec: TestSpec = {
+  id: 'smoke-landing-001',
+  name: 'Landing Page Smoke',
   url: `${BASE_URL}/`,
   steps: [
     {
-      action: 'Verify the page loads',
-      expected: 'I see the QAgent landing page',
+      action: 'Verify the public landing page loads with the PatchPilot hero content',
+      expected: 'PatchPilot',
+    },
+    {
+      action: 'Verify the primary call to action is available',
+      expected: 'Connect with GitHub',
     },
   ],
   timeout: 30000,
 };
 
-/**
- * All test specifications
- */
+export const authenticatedShellSmokeSpec: TestSpec = {
+  id: 'smoke-dashboard-001',
+  name: 'Authenticated Shell Smoke',
+  url: `${BASE_URL}/dashboard`,
+  steps: [
+    {
+      action: 'Verify the authenticated dashboard shell loads',
+      expected: 'Dashboard',
+    },
+    {
+      action: 'Verify the primary navigation is available',
+      expected: 'Runs',
+    },
+    {
+      action: 'Verify the patches surface is reachable from the shell',
+      expected: 'Patches',
+    },
+  ],
+  timeout: 30000,
+};
+
 export const allTestSpecs: TestSpec[] = [
-  exampleTest,
+  landingSmokeSpec,
+  authenticatedShellSmokeSpec,
 ];
 
 export default allTestSpecs;

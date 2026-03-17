@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getRun } from '@/lib/dashboard/run-store';
+import { getRunAsync } from '@/lib/dashboard/run-store';
 import { sseEmitter } from '@/lib/dashboard/sse-emitter';
 import type { RunEvent } from '@/lib/types';
 
@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ runId: string }> }
 ) {
   const { runId } = await params;
-  const run = getRun(runId);
+  const run = await getRunAsync(runId);
 
   if (!run) {
     return new Response('Run not found', { status: 404 });
@@ -32,6 +32,10 @@ export async function GET(
         },
       };
       controller.enqueue(encoder.encode(`data: ${JSON.stringify(initialEvent)}\n\n`));
+
+      for (const bufferedEvent of sseEmitter.getBufferedEvents(runId)) {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(bufferedEvent)}\n\n`));
+      }
 
       // Subscribe to updates
       const unsubscribe = sseEmitter.subscribe(runId, (event) => {

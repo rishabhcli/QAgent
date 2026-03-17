@@ -1,10 +1,8 @@
 /**
  * Verifier Agent
  *
- * Applies patches to GitHub repositories and verifies fixes work.
- * Re-runs the failing test to confirm the bug is fixed.
- *
- * NOTE: Does NOT deploy to Vercel. Fixes are applied directly to the codebase.
+ * Applies patches to the local codebase, resolves a test target URL, and
+ * re-runs the failing test to confirm the bug is fixed.
  *
  * Instrumented with W&B Weave for observability.
  */
@@ -30,6 +28,8 @@ export interface VerifierOptions {
 }
 
 export class VerifierAgent implements IVerifierAgent {
+  private static readonly DEPLOY_POLL_INTERVAL_MS = 1000;
+  private static readonly DEPLOY_MAX_ATTEMPTS = 10;
   private projectRoot: string;
   private testerAgent: TesterAgent | null = null;
   private ownsTesterAgent: boolean = false;
@@ -112,8 +112,8 @@ export class VerifierAgent implements IVerifierAgent {
           await this.commitFix(patch);
         }
 
-        // 5. Use configured target URL for testing
-        const targetUrl = this.targetUrl;
+        // 5. Resolve the URL we should test against.
+        const deploymentUrl = await this.resolveDeploymentUrl();
 
         // 6. Re-run the failing test
         // Use shared tester if available, otherwise create our own
@@ -128,7 +128,7 @@ export class VerifierAgent implements IVerifierAgent {
           ...testSpec,
           url: testSpec.url.replace(
             /https?:\/\/[^/]+/,
-            targetUrl
+            deploymentUrl
           ),
         });
 
@@ -147,6 +147,7 @@ export class VerifierAgent implements IVerifierAgent {
 
           return {
             success: true,
+            deploymentUrl,
             testResult,
           };
         } else {
@@ -155,6 +156,7 @@ export class VerifierAgent implements IVerifierAgent {
 
           return {
             success: false,
+            deploymentUrl,
             testResult,
             error: 'Test still fails after applying patch',
           };
@@ -177,7 +179,7 @@ export class VerifierAgent implements IVerifierAgent {
    */
   private async commitFix(patch: Patch): Promise<void> {
     try {
-      const commitMessage = `fix: ${patch.description}\n\nApplied by QAgent`;
+      const commitMessage = `fix: ${patch.description}\n\nApplied by PatchPilot`;
       execSync(`git add ${patch.file}`, { cwd: this.projectRoot, stdio: 'pipe' });
       execSync(`git commit -m "${commitMessage}"`, {
         cwd: this.projectRoot,
@@ -188,6 +190,75 @@ export class VerifierAgent implements IVerifierAgent {
       // Git commit may fail if nothing to commit or other issues
       console.log('[VerifierAgent] Git commit skipped or failed:', error);
     }
+  }
+
+  private isVercelConfigured(): boolean {
+    return Boolean(process.env.VERCEL_TOKEN && process.env.VERCEL_PROJECT_ID);
+  }
+
+  private async resolveDeploymentUrl(): Promise<string> {
+    if (!this.isVercelConfigured()) {
+      return this.targetUrl;
+    }
+
+    try {
+      return await this.deploy();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown deployment error';
+      throw new Error(`Deployment failed: ${message}`);
+    }
+  }
+
+  private async deploy(): Promise<string> {
+    execSync('git push', {
+      cwd: this.projectRoot,
+      stdio: 'pipe',
+    });
+
+    const token = process.env.VERCEL_TOKEN!;
+    const projectId = process.env.VERCEL_PROJECT_ID!;
+    const endpoint = `https://api.vercel.com/v6/deployments?projectId=${projectId}&limit=1`;
+
+    for (
+      let attempt = 0;
+      attempt < VerifierAgent.DEPLOY_MAX_ATTEMPTS;
+      attempt += 1
+    ) {
+      const response = await fetch(endpoint, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Vercel API returned ${response.status}`);
+      }
+
+      const payload = (await response.json()) as {
+        deployments?: Array<{ state?: string; url?: string }>;
+      };
+      const deployment = payload.deployments?.[0];
+
+      if (!deployment) {
+        throw new Error('No deployment found for project');
+      }
+
+      if (deployment.state === 'READY' && deployment.url) {
+        return deployment.url.startsWith('http')
+          ? deployment.url
+          : `https://${deployment.url}`;
+      }
+
+      if (deployment.state === 'ERROR' || deployment.state === 'CANCELED') {
+        throw new Error(`Vercel deployment entered ${deployment.state} state`);
+      }
+
+      await new Promise((resolve) =>
+        setTimeout(resolve, VerifierAgent.DEPLOY_POLL_INTERVAL_MS)
+      );
+    }
+
+    throw new Error('Timed out waiting for Vercel deployment to become ready');
   }
 
   /**

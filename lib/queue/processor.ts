@@ -15,6 +15,8 @@ import {
 import { recordRunMetrics } from '@/lib/redis/metrics-store';
 import { emitSessionStarted, sseEmitter } from '@/lib/dashboard/sse-emitter';
 import { Orchestrator } from '@/agents/orchestrator';
+import { getRunAsync } from '@/lib/dashboard/run-store';
+import { executeAdHocRun } from '@/lib/queue/ad-hoc-runner';
 import type { QueuedRun, Run } from '@/lib/types';
 
 /**
@@ -22,6 +24,10 @@ import type { QueuedRun, Run } from '@/lib/types';
  */
 export async function processQueuedRun(queuedRun: QueuedRun): Promise<Run | null> {
   console.log(`[Processor] Starting run ${queuedRun.id} for ${queuedRun.repoFullName}`);
+
+  if (queuedRun.metadata?.adHoc) {
+    return processAdHocQueuedRun(queuedRun);
+  }
 
   // Get monitoring config for test specs
   const config = await getMonitoringConfig(queuedRun.repoId);
@@ -155,6 +161,38 @@ export async function processQueuedRun(queuedRun: QueuedRun): Promise<Run | null
     await recordMonitoringRun(queuedRun.repoId);
 
     return null;
+  }
+}
+
+async function processAdHocQueuedRun(queuedRun: QueuedRun): Promise<Run | null> {
+  const adHocConfig = queuedRun.metadata?.adHoc;
+  if (!adHocConfig) {
+    return null;
+  }
+
+  const runId = adHocConfig.runId;
+
+  try {
+    const success = await executeAdHocRun({
+      repoId: queuedRun.repoId,
+      repoName: queuedRun.repoFullName,
+      config: adHocConfig,
+    });
+
+    const run = await getRunAsync(runId);
+    await completeQueuedRun(queuedRun.id, runId, success);
+
+    if (run) {
+      await recordRunMetrics(run);
+    }
+
+    return run;
+  } catch (error) {
+    console.error(`[Processor] Error in ad-hoc run ${runId}:`, error);
+    await updateStoredRunStatus(runId, 'failed');
+    await completeQueuedRun(queuedRun.id, runId, false);
+
+    return await getRunAsync(runId);
   }
 }
 

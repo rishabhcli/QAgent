@@ -30,6 +30,9 @@ export class TesterAgent {
   private consoleLogs: ConsoleLog[] = [];
   private sessionId: string | null = null;
   private actionCount: number = 0; // Track number of actions per run
+  private mode: 'browserbase' | 'local' = 'browserbase';
+  private fallbackUrl = '';
+  private fallbackDomSnapshot = '';
 
   /**
    * Initialize Stagehand with Browserbase
@@ -39,9 +42,12 @@ export class TesterAgent {
     const projectId = process.env.BROWSERBASE_PROJECT_ID;
 
     if (!apiKey || !projectId) {
-      throw new Error('BROWSERBASE_API_KEY and BROWSERBASE_PROJECT_ID are required');
+      this.mode = 'local';
+      console.log('[TesterAgent] Browserbase credentials not found, using local fallback mode');
+      return;
     }
 
+    this.mode = 'browserbase';
     console.log('[TesterAgent] Initializing Stagehand with Browserbase...');
     console.log(`[TesterAgent] Project ID: ${projectId.slice(0, 8)}...`);
 
@@ -136,13 +142,19 @@ export class TesterAgent {
     : this._runTest.bind(this);
 
   private async _runTest(spec: TestSpec): Promise<TestResult> {
-    if (!this.stagehand) {
+    if (!this.stagehand && this.mode === 'browserbase') {
       await this.init();
     }
 
     const startTime = Date.now();
     this.consoleLogs = [];
     this.actionCount = 0; // Reset action counter
+    this.fallbackUrl = spec.url;
+    this.fallbackDomSnapshot = '';
+
+    if (this.mode === 'local') {
+      return this.runLocalFallbackTest(spec, startTime);
+    }
 
     try {
       const page = await this.getPage();
@@ -272,6 +284,129 @@ export class TesterAgent {
     }
   }
 
+  private async runLocalFallbackTest(spec: TestSpec, startTime: number): Promise<TestResult> {
+    try {
+      let currentUrl = spec.url;
+      let currentHtml = await this.fetchPageHtml(currentUrl);
+
+      for (let stepIndex = 0; stepIndex < spec.steps.length; stepIndex++) {
+        const step = spec.steps[stepIndex];
+        const nextUrl = this.resolveActionUrl(currentUrl, currentHtml, step.action);
+
+        if (nextUrl) {
+          currentUrl = nextUrl;
+          currentHtml = await this.fetchPageHtml(currentUrl);
+        }
+
+        if (step.expected && !this.matchesExpectation(step.expected, currentHtml)) {
+          const failureReport = await this.buildFailureReport(
+            spec.id,
+            stepIndex,
+            new Error(`Assertion failed in local fallback mode: ${step.expected}`)
+          );
+
+          return {
+            passed: false,
+            duration: Date.now() - startTime,
+            failureReport,
+          };
+        }
+      }
+
+      return {
+        passed: true,
+        duration: Date.now() - startTime,
+      };
+    } catch (error) {
+      const failureReport = await this.buildFailureReport(
+        spec.id,
+        -1,
+        error instanceof Error ? error : new Error(String(error))
+      );
+
+      return {
+        passed: false,
+        duration: Date.now() - startTime,
+        failureReport,
+      };
+    }
+  }
+
+  private async fetchPageHtml(url: string): Promise<string> {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'PatchPilot Local Tester',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${url}: ${response.status}`);
+    }
+
+    const html = await response.text();
+    this.fallbackUrl = url;
+    this.fallbackDomSnapshot = html;
+    return html;
+  }
+
+  private resolveActionUrl(currentUrl: string, html: string, action: string): string | null {
+    const normalizedAction = action.toLowerCase();
+
+    const directUrlMatch = action.match(/https?:\/\/\S+/);
+    if (directUrlMatch) {
+      return directUrlMatch[0];
+    }
+
+    const pathMatch = action.match(/\s(\/[A-Za-z0-9/_-]+)/);
+    if (pathMatch) {
+      return new URL(pathMatch[1], currentUrl).toString();
+    }
+
+    if (!normalizedAction.includes('click') && !normalizedAction.includes('navigate')) {
+      return null;
+    }
+
+    const quotedText = action.match(/"([^"]+)"|'([^']+)'/);
+    const targetText = (quotedText?.[1] || quotedText?.[2] || '').trim().toLowerCase();
+    if (!targetText) {
+      return null;
+    }
+
+    const anchorPattern = /<a\b[^>]*href=["']([^"']+)["'][^>]*>(.*?)<\/a>/gis;
+    for (const match of html.matchAll(anchorPattern)) {
+      const href = match[1];
+      const anchorText = this.normalizeText(match[2].replace(/<[^>]+>/g, ' '));
+      if (anchorText.includes(this.normalizeText(targetText))) {
+        return new URL(href, currentUrl).toString();
+      }
+    }
+
+    return null;
+  }
+
+  private matchesExpectation(expected: string, html: string): boolean {
+    const pageText = this.normalizeText(html.replace(/<[^>]+>/g, ' '));
+    const quotedText = expected.match(/"([^"]+)"|'([^']+)'/);
+    if (quotedText) {
+      return pageText.includes(this.normalizeText(quotedText[1] || quotedText[2]));
+    }
+
+    const stopWords = new Set(['i', 'see', 'the', 'a', 'an', 'page', 'screen', 'should', 'be', 'to', 'on', 'of', 'and', 'is', 'there', 'appears']);
+    const keywords = this.normalizeText(expected)
+      .split(' ')
+      .filter((token) => token.length > 2 && !stopWords.has(token));
+
+    if (keywords.length === 0) {
+      return pageText.includes(this.normalizeText(expected));
+    }
+
+    return keywords.every((token) => pageText.includes(token));
+  }
+
+  private normalizeText(value: string): string {
+    return value.toLowerCase().replace(/\s+/g, ' ').trim();
+  }
+
   /**
    * Traced observe - wraps stagehand.observe() with Weave logging
    */
@@ -379,9 +514,9 @@ export class TesterAgent {
         type: error.name,
       },
       context: {
-        url,
+        url: url || this.fallbackUrl,
         screenshot,
-        domSnapshot,
+        domSnapshot: domSnapshot || this.fallbackDomSnapshot,
         consoleLogs: [...this.consoleLogs],
       },
     };

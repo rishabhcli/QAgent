@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { TestSpec } from '@/lib/types';
 import { getAllTestSpecs, addTestSpec } from '@/lib/dashboard/test-store';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/tests - List all test specs
 export async function GET() {
-  const specs = getAllTestSpecs();
+  const specs = await getAllTestSpecs();
   return NextResponse.json({ testSpecs: specs });
 }
 
@@ -32,7 +34,7 @@ export async function POST(request: NextRequest) {
       timeout,
     };
 
-    addTestSpec(spec);
+    await addTestSpec(spec);
 
     return NextResponse.json({ testSpec: spec }, { status: 201 });
   } catch (error) {

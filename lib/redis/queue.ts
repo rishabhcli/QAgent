@@ -73,12 +73,7 @@ export async function enqueueRun(params: {
   repoFullName: string;
   trigger: QueuedRunTrigger;
   priority?: QueuedRunPriority;
-  metadata?: {
-    commitSha?: string;
-    branch?: string;
-    pusher?: string;
-    prNumber?: number;
-  };
+  metadata?: QueuedRun['metadata'];
 }): Promise<QueuedRun | null> {
   if (!(await isRedisAvailable())) {
     console.warn('Redis not available, cannot enqueue run');
@@ -311,6 +306,16 @@ export async function cancelQueuedRun(id: string): Promise<boolean> {
 export async function getRepoQueuedRuns(repoId: string): Promise<QueuedRun[]> {
   const status = await getQueueStatus();
   return status.items.filter((item) => item.repoId === repoId);
+}
+
+export async function cancelQueuedRunByActualRunId(runId: string): Promise<boolean> {
+  const status = await getQueueStatus();
+  const match = status.items.find((item) => item.metadata?.adHoc?.runId === runId);
+  if (!match) {
+    return false;
+  }
+
+  return cancelQueuedRun(match.id);
 }
 
 /**

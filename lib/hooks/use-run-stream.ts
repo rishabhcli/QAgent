@@ -43,7 +43,7 @@ export function useRunStream({
     let eventSource: EventSource | null = null;
 
     const connect = () => {
-      eventSource = new EventSource(`/api/runs/stream?runId=${runId}`);
+      eventSource = new EventSource(`/api/runs/${runId}/stream`);
 
       eventSource.onopen = () => {
         setState((prev) => ({ ...prev, isConnected: true }));

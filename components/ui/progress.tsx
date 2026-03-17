@@ -7,14 +7,18 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils/cn';
 
 const progressVariants = cva(
-  'relative h-2 w-full overflow-hidden rounded-full',
+  'relative h-2 w-full overflow-hidden rounded-full bg-muted',
   {
     variants: {
       variant: {
         default: 'bg-primary/20',
-        neon: 'bg-neon-cyan/20',
-        'neon-magenta': 'bg-neon-magenta/20',
-        'neon-green': 'bg-neon-green/20',
+        brand: 'bg-brand/20',
+        success: 'bg-emerald-500/20',
+        warning: 'bg-amber-500/20',
+        info: 'bg-sky-500/20',
+        neon: 'bg-brand/20',
+        'neon-magenta': 'bg-brand-strong/20',
+        'neon-green': 'bg-emerald-500/20',
       },
     },
     defaultVariants: {
@@ -29,9 +33,13 @@ const indicatorVariants = cva(
     variants: {
       variant: {
         default: 'bg-primary',
-        neon: 'bg-neon-cyan shadow-[0_0_10px_hsl(var(--neon-cyan)/0.5)]',
-        'neon-magenta': 'bg-neon-magenta shadow-[0_0_10px_hsl(var(--neon-magenta)/0.5)]',
-        'neon-green': 'bg-neon-green shadow-[0_0_10px_hsl(var(--neon-green)/0.5)]',
+        brand: 'bg-brand shadow-[0_0_18px_hsl(var(--brand-glow)/0.18)]',
+        success: 'bg-emerald-500',
+        warning: 'bg-amber-500',
+        info: 'bg-sky-500',
+        neon: 'bg-brand shadow-[0_0_18px_hsl(var(--brand-glow)/0.18)]',
+        'neon-magenta': 'bg-brand-strong shadow-[0_0_18px_hsl(var(--brand-strong)/0.18)]',
+        'neon-green': 'bg-emerald-500',
       },
     },
     defaultVariants: {
@@ -55,7 +63,7 @@ const Progress = React.forwardRef<
   >
     <ProgressPrimitive.Indicator
       className={cn(indicatorVariants({ variant }))}
-      style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+      style={{ transform: `translateX(-${100 - (value ?? 0)}%)` }}
     />
   </ProgressPrimitive.Root>
 ));

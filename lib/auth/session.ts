@@ -3,8 +3,24 @@ import { SignJWT, jwtVerify } from 'jose';
 import type { Session, GitHubUser, GitHubRepo, SessionPayload } from '@/lib/types';
 
 const SESSION_COOKIE = 'qagent_session';
-const SECRET_KEY = process.env.SESSION_SECRET || 'default-dev-secret-do-not-use-in-prod';
-const key = new TextEncoder().encode(SECRET_KEY);
+const TEST_FALLBACK_SECRET = 'test-session-secret';
+
+function getSessionSecret(): string {
+  const secret = process.env.SESSION_SECRET;
+  if (secret) {
+    return secret;
+  }
+
+  if (process.env.NODE_ENV === 'test') {
+    return TEST_FALLBACK_SECRET;
+  }
+
+  throw new Error('SESSION_SECRET environment variable is required');
+}
+
+export function getSessionKey(): Uint8Array {
+  return new TextEncoder().encode(getSessionSecret());
+}
 
 export async function encrypt(payload: SessionPayload): Promise<string> {
   const jti = payload.jti || crypto.randomUUID();
@@ -12,11 +28,11 @@ export async function encrypt(payload: SessionPayload): Promise<string> {
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('24h')
-    .sign(key);
+    .sign(getSessionKey());
 }
 
 export async function decrypt(input: string): Promise<SessionPayload> {
-  const { payload } = await jwtVerify(input, key, {
+  const { payload } = await jwtVerify(input, getSessionKey(), {
     algorithms: ['HS256'],
   });
   return payload as unknown as SessionPayload;
@@ -34,6 +50,7 @@ export async function getSession(): Promise<Session | null> {
       user: payload.user,
       accessToken: payload.accessToken,
       repos: payload.repos ?? [],
+      selectedRepoIds: payload.selectedRepoIds ?? [],
     };
   } catch {
     return null;
@@ -43,7 +60,8 @@ export async function getSession(): Promise<Session | null> {
 export async function createSession(data: {
   accessToken: string;
   user: GitHubUser;
-  repos: GitHubRepo[];
+  repos?: GitHubRepo[];
+  selectedRepoIds?: number[];
 }): Promise<void> {
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
   const session = await encrypt({ ...data, expiresAt: expiresAt.toISOString() });
@@ -72,5 +90,20 @@ export async function updateSessionRepos(repos: GitHubRepo[]): Promise<void> {
     accessToken: session.accessToken,
     user: session.user,
     repos,
+    selectedRepoIds: session.selectedRepoIds,
+  });
+}
+
+export async function updateSelectedRepos(selectedRepoIds: number[]): Promise<void> {
+  const session = await getSession();
+  if (!session || !session.user || !session.accessToken) {
+    return;
+  }
+
+  await createSession({
+    accessToken: session.accessToken,
+    user: session.user,
+    repos: session.repos,
+    selectedRepoIds,
   });
 }

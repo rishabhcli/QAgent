@@ -1,14 +1,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
-import type { SessionPayload } from '@/lib/types';
+import { getSessionKey } from '@/lib/auth/session';
 
 const SESSION_COOKIE = 'qagent_session';
-const SECRET_KEY = process.env.SESSION_SECRET;
-if (!SECRET_KEY && process.env.NODE_ENV === 'production') {
-  throw new Error('SESSION_SECRET environment variable is required in production');
-}
-const key = new TextEncoder().encode(SECRET_KEY || 'default-dev-secret-do-not-use-in-prod');
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
@@ -44,7 +39,7 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    await jwtVerify(sessionToken, key, { algorithms: ['HS256'] });
+    await jwtVerify(sessionToken, getSessionKey(), { algorithms: ['HS256'] });
     return NextResponse.next();
   } catch {
     if (path.startsWith('/api')) {

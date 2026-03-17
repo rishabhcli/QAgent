@@ -229,11 +229,11 @@ export function TestGeneratorDialog({
           <>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Wand2 className="h-5 w-5 text-neon-violet" />
+                <Wand2 className="h-5 w-5 text-primary" />
                 Auto-Generate Tests
               </DialogTitle>
               <DialogDescription>
-                Enter a URL and QAgent will crawl your app to discover user flows
+                Enter a URL and PatchPilot will crawl your app to discover user flows
                 and automatically generate test specifications.
               </DialogDescription>
             </DialogHeader>
@@ -253,7 +253,7 @@ export function TestGeneratorDialog({
                   className="font-mono"
                 />
                 <p className="text-xs text-muted-foreground">
-                  QAgent will navigate your app and discover testable user flows
+                  PatchPilot will navigate your app and discover testable user flows
                 </p>
               </div>
 
@@ -272,7 +272,7 @@ export function TestGeneratorDialog({
               <Button
                 onClick={handleGenerate}
                 disabled={!url}
-                className="bg-gradient-to-r from-neon-violet to-neon-magenta hover:opacity-90"
+                className="shadow-lg shadow-primary/20"
               >
                 <Sparkles className="mr-2 h-4 w-4" />
                 Generate Tests
@@ -286,11 +286,11 @@ export function TestGeneratorDialog({
           <>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Loader2 className="h-5 w-5 animate-spin text-neon-cyan" />
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
                 Discovering Flows
               </DialogTitle>
               <DialogDescription>
-                QAgent is crawling your application to discover user flows...
+                PatchPilot is crawling your application to discover user flows...
               </DialogDescription>
             </DialogHeader>
 
@@ -305,11 +305,11 @@ export function TestGeneratorDialog({
 
               <div className="flex items-center justify-center">
                 <div className="relative">
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-neon-cyan/20 to-neon-violet/20 border border-neon-cyan/30 flex items-center justify-center">
-                    <Wand2 className="h-8 w-8 text-neon-cyan animate-pulse" />
+                  <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-primary/20 bg-primary/10">
+                    <Wand2 className="h-8 w-8 animate-pulse text-primary" />
                   </div>
                   <motion.div
-                    className="absolute -inset-4 rounded-3xl border border-neon-cyan/20"
+                    className="absolute -inset-4 rounded-[2rem] border border-primary/15"
                     animate={{
                       scale: [1, 1.1, 1],
                       opacity: [0.5, 0.2, 0.5],
@@ -329,7 +329,7 @@ export function TestGeneratorDialog({
           <>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-neon-green" />
+                <CheckCircle className="h-5 w-5 text-success" />
                 Review Discovered Flows
               </DialogTitle>
               <DialogDescription>
@@ -435,7 +435,7 @@ export function TestGeneratorDialog({
               <Button
                 onClick={handleSave}
                 disabled={selectedFlows.size === 0 || isSaving}
-                className="bg-gradient-to-r from-neon-green to-emerald-500 hover:opacity-90"
+                className="shadow-lg shadow-primary/20"
               >
                 {isSaving ? (
                   <>

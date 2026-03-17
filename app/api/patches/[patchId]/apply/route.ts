@@ -3,13 +3,15 @@ import { getPatch, updatePatchStatus } from '@/lib/dashboard/patch-store';
 import { getSession } from '@/lib/auth/session';
 import { createPatchPR } from '@/lib/github/patches';
 
-// POST /api/patches/[patchId]/apply - Apply a patch and create a PR
+export const dynamic = 'force-dynamic';
+
+// POST /api/patches/[patchId]/apply - Apply a patch, create a PR, and optionally merge it
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ patchId: string }> }
 ) {
   const { patchId } = await params;
-  const patch = getPatch(patchId);
+  const patch = await getPatch(patchId);
 
   if (!patch) {
     return NextResponse.json({ error: 'Patch not found' }, { status: 404 });
@@ -31,7 +33,12 @@ export async function POST(
 
   try {
     const body = await request.json().catch(() => ({}));
-    const { repoOwner, repoName } = body;
+    const {
+      repoOwner,
+      repoName,
+      autoMerge = true,
+      mergeMethod,
+    } = body;
 
     if (!repoOwner || !repoName) {
       return NextResponse.json(
@@ -63,11 +70,26 @@ export async function POST(
         rootCause: patch.diagnosis.rootCause,
         confidence: patch.diagnosis.confidence,
         suggestedFix: patch.description,
+      },
+      {
+        autoMerge,
+        mergeMethod,
       }
     );
 
-    // Update patch status
-    updatePatchStatus(patchId, 'applied', result.prUrl);
+    // Update patch status. A created but unmerged PR remains pending.
+    await updatePatchStatus(
+      patchId,
+      result.merged ? 'applied' : 'pending',
+      {
+        prUrl: result.prUrl,
+        prNumber: result.prNumber,
+        merged: result.merged,
+        mergeMethod: result.mergeMethod,
+        mergeCommitSha: result.mergeCommitSha,
+        mergeError: result.mergeError,
+      }
+    );
 
     return NextResponse.json({
       success: true,
@@ -75,6 +97,10 @@ export async function POST(
       commitSha: result.commitSha,
       prUrl: result.prUrl,
       prNumber: result.prNumber,
+      merged: result.merged,
+      mergeMethod: result.mergeMethod,
+      mergeCommitSha: result.mergeCommitSha,
+      mergeError: result.mergeError,
     });
   } catch (error) {
     // eslint-disable-next-line no-console

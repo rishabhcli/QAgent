@@ -66,7 +66,7 @@ export function EnhancedAgentPipeline({
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-yellow-400" />
+              <Sparkles className="h-5 w-5 text-primary" />
               Agent Pipeline
             </CardTitle>
             <CardDescription>

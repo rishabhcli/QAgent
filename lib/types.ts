@@ -104,6 +104,12 @@ export interface Patch {
   file: string;
   diff: string;
   description: string;
+  prUrl?: string;
+  prNumber?: number;
+  merged?: boolean;
+  mergeMethod?: string;
+  mergeCommitSha?: string;
+  mergeError?: string;
   metadata: {
     linesAdded: number;
     linesRemoved: number;
@@ -258,6 +264,7 @@ export interface Session {
   user: GitHubUser | null;
   accessToken: string | null;
   repos: GitHubRepo[];
+  selectedRepoIds?: number[];
 }
 
 /** JWT payload shape for session tokens */
@@ -265,6 +272,7 @@ export interface SessionPayload {
   user: GitHubUser;
   accessToken: string;
   repos?: GitHubRepo[];
+  selectedRepoIds?: number[];
   expiresAt?: string;
   jti?: string;
 }
@@ -405,6 +413,16 @@ export interface MonitoringConfig {
 
 export type QueuedRunPriority = 'high' | 'normal' | 'low';
 export type QueuedRunTrigger = 'webhook' | 'cron' | 'manual';
+export type AdHocRunMode = 'local' | 'code' | 'analyze';
+
+export interface AdHocRunConfig {
+  mode: AdHocRunMode;
+  runId: string;
+  maxIterations: number;
+  targetUrl?: string;
+  testSpecs?: TestSpec[];
+  githubToken?: string;
+}
 
 export interface QueuedRun {
   id: string;
@@ -422,6 +440,7 @@ export interface QueuedRun {
     branch?: string;
     pusher?: string;
     prNumber?: number;
+    adHoc?: AdHocRunConfig;
   };
 }
 

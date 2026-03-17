@@ -29,10 +29,10 @@ interface ActivityLogEntryProps {
 }
 
 const agentConfig: Record<AgentType, { icon: typeof TestTube2; color: string; bgColor: string }> = {
-  tester: { icon: TestTube2, color: 'text-blue-400', bgColor: 'bg-blue-500/20' },
-  triage: { icon: Search, color: 'text-yellow-400', bgColor: 'bg-yellow-500/20' },
-  fixer: { icon: Wrench, color: 'text-purple-400', bgColor: 'bg-purple-500/20' },
-  verifier: { icon: ShieldCheck, color: 'text-green-400', bgColor: 'bg-green-500/20' },
+  tester: { icon: TestTube2, color: 'text-sky-600 dark:text-sky-400', bgColor: 'bg-sky-500/15' },
+  triage: { icon: Search, color: 'text-amber-600 dark:text-amber-400', bgColor: 'bg-amber-500/15' },
+  fixer: { icon: Wrench, color: 'text-violet-600 dark:text-violet-400', bgColor: 'bg-violet-500/15' },
+  verifier: { icon: ShieldCheck, color: 'text-emerald-600 dark:text-emerald-400', bgColor: 'bg-emerald-500/15' },
 };
 
 const actionIcons: Record<ActivityAction, typeof Play> = {
@@ -71,7 +71,7 @@ export function ActivityLogEntry({ entry, className }: ActivityLogEntryProps) {
     <div
       className={cn(
         'group relative pl-4 border-l-2 transition-colors',
-        isFailed && 'border-red-500/50',
+        isFailed && 'border-destructive/50',
         isSuccess && 'border-emerald-500/50',
         !isFailed && !isSuccess && 'border-border hover:border-muted-foreground/50',
         className
@@ -105,8 +105,8 @@ export function ActivityLogEntry({ entry, className }: ActivityLogEntryProps) {
         <ActionIcon
           className={cn(
             'h-4 w-4 flex-shrink-0 mt-0.5',
-            isFailed && 'text-red-400',
-            isSuccess && 'text-emerald-400',
+            isFailed && 'text-destructive',
+            isSuccess && 'text-emerald-600 dark:text-emerald-400',
             !isFailed && !isSuccess && 'text-muted-foreground'
           )}
         />
@@ -115,8 +115,8 @@ export function ActivityLogEntry({ entry, className }: ActivityLogEntryProps) {
         <span
           className={cn(
             'flex-1 text-sm',
-            isFailed && 'text-red-400',
-            isSuccess && 'text-emerald-400'
+            isFailed && 'text-destructive',
+            isSuccess && 'text-emerald-600 dark:text-emerald-400'
           )}
         >
           {entry.message}
@@ -150,8 +150,8 @@ export function ActivityLogEntry({ entry, className }: ActivityLogEntryProps) {
 
               {/* Error Details */}
               {entry.details?.error && (
-                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                  <p className="text-sm text-red-400 font-medium mb-1">
+                <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3">
+                  <p className="mb-1 text-sm font-medium text-destructive">
                     {entry.details.error.message}
                   </p>
                   {entry.details.error.stack && (

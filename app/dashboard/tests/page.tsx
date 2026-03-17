@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { TestGeneratorDialog } from '@/components/dashboard/test-generator-dialog';
+import { useToast } from '@/components/ui/toaster';
 
 interface TestSpec {
   id: string;
@@ -18,6 +19,7 @@ interface TestSpec {
 }
 
 export default function TestsPage() {
+  const { error: showError, success } = useToast();
   const [testSpecs, setTestSpecs] = useState<TestSpec[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -28,15 +30,16 @@ export default function TestsPage() {
       if (res.ok) {
         const data = await res.json();
         setTestSpecs(data.testSpecs || []);
+      } else {
+        showError('Failed to load test specs', 'PatchPilot could not fetch your saved test definitions.');
       }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to fetch test specs:', error);
+    } catch {
+      showError('Failed to load test specs', 'Check your connection and try again.');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [showError]);
 
   useEffect(() => {
     fetchTestSpecs();
@@ -52,10 +55,12 @@ export default function TestsPage() {
       const res = await fetch(`/api/tests/${id}`, { method: 'DELETE', credentials: 'include' });
       if (res.ok) {
         fetchTestSpecs();
+        success('Test spec deleted');
+      } else {
+        showError('Failed to delete test spec');
       }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to delete test spec:', error);
+    } catch {
+      showError('Failed to delete test spec');
     }
   };
 
@@ -71,16 +76,19 @@ export default function TestsPage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       <Header title="Test Specs" />
 
-      <div className="p-6 space-y-6">
+      <div className="mx-auto max-w-7xl space-y-6 p-6 lg:p-8">
         {/* Actions Bar */}
-        <div className="flex items-center justify-between">
-          <p className="text-muted-foreground">
-            Configure E2E tests that QAgent will run against your application.
-          </p>
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-sm font-medium text-foreground">Test specifications</p>
+            <p className="text-sm text-muted-foreground">
+              Define manual flows or auto-generate them so PatchPilot has reliable coverage targets.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
               <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
               Refresh
@@ -153,7 +161,7 @@ export default function TestsPage() {
           <EmptyState
             icon={TestTube2}
             title="No test specs yet"
-            description="Create test specifications that QAgent will use to automatically test your application and find bugs."
+            description="Create test specifications that PatchPilot will use to automatically test your application and find bugs."
             action={
               <Link href="/dashboard/tests/new">
                 <Button>
