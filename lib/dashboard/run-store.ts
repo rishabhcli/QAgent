@@ -16,6 +16,7 @@ const runs = globalForRuns.runsMap ?? new Map<string, Run>();
 globalForRuns.runsMap = runs;
 
 export function createRun(data: {
+  ownerId?: number;
   repoId: string;
   repoName: string;
   testSpecs: TestSpec[];
@@ -23,6 +24,7 @@ export function createRun(data: {
 }): Run {
   const run: Run = {
     id: crypto.randomUUID(),
+    ownerId: data.ownerId,
     repoId: data.repoId,
     repoName: data.repoName,
     status: 'pending',

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { getSession } from '@/lib/auth/session';
 import {
   createRun,
   updateRunStatus,
@@ -42,18 +42,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Get GitHub access token from session
-    const cookieStore = await cookies();
-    const session = cookieStore.get('qagent_session');
-    let githubToken: string | undefined;
-
-    if (session) {
-      try {
-        const sessionData = JSON.parse(session.value);
-        githubToken = sessionData.accessToken;
-      } catch {
-        // Session parse error
-      }
-    }
+    const session = await getSession();
+    const githubToken = session?.accessToken || undefined;
 
     if (!githubToken) {
       return NextResponse.json(
@@ -64,6 +54,7 @@ export async function POST(request: NextRequest) {
 
     // Create the run
     const run = createRun({
+      ownerId: session?.user?.id,
       repoId: repoId || repoName,
       repoName,
       testSpecs: [], // No test specs for code analysis

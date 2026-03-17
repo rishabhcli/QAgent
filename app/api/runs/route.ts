@@ -35,6 +35,9 @@ import type { AgentType, Patch, DiagnosisReport, ClonedRepo } from '@/lib/types'
 
 // GET /api/runs - List all runs with optional pagination and filtering
 export async function GET(request: NextRequest) {
+  const session = await getSession();
+  const userId = session?.user?.id;
+
   const { searchParams } = request.nextUrl;
   const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
   const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)));
@@ -43,6 +46,10 @@ export async function GET(request: NextRequest) {
   const searchQuery = searchParams.get('search');
 
   let runs = getAllRuns();
+
+  if (userId !== undefined) {
+    runs = runs.filter((r) => r.ownerId === userId);
+  }
 
   if (statusFilter) {
     runs = runs.filter((r) => r.status === statusFilter);
@@ -114,10 +121,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get current user session
+    const session = await getSession();
+
     // Get GitHub access token from session for cloud mode
     let githubToken: string | undefined;
     if (cloudMode) {
-      const session = await getSession();
       if (session?.accessToken) {
         githubToken = session.accessToken;
         // eslint-disable-next-line no-console
@@ -129,6 +138,7 @@ export async function POST(request: NextRequest) {
     }
 
     const run = createRun({
+      ownerId: session?.user?.id,
       repoId: repoId || 'local',
       repoName: repoName || 'Demo App',
       testSpecs: testSpecs || [],

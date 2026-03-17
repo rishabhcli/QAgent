@@ -208,6 +208,7 @@ export type AgentType = 'tester' | 'triage' | 'fixer' | 'verifier';
 
 export interface Run {
   id: string;
+  ownerId?: number;
   repoId: string;
   repoName: string;
   status: RunStatus;
