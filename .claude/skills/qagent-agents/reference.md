@@ -1,4 +1,4 @@
-# Reference: PatchPilot Agents
+# Reference: QAgent Agents
 
 Copy-paste code patterns for implementing the core agents.
 
@@ -7,8 +7,8 @@ Copy-paste code patterns for implementing the core agents.
 ## Quick Start
 
 ```typescript
-// Run the full PatchPilot loop
-const orchestrator = new PatchPilotOrchestrator();
+// Run the full QAgent loop
+const orchestrator = new QAgentOrchestrator();
 const result = await orchestrator.run({
   testSpec: checkoutTestSpec,
   appUrl: 'https://demo.vercel.app'

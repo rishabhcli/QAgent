@@ -414,7 +414,7 @@ export interface MonitoringConfig {
 
 export type QueuedRunPriority = 'high' | 'normal' | 'low';
 export type QueuedRunTrigger = 'webhook' | 'cron' | 'manual';
-export type AdHocRunMode = 'local' | 'code' | 'analyze';
+export type AdHocRunMode = 'local' | 'code' | 'analyze' | 'sandbox';
 
 export interface AdHocRunConfig {
   mode: AdHocRunMode;

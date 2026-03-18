@@ -23,12 +23,15 @@ import {
   sseEmitter,
 } from '@/lib/dashboard/sse-emitter';
 import { createStoredRun } from '@/lib/redis/runs-store';
+import { createSandboxForRepo } from '@/lib/daytona';
+import { initWeave, isWeaveEnabled, getWeaveProjectUrl } from '@/lib/weave';
 import type {
   AdHocRunConfig,
   AgentType,
   ClonedRepo,
   DiagnosisReport,
   Patch,
+  TestSpec,
 } from '@/lib/types';
 
 interface CodeIssue {
@@ -86,6 +89,9 @@ export async function executeAdHocRun(params: {
 
   try {
     switch (config.mode) {
+      case 'sandbox':
+        await runSandboxMode(config.runId, repoName, config.maxIterations, config.githubToken, config.testSpecs);
+        return true;
       case 'code':
         await runCodeFirst(config.runId, repoName, config.maxIterations, config.githubToken, config.targetUrl);
         return true;
@@ -724,4 +730,195 @@ async function generateFix(
       promptTokens: 0,
     },
   };
+}
+
+/**
+ * Sandbox mode: create a Daytona sandbox, clone the repo, run the dev server,
+ * discover flows, and run the full QAgent test → fix → verify loop against
+ * the sandboxed application.
+ */
+async function runSandboxMode(
+  runId: string,
+  repoFullName: string,
+  maxIterations: number,
+  githubToken?: string,
+  testSpecs?: TestSpec[]
+): Promise<void> {
+  if (!githubToken) {
+    throw new Error('GitHub authentication required for sandbox runs');
+  }
+
+  // Initialize Weave observability
+  await initWeave('qagent');
+  if (isWeaveEnabled()) {
+    console.log(`[SandboxRunner] Weave enabled — traces at ${getWeaveProjectUrl()}`);
+  }
+
+  let sandboxInstance: Awaited<ReturnType<typeof createSandboxForRepo>> | null = null;
+
+  try {
+    // 1. Create sandbox and provision the repo
+    sseEmitter.emit({
+      type: 'status',
+      timestamp: new Date(),
+      runId,
+      data: { status: 'running', message: 'Creating cloud sandbox...' },
+    });
+
+    sandboxInstance = await createSandboxForRepo({
+      repoFullName,
+      githubToken,
+      onStatus: (message) => {
+        sseEmitter.emit({
+          type: 'status',
+          timestamp: new Date(),
+          runId,
+          data: { status: 'running', message },
+        });
+      },
+    });
+
+    const { previewUrl } = sandboxInstance;
+
+    sseEmitter.emit({
+      type: 'status',
+      timestamp: new Date(),
+      runId,
+      data: { status: 'running', message: `Sandbox ready at ${previewUrl}` },
+    });
+
+    // 2. Discover flows via crawler if no test specs provided
+    let resolvedSpecs = testSpecs && testSpecs.length > 0 ? testSpecs : [];
+
+    if (resolvedSpecs.length === 0) {
+      emitAgentStarted(runId, 'tester');
+      updateRunAgent(runId, 'tester');
+
+      sseEmitter.emit({
+        type: 'status',
+        timestamp: new Date(),
+        runId,
+        data: { status: 'running', message: 'Discovering test flows...' },
+      });
+
+      const crawler = new CrawlerAgent();
+      await crawler.init();
+
+      const crawlerSessionId = crawler.getSessionId();
+      if (crawlerSessionId) {
+        updateRunSession(runId, crawlerSessionId);
+        emitSessionStarted(runId, crawlerSessionId);
+      }
+
+      const flows = await crawler.discoverFlows(previewUrl, { maxPages: 5, maxDepth: 3 });
+      const discoveredSessionId = crawler.getSessionId();
+      if (discoveredSessionId) {
+        updateRunSession(runId, discoveredSessionId);
+        emitSessionStarted(runId, discoveredSessionId);
+      }
+
+      resolvedSpecs = crawler.flowsToTestSpecs(flows);
+      await crawler.close();
+
+      emitAgentCompleted(runId, 'tester');
+
+      if (resolvedSpecs.length === 0) {
+        sseEmitter.emit({
+          type: 'status',
+          timestamp: new Date(),
+          runId,
+          data: { status: 'running', message: 'No testable flows found. Completing run.' },
+        });
+        updateRunStatus(runId, 'completed');
+        emitRunCompleted(runId, true);
+        return;
+      }
+
+      sseEmitter.emit({
+        type: 'status',
+        timestamp: new Date(),
+        runId,
+        data: { status: 'running', message: `Found ${resolvedSpecs.length} test flows. Starting QAgent loop...` },
+      });
+    }
+
+    // 3. Run the orchestrator against the sandbox URL
+    const orchestrator = new Orchestrator({
+      targetUrl: previewUrl,
+      autoCommit: false,
+      onSessionStarted: (sessionId) => {
+        updateRunSession(runId, sessionId);
+        emitSessionStarted(runId, sessionId);
+      },
+    });
+
+    orchestrator.onPatchGenerated = async (patch: Patch, diagnosis: DiagnosisReport) => {
+      addRunPatch(runId, patch);
+
+      try {
+        const result = await createPatchPR(githubToken, repoFullName, patch, {
+          rootCause: diagnosis.rootCause,
+          confidence: diagnosis.confidence,
+          suggestedFix: diagnosis.suggestedFix,
+        }, getPatchPRWorkflowOptions());
+
+        await updatePatchStatus(
+          patch.id,
+          result.merged ? 'applied' : 'pending',
+          {
+            prUrl: result.prUrl,
+            prNumber: result.prNumber,
+            merged: result.merged,
+            mergeMethod: result.mergeMethod,
+            mergeCommitSha: result.mergeCommitSha,
+            mergeError: result.mergeError,
+          }
+        );
+
+        sseEmitter.emit({
+          type: 'patch',
+          timestamp: new Date(),
+          runId,
+          data: {
+            patch,
+            prUrl: result.prUrl,
+            prNumber: result.prNumber,
+            merged: result.merged,
+            mergeCommitSha: result.mergeCommitSha,
+            mergeError: result.mergeError,
+            status: result.merged ? 'pr_merged' : 'pr_created',
+          },
+        });
+      } catch (error) {
+        console.error('[SandboxRunner] Failed to create PR:', error);
+      }
+    };
+
+    const result = await orchestrator.run({
+      maxIterations,
+      testSpecs: resolvedSpecs,
+      targetUrl: previewUrl,
+    });
+
+    if (result.success) {
+      updateRunStatus(runId, 'completed');
+      emitRunCompleted(runId, true);
+    } else {
+      updateRunStatus(runId, 'failed');
+      emitRunCompleted(runId, false);
+    }
+
+    for (const patch of result.patches || []) {
+      addRunPatch(runId, patch);
+      emitPatchGenerated(runId, patch);
+    }
+  } catch (error) {
+    updateRunStatus(runId, 'failed');
+    emitRunError(runId, error instanceof Error ? error.message : 'Unknown error');
+    throw error;
+  } finally {
+    if (sandboxInstance) {
+      await sandboxInstance.cleanup();
+    }
+  }
 }

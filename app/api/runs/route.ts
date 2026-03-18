@@ -87,6 +87,7 @@ export async function POST(request: NextRequest) {
       maxIterations = 5,
       targetUrl,
       cloudMode = false,
+      sandboxMode = false,
     } = body;
 
     if (cloudMode && !repoName) {
@@ -111,7 +112,9 @@ export async function POST(request: NextRequest) {
     });
 
     const adHocConfig = {
-      mode: cloudMode && repoName && githubToken ? ('code' as const) : ('local' as const),
+      mode: sandboxMode && repoName && githubToken ? ('sandbox' as const)
+        : cloudMode && repoName && githubToken ? ('code' as const)
+        : ('local' as const),
       runId: run.id,
       maxIterations,
       targetUrl: targetUrl || undefined,

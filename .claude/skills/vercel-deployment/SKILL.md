@@ -53,7 +53,7 @@ Git Push → Build → Deploy → Ready
 - **Preview**: Auto-deploys for every push/PR
 - **Production**: Only deploys from main branch (or manual promotion)
 
-For PatchPilot, we use preview deployments for testing fixes.
+For QAgent, we use preview deployments for testing fixes.
 
 ---
 
@@ -162,7 +162,7 @@ async function waitForDeployment(
 
 ## Related Skills
 
-- `patchpilot-agents/` - Verifier Agent implementation
+- `qagent-agents/` - Verifier Agent implementation
 - `wandb-weave/` - Logging deployment metrics
 
 ---

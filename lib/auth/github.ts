@@ -1,13 +1,37 @@
 import type { GitHubUser, GitHubRepo } from '@/lib/types';
 
-const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || '';
-const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || '';
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+const DEFAULT_APP_ORIGIN = 'http://localhost:3000';
 
-export function getGitHubAuthUrl(state: string): string {
+function getGitHubClientId(): string {
+  return process.env.GITHUB_CLIENT_ID?.trim() || '';
+}
+
+function getGitHubClientSecret(): string {
+  return process.env.GITHUB_CLIENT_SECRET?.trim() || '';
+}
+
+export function isGitHubOAuthConfigured(): boolean {
+  return Boolean(getGitHubClientId() && getGitHubClientSecret());
+}
+
+export function getAppOrigin(origin?: string): string {
+  const candidate = process.env.NEXT_PUBLIC_APP_URL?.trim() || origin?.trim() || DEFAULT_APP_ORIGIN;
+
+  try {
+    return new URL(candidate).origin;
+  } catch {
+    return DEFAULT_APP_ORIGIN;
+  }
+}
+
+export function getGitHubCallbackUrl(origin?: string): string {
+  return new URL('/api/auth/github/callback', getAppOrigin(origin)).toString();
+}
+
+export function getGitHubAuthUrl(state: string, origin?: string): string {
   const params = new URLSearchParams({
-    client_id: GITHUB_CLIENT_ID,
-    redirect_uri: `${APP_URL}/api/auth/github/callback`,
+    client_id: getGitHubClientId(),
+    redirect_uri: getGitHubCallbackUrl(origin),
     scope: 'repo read:user',
     state,
   });
@@ -30,8 +54,8 @@ export async function exchangeCodeForToken(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      client_id: GITHUB_CLIENT_ID,
-      client_secret: GITHUB_CLIENT_SECRET,
+      client_id: getGitHubClientId(),
+      client_secret: getGitHubClientSecret(),
       code: requestParams.code,
       ...(requestParams.redirectUri ? { redirect_uri: requestParams.redirectUri } : {}),
       ...(requestParams.codeVerifier ? { code_verifier: requestParams.codeVerifier } : {}),

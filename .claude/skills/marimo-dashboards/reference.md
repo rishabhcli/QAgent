@@ -1,6 +1,6 @@
 # Reference: Marimo Dashboards
 
-Copy-paste code patterns for the PatchPilot dashboard.
+Copy-paste code patterns for the QAgent dashboard.
 
 ---
 
@@ -13,7 +13,7 @@ app = mo.App()
 
 @app.cell
 def hello():
-    return mo.md("# PatchPilot Dashboard")
+    return mo.md("# QAgent Dashboard")
 
 if __name__ == "__main__":
     app.run()
@@ -25,7 +25,7 @@ Run with: `marimo run dashboard.py`
 
 ## Code Patterns
 
-### Pattern 1: Complete PatchPilot Dashboard
+### Pattern 1: Complete QAgent Dashboard
 
 **Use when:** Setting up the main dashboard
 
@@ -43,7 +43,7 @@ app = mo.App()
 @app.cell
 def header():
     return mo.md("""
-    # PatchPilot Dashboard
+    # QAgent Dashboard
     Self-Healing QA Agent Analytics
     """)
 
@@ -223,7 +223,7 @@ if __name__ == "__main__":
 import weave
 import pandas as pd
 
-def fetch_weave_runs(project: str = 'patchpilot', limit: int = 50) -> pd.DataFrame:
+def fetch_weave_runs(project: str = 'qagent', limit: int = 50) -> pd.DataFrame:
     """Fetch runs from W&B Weave."""
     client = weave.init(project)
 
@@ -335,7 +335,7 @@ def styled_header():
     return mo.Html("""
     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 padding: 2rem; border-radius: 8px; color: white;">
-        <h1>PatchPilot</h1>
+        <h1>QAgent</h1>
         <p>Self-Healing QA Agent</p>
     </div>
     """)

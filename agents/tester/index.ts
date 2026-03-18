@@ -335,7 +335,7 @@ export class TesterAgent {
   private async fetchPageHtml(url: string): Promise<string> {
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'PatchPilot Local Tester',
+        'User-Agent': 'QAgent Local Tester',
       },
     });
 

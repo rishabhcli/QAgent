@@ -1,5 +1,5 @@
 {
-  "project": "patchpilot",
+  "project": "qagent",
   "version": "0.1.0",
   "description": "Self-Healing QA Agent for Web Applications",
   "skills": {
@@ -11,7 +11,7 @@
       "wandb-weave",
       "google-adk",
       "marimo-dashboards",
-      "patchpilot-agents"
+      "qagent-agents"
     ],
     "autoload": []
   },
@@ -32,7 +32,7 @@
       },
       {
         "id": 2,
-        "name": "Core PatchPilot Loop",
+        "name": "Core QAgent Loop",
         "status": "pending",
         "description": "Triage, Fixer, Verifier agents and orchestration"
       },
@@ -75,19 +75,19 @@
     },
     "triage": {
       "description": "Diagnoses failures, queries knowledge base",
-      "skills": ["redis-vectorstore", "patchpilot-agents"]
+      "skills": ["redis-vectorstore", "qagent-agents"]
     },
     "fixer": {
       "description": "Generates code patches using LLM",
-      "skills": ["redis-vectorstore", "patchpilot-agents"]
+      "skills": ["redis-vectorstore", "qagent-agents"]
     },
     "verifier": {
       "description": "Applies patches, deploys, re-tests",
-      "skills": ["vercel-deployment", "patchpilot-agents"]
+      "skills": ["vercel-deployment", "qagent-agents"]
     },
     "orchestrator": {
       "description": "Coordinates multi-agent workflow",
-      "skills": ["google-adk", "patchpilot-agents"]
+      "skills": ["google-adk", "qagent-agents"]
     }
   },
   "integrations": {

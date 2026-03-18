@@ -352,7 +352,7 @@ export default x;`;
       expect(result).toHaveProperty('prNumber');
       expect(result.merged).toBe(true);
       expect(result.mergeCommitSha).toBe('merge123');
-      expect(result.branchName).toContain('patchpilot');
+      expect(result.branchName).toContain('qagent');
     });
 
     it('should handle errors at any step', async () => {

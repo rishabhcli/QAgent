@@ -25,7 +25,7 @@ const output = await myAgent.run({ data: 'input' });
 
 ## Code Patterns
 
-### Pattern 1: PatchPilot Orchestrator
+### Pattern 1: QAgent Orchestrator
 
 **Use when:** Implementing the main orchestration loop
 
@@ -33,7 +33,7 @@ const output = await myAgent.run({ data: 'input' });
 import { Workflow, Agent, Context } from '@google-cloud/adk';
 import weave from 'weave';
 
-interface PatchPilotContext {
+interface QAgentContext {
   testSpec: TestSpec;
   appUrl: string;
   maxIterations: number;
@@ -45,7 +45,7 @@ interface PatchPilotContext {
   verificationResult?: VerificationResult;
 }
 
-class PatchPilotOrchestrator {
+class QAgentOrchestrator {
   private tester: TesterAgent;
   private triage: TriageAgent;
   private fixer: FixerAgent;
@@ -60,7 +60,7 @@ class PatchPilotOrchestrator {
 
   @weave.op()
   async run(testSpec: TestSpec, appUrl: string): Promise<RunResult> {
-    const context: PatchPilotContext = {
+    const context: QAgentContext = {
       testSpec,
       appUrl,
       maxIterations: 5,
@@ -105,7 +105,7 @@ class PatchPilotOrchestrator {
     return this.createFailureResult(context);
   }
 
-  private createSuccessResult(context: PatchPilotContext): RunResult {
+  private createSuccessResult(context: QAgentContext): RunResult {
     return {
       success: true,
       iterations: context.currentIteration,
@@ -114,7 +114,7 @@ class PatchPilotOrchestrator {
     };
   }
 
-  private createFailureResult(context: PatchPilotContext): RunResult {
+  private createFailureResult(context: QAgentContext): RunResult {
     return {
       success: false,
       iterations: context.currentIteration,
@@ -297,7 +297,7 @@ async function withRetry<T>(
 // Usage in orchestrator
 async function runWithRecovery(testSpec: TestSpec): Promise<RunResult> {
   return withRetry(async () => {
-    const orchestrator = new PatchPilotOrchestrator();
+    const orchestrator = new QAgentOrchestrator();
     return orchestrator.run(testSpec, process.env.APP_URL!);
   });
 }

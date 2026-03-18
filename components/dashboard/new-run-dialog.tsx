@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Globe, Loader2, Rocket, Sparkles, Wand2 } from 'lucide-react';
+import { Box, Globe, Loader2, Rocket, Sparkles, Wand2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,7 +15,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
 import {
   Select,
   SelectContent,
@@ -30,14 +29,6 @@ interface NewRunDialogProps {
   onRunCreated?: (runId: string) => void;
 }
 
-const GENERATION_STAGES = [
-  { threshold: 18, label: 'Preparing repository workspace' },
-  { threshold: 36, label: 'Inspecting project structure' },
-  { threshold: 58, label: 'Running validation and analysis' },
-  { threshold: 78, label: 'Generating candidate fixes' },
-  { threshold: 92, label: 'Preparing pull request workflow' },
-];
-
 export function NewRunDialog({ onRunCreated }: NewRunDialogProps) {
   const router = useRouter();
   const { selectedRepos, primaryRepo, isAuthenticated } = useSession();
@@ -46,8 +37,7 @@ export function NewRunDialog({ onRunCreated }: NewRunDialogProps) {
   const [selectedRepo, setSelectedRepo] = useState('');
   const [targetUrl, setTargetUrl] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generateProgress, setGenerateProgress] = useState(0);
-  const [generateStatus, setGenerateStatus] = useState('');
+  const [sandboxMode, setSandboxMode] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -75,27 +65,12 @@ export function NewRunDialog({ onRunCreated }: NewRunDialogProps) {
       return;
     }
 
-    if (targetUrl && !/^https?:\/\//i.test(targetUrl)) {
+    if (!sandboxMode && targetUrl && !/^https?:\/\//i.test(targetUrl)) {
       showError('Invalid target URL', 'Enter a full URL including http:// or https://.');
       return;
     }
 
     setIsGenerating(true);
-    setGenerateProgress(8);
-    setGenerateStatus(GENERATION_STAGES[0].label);
-
-    const progressInterval = window.setInterval(() => {
-      setGenerateProgress((current) => {
-        if (current >= 94) {
-          return current;
-        }
-
-        const next = Math.min(current + 3, 94);
-        const stage = GENERATION_STAGES.find(({ threshold }) => next <= threshold) || GENERATION_STAGES[GENERATION_STAGES.length - 1];
-        setGenerateStatus(stage.label);
-        return next;
-      });
-    }, 500);
 
     try {
       const response = await fetch('/api/runs', {
@@ -105,9 +80,10 @@ export function NewRunDialog({ onRunCreated }: NewRunDialogProps) {
         body: JSON.stringify({
           repoId: String(selectedRepository.id),
           repoName: selectedRepository.fullName,
-          targetUrl: targetUrl || undefined,
+          targetUrl: sandboxMode ? undefined : (targetUrl || undefined),
           maxIterations: 5,
           cloudMode: true,
+          sandboxMode,
         }),
       });
 
@@ -116,26 +92,18 @@ export function NewRunDialog({ onRunCreated }: NewRunDialogProps) {
       }
 
       const data = await response.json();
-      window.clearInterval(progressInterval);
-      setGenerateProgress(100);
-      setGenerateStatus('Run created. Redirecting to live view…');
-      success('Run created', 'PatchPilot has started the analysis pipeline.');
+      success('Run created', 'QAgent has started the analysis pipeline.');
 
       window.setTimeout(() => {
         setOpen(false);
         setIsGenerating(false);
-        setGenerateProgress(0);
-        setGenerateStatus('');
         onRunCreated?.(data.run.id);
       }, 450);
     } catch (error) {
-      window.clearInterval(progressInterval);
       setIsGenerating(false);
-      setGenerateProgress(0);
-      setGenerateStatus('');
       showError(
         'Unable to start run',
-        error instanceof Error ? error.message : 'PatchPilot could not create a run.'
+        error instanceof Error ? error.message : 'QAgent could not create a run.'
       );
     }
   };
@@ -144,8 +112,6 @@ export function NewRunDialog({ onRunCreated }: NewRunDialogProps) {
     setOpen(nextOpen);
     if (!nextOpen) {
       setIsGenerating(false);
-      setGenerateProgress(0);
-      setGenerateStatus('');
     }
   };
 
@@ -166,10 +132,10 @@ export function NewRunDialog({ onRunCreated }: NewRunDialogProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            Start a PatchPilot run
+            Start a QAgent run
           </DialogTitle>
           <DialogDescription>
-            PatchPilot will inspect your repository, run validations, generate fixes, and open GitHub pull requests for review or auto-merge.
+            QAgent will inspect your repository, run validations, generate fixes, and open GitHub pull requests for review or auto-merge.
           </DialogDescription>
         </DialogHeader>
 
@@ -226,35 +192,61 @@ export function NewRunDialog({ onRunCreated }: NewRunDialogProps) {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="target-url" className="flex items-center gap-2">
-              <Globe className="h-4 w-4" />
-              Deployed URL
-              <span className="text-xs font-normal text-muted-foreground">(optional)</span>
-            </Label>
-            <Input
-              id="target-url"
-              type="url"
-              placeholder="https://your-app.vercel.app"
-              value={targetUrl}
-              onChange={(event) => setTargetUrl(event.target.value)}
-              className="min-h-11 font-mono text-sm"
-            />
-            <p className="text-xs text-muted-foreground">
-              Provide a public deployment if you want Browserbase validation against a live environment. Leave this blank to run repository-first checks only.
-            </p>
+            <button
+              type="button"
+              onClick={() => setSandboxMode(!sandboxMode)}
+              className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition-colors ${
+                sandboxMode
+                  ? 'border-primary/50 bg-primary/5'
+                  : 'border-border/80 bg-muted/30 hover:border-border'
+              }`}
+            >
+              <div className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-md border ${
+                sandboxMode ? 'border-primary bg-primary text-primary-foreground' : 'border-border'
+              }`}>
+                {sandboxMode && (
+                  <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M2 6l3 3 5-5" />
+                  </svg>
+                )}
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Box className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold text-foreground">Run from source</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Clone the repo into a cloud sandbox, start the dev server, and test the running UI automatically. No deployed URL needed.
+                </p>
+              </div>
+            </button>
           </div>
 
+          {!sandboxMode && (
+            <div className="grid gap-2">
+              <Label htmlFor="target-url" className="flex items-center gap-2">
+                <Globe className="h-4 w-4" />
+                Deployed URL
+                <span className="text-xs font-normal text-muted-foreground">(optional)</span>
+              </Label>
+              <Input
+                id="target-url"
+                type="url"
+                placeholder="https://your-app.vercel.app"
+                value={targetUrl}
+                onChange={(event) => setTargetUrl(event.target.value)}
+                className="min-h-11 font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                Provide a public deployment if you want Browserbase validation against a live environment. Leave this blank to run repository-first checks only.
+              </p>
+            </div>
+          )}
+
           {isGenerating && (
-            <div className="rounded-2xl border border-border/80 bg-card/80 p-4 shadow-sm">
-              <div className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                <p className="text-sm font-medium text-foreground">{generateStatus}</p>
-              </div>
-              <Progress value={generateProgress} className="mt-4 h-2.5" />
-              <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                <span>Patch generation pipeline</span>
-                <span>{Math.round(generateProgress)}%</span>
-              </div>
+            <div className="flex items-center gap-3 py-4">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">Creating run...</span>
             </div>
           )}
         </div>

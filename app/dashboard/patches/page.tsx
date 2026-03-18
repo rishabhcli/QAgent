@@ -78,7 +78,7 @@ export default function PatchesPage() {
         const data = await res.json();
         setPatches(data.patches || []);
       } else {
-        showError('Failed to load patches', 'PatchPilot could not fetch patch history.');
+        showError('Failed to load patches', 'QAgent could not fetch patch history.');
       }
     } catch {
       showError('Failed to load patches', 'Check your connection and try again.');

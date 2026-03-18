@@ -15,7 +15,7 @@ const response = await fetch('https://api.vercel.com/v13/deployments', {
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
-    name: 'patchpilot-demo',
+    name: 'qagent-demo',
     gitSource: {
       type: 'github',
       ref: 'main',

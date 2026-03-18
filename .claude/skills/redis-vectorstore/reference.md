@@ -1,6 +1,6 @@
 # Reference: Redis Vector Store
 
-Copy-paste code patterns for the PatchPilot knowledge base.
+Copy-paste code patterns for the QAgent knowledge base.
 
 ---
 

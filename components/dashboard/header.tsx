@@ -26,7 +26,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-const GITHUB_REPO_URL = 'https://github.com/rishabhcli/weavehacks';
+const GITHUB_REPO_URL = 'https://github.com/rishabhcli/QAgent';
 const README_URL = `${GITHUB_REPO_URL}#readme`;
 
 interface HeaderProps {
@@ -34,7 +34,7 @@ interface HeaderProps {
 }
 
 function dispatchPaletteEvent(mode: 'search' | 'shortcuts' = 'search') {
-  document.dispatchEvent(new CustomEvent('patchpilot:open-command-palette', { detail: { mode } }));
+  document.dispatchEvent(new CustomEvent('qagent:open-command-palette', { detail: { mode } }));
 }
 
 export function Header({ title }: HeaderProps) {
@@ -55,7 +55,7 @@ export function Header({ title }: HeaderProps) {
           {title ? (
             <>
               <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                PatchPilot
+                QAgent
               </p>
               <h1 className="truncate text-xl font-semibold text-foreground">{title}</h1>
             </>
@@ -65,7 +65,7 @@ export function Header({ title }: HeaderProps) {
                 <Github className="h-4 w-4" />
               </div>
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-foreground">PatchPilot</p>
+                <p className="truncate text-sm font-semibold text-foreground">QAgent</p>
                 <p className="truncate text-xs text-muted-foreground">
                   {primaryRepo?.fullName || 'Self-healing QA operations'}
                 </p>

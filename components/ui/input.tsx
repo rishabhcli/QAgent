@@ -15,8 +15,6 @@ const inputVariants = cva(
           'border-brand-strong/30 bg-background/90 focus-visible:border-brand-strong focus-visible:ring-2 focus-visible:ring-brand-strong/30 focus-visible:ring-offset-2',
         neon:
           'border-brand/30 bg-brand-soft/20 focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2',
-        'neon-magenta':
-          'border-brand-strong/30 bg-background/90 focus-visible:border-brand-strong focus-visible:ring-2 focus-visible:ring-brand-strong/30 focus-visible:ring-offset-2',
       },
     },
     defaultVariants: {

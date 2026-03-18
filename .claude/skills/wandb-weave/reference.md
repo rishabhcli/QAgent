@@ -10,7 +10,7 @@ Copy-paste code patterns for observability and tracing.
 import weave from 'weave';
 
 // Initialize
-await weave.init({ project: 'patchpilot' });
+await weave.init({ project: 'qagent' });
 
 // Trace a function
 class MyAgent {
@@ -30,7 +30,7 @@ weave.log({ success: true, duration_ms: 1234 });
 
 ### Pattern 1: Full Agent Tracing Setup
 
-**Use when:** Setting up tracing for all PatchPilot agents
+**Use when:** Setting up tracing for all QAgent agents
 
 ```typescript
 import weave from 'weave';
@@ -38,7 +38,7 @@ import weave from 'weave';
 // Initialize at app startup
 export async function initWeave(): Promise<void> {
   await weave.init({
-    project: process.env.WANDB_PROJECT || 'patchpilot',
+    project: process.env.WANDB_PROJECT || 'qagent',
     entity: process.env.WANDB_ENTITY
   });
 }
@@ -122,7 +122,7 @@ export class VerifierAgent {
 
 ### Pattern 2: Logging Run Metrics
 
-**Use when:** Recording metrics after each PatchPilot run
+**Use when:** Recording metrics after each QAgent run
 
 ```typescript
 import weave from 'weave';
@@ -380,7 +380,7 @@ async function compareAgentVersions(): Promise<void> {
 import weave from 'weave';
 
 await weave.init({
-  project: 'patchpilot'
+  project: 'qagent'
 });
 ```
 
@@ -388,7 +388,7 @@ await weave.init({
 
 ```typescript
 await weave.init({
-  project: process.env.WANDB_PROJECT || 'patchpilot',
+  project: process.env.WANDB_PROJECT || 'qagent',
   entity: process.env.WANDB_ENTITY,
   settings: {
     silent: process.env.NODE_ENV === 'production'
@@ -422,7 +422,7 @@ export WANDB_API_KEY=your_key_here
 **Solution:**
 ```typescript
 // Ensure init is called and awaited
-await weave.init({ project: 'patchpilot' });
+await weave.init({ project: 'qagent' });
 
 // Ensure WANDB_API_KEY is set
 console.log('API Key set:', !!process.env.WANDB_API_KEY);

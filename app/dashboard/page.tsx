@@ -34,6 +34,7 @@ import { DashboardSkeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { useSession } from '@/lib/hooks/use-session';
+import { SetupChecklist } from '@/components/onboarding/onboarding-wizard';
 
 interface RunStats {
   totalRuns: number;
@@ -94,7 +95,7 @@ const statusConfig = {
 export default function DashboardPage() {
   const router = useRouter();
   const { success, error: showError } = useToast();
-  const { primaryRepo } = useSession();
+  const { primaryRepo, isAuthenticated, selectedRepos } = useSession();
   const [runs, setRuns] = useState<Run[]>([]);
   const [patches, setPatches] = useState<Patch[]>([]);
   const [learningMetrics, setLearningMetrics] = useState<LearningMetrics | null>(null);
@@ -107,6 +108,16 @@ export default function DashboardPage() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Setup checklist state
+  const [setupDismissed, setSetupDismissed] = useState(() => {
+    try {
+      return localStorage.getItem('qagent_setup_dismissed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [hasTests, setHasTests] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -179,6 +190,17 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
+  // Lightweight check for whether any test specs exist (for the setup checklist)
+  useEffect(() => {
+    fetch('/api/tests', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setHasTests(Array.isArray(data) && data.length > 0))
+      .catch(() => {});
+  }, []);
+
+  const allSetupComplete =
+    isAuthenticated && selectedRepos.length > 0 && hasTests && runs.length > 0;
+
   const handleRunCreated = (runId: string) => {
     success('Run created', 'Redirecting to run details...', {
       action: { label: 'View Run', onClick: () => router.push(`/dashboard/runs/${runId}`) }
@@ -214,6 +236,24 @@ export default function DashboardPage() {
       <Header title="Dashboard" />
 
       <main className="mx-auto max-w-7xl space-y-8 p-6 lg:p-8">
+        {/* Setup Checklist */}
+        {!setupDismissed && !allSetupComplete && (
+          <SetupChecklist
+            isAuthenticated={isAuthenticated}
+            hasSelectedRepo={selectedRepos.length > 0}
+            hasTests={hasTests}
+            hasRuns={runs.length > 0}
+            onDismiss={() => {
+              setSetupDismissed(true);
+              try {
+                localStorage.setItem('qagent_setup_dismissed', 'true');
+              } catch {
+                // localStorage not available
+              }
+            }}
+          />
+        )}
+
         {/* Welcome Section */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
@@ -235,7 +275,7 @@ export default function DashboardPage() {
                 Operate the full test-fix-verify loop from one place
               </h1>
               <p className="max-w-2xl text-muted-foreground">
-                Monitor repository health, launch repair runs, and review patches and pull requests without leaving the PatchPilot workspace.
+                Monitor repository health, launch repair runs, and review patches and pull requests without leaving the QAgent workspace.
               </p>
               <div className="mt-4 flex flex-wrap gap-2 text-sm text-muted-foreground">
                 <span className="rounded-full border border-border/80 bg-muted/40 px-3 py-1">
@@ -274,28 +314,28 @@ export default function DashboardPage() {
         >
           <StatCard
             title="Total Runs"
-            value={stats.totalRuns}
+            value={stats.totalRuns === 0 ? '\u2014' : stats.totalRuns}
             description="Test runs executed"
             icon={Rocket}
             href="/dashboard/runs"
           />
           <StatCard
             title="Pass Rate"
-            value={`${Math.round(stats.passRate)}%`}
+            value={runs.length === 0 ? '\u2014' : `${Math.round(stats.passRate)}%`}
             description="Tests passing after fixes"
             icon={TrendingUp}
             href="/dashboard/runs"
           />
           <StatCard
             title="Patches Applied"
-            value={stats.patchesApplied}
+            value={stats.patchesApplied === 0 ? '\u2014' : stats.patchesApplied}
             description="Auto-generated fixes"
             icon={GitBranch}
             href="/dashboard/patches"
           />
           <StatCard
             title="Knowledge Base"
-            value={learningMetrics?.knowledgeReuseRate ? `${Math.round(learningMetrics.knowledgeReuseRate)}%` : '0%'}
+            value={learningMetrics?.knowledgeReuseRate ? `${Math.round(learningMetrics.knowledgeReuseRate)}%` : '\u2014'}
             description="Pattern reuse rate"
             icon={Brain}
             href="/dashboard/learning"
@@ -332,7 +372,7 @@ export default function DashboardPage() {
                   <EmptyState
                     variant="default"
                     title="No runs yet"
-                    description="Start your first run to see PatchPilot in action"
+                    description="Start your first run to see QAgent in action"
                     action={{ label: 'Start First Run', onClick: () => document.querySelector<HTMLButtonElement>('[data-new-run-trigger]')?.click() }}
                     compact
                   />
@@ -494,26 +534,43 @@ export default function DashboardPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-emerald-500">
-                    +{learningMetrics?.improvementPercent ?? 0}%
+                {!learningMetrics || (learningMetrics.improvementPercent === 0 && learningMetrics.firstTryRate === 0 && learningMetrics.knowledgeReuseRate === 0) ? (
+                  <div className="text-center py-2">
+                    <p className="text-sm text-muted-foreground">Complete your first run to see learning metrics.</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => document.querySelector<HTMLButtonElement>('[data-new-run-trigger]')?.click()}
+                    >
+                      <Plus className="mr-1 h-3 w-3" />
+                      Start a run
+                    </Button>
                   </div>
-                  <p className="text-sm text-muted-foreground">Improvement this week</p>
-                </div>
-                <div className="space-y-2">
-                  <MetricRow 
-                    label="First-Try Success" 
-                    value={`${Math.round(learningMetrics?.firstTryRate ?? 0)}%`} 
-                  />
-                  <MetricRow 
-                    label="Avg Time to Fix" 
-                    value={`${Math.round(learningMetrics?.avgTimeToFix ?? 0)}s`} 
-                  />
-                  <MetricRow 
-                    label="Knowledge Reuse" 
-                    value={`${Math.round(learningMetrics?.knowledgeReuseRate ?? 0)}%`} 
-                  />
-                </div>
+                ) : (
+                  <>
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-emerald-500">
+                        +{learningMetrics.improvementPercent}%
+                      </div>
+                      <p className="text-sm text-muted-foreground">Improvement this week</p>
+                    </div>
+                    <div className="space-y-2">
+                      <MetricRow
+                        label="First-Try Success"
+                        value={`${Math.round(learningMetrics.firstTryRate)}%`}
+                      />
+                      <MetricRow
+                        label="Avg Time to Fix"
+                        value={`${Math.round(learningMetrics.avgTimeToFix)}s`}
+                      />
+                      <MetricRow
+                        label="Knowledge Reuse"
+                        value={`${Math.round(learningMetrics.knowledgeReuseRate)}%`}
+                      />
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -531,21 +588,35 @@ export default function DashboardPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Status</span>
-                  <Badge variant={monitoringStatus?.isHealthy ? 'default' : 'secondary'}>
-                    {monitoringStatus?.isHealthy ? 'Active' : 'Inactive'}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Monitored Repos</span>
-                  <span className="font-medium">{monitoringStatus?.monitoredRepos ?? 0}</span>
-                </div>
-                {monitoringStatus?.lastRun && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Last Run</span>
-                    <span className="text-sm">{formatTimeAgo(monitoringStatus.lastRun)}</span>
+                {!monitoringStatus || monitoringStatus.monitoredRepos === 0 ? (
+                  <div className="text-center py-2">
+                    <p className="text-sm text-muted-foreground">No repositories monitored yet.</p>
+                    <Link href="/dashboard/monitoring">
+                      <Button variant="ghost" size="sm" className="mt-2">
+                        <Radio className="mr-1 h-3 w-3" />
+                        Set up monitoring
+                      </Button>
+                    </Link>
                   </div>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Status</span>
+                      <Badge variant={monitoringStatus.isHealthy ? 'default' : 'secondary'}>
+                        {monitoringStatus.isHealthy ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Monitored Repos</span>
+                      <span className="font-medium">{monitoringStatus.monitoredRepos}</span>
+                    </div>
+                    {monitoringStatus.lastRun && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Last Run</span>
+                        <span className="text-sm">{formatTimeAgo(monitoringStatus.lastRun)}</span>
+                      </div>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>

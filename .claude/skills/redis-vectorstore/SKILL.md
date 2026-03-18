@@ -3,7 +3,7 @@
 ## When to Use This Skill
 
 Use this skill when:
-- Implementing the knowledge base for PatchPilot
+- Implementing the knowledge base for QAgent
 - Storing failure traces with embeddings
 - Retrieving similar past failures
 - Storing and retrieving fix patterns
@@ -17,7 +17,7 @@ Do NOT use this skill when:
 
 ## Overview
 
-Redis Stack provides vector search capabilities that enable semantic similarity search over failure traces and fix patterns. This is the "memory" that makes PatchPilot self-improving - it learns from past bugs to fix similar issues faster.
+Redis Stack provides vector search capabilities that enable semantic similarity search over failure traces and fix patterns. This is the "memory" that makes QAgent self-improving - it learns from past bugs to fix similar issues faster.
 
 Key capabilities:
 - Store failure traces with vector embeddings
@@ -181,7 +181,7 @@ async function recordSuccessfulFix(
 
 ## Related Skills
 
-- `patchpilot-agents/` - Using Redis in Triage and Fixer agents
+- `qagent-agents/` - Using Redis in Triage and Fixer agents
 - `wandb-weave/` - Logging Redis query results
 
 ---

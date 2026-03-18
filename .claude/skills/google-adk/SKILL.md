@@ -16,7 +16,7 @@ Do NOT use this skill when:
 
 ## Overview
 
-Google Cloud's Agent Development Kit (ADK) and Agent-to-Agent (A2A) protocol provide infrastructure for building and orchestrating multi-agent systems. For PatchPilot:
+Google Cloud's Agent Development Kit (ADK) and Agent-to-Agent (A2A) protocol provide infrastructure for building and orchestrating multi-agent systems. For QAgent:
 
 - Define agents as independent services
 - Coordinate Tester → Triage → Fixer → Verifier workflow
@@ -85,8 +85,8 @@ const testerAgent = new Agent<TesterInput, TesterOutput>({
 ```typescript
 import { Workflow, sequential, conditional } from '@google-cloud/adk';
 
-const patchPilotWorkflow = new Workflow({
-  name: 'patchpilot',
+const qAgentWorkflow = new Workflow({
+  name: 'qagent',
   steps: [
     // 1. Run tests
     { agent: 'tester', input: (ctx) => ctx.testSpec },
@@ -120,7 +120,7 @@ const patchPilotWorkflow = new Workflow({
 ### Run Workflow
 
 ```typescript
-const result = await patchPilotWorkflow.run({
+const result = await qAgentWorkflow.run({
   testSpec: {
     name: 'checkout-flow',
     steps: [/* ... */]
@@ -162,7 +162,7 @@ console.log('Iterations:', result.iterations);
 
 ## Related Skills
 
-- `patchpilot-agents/` - Individual agent implementations
+- `qagent-agents/` - Individual agent implementations
 - `wandb-weave/` - Tracing workflow execution
 
 ---

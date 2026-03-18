@@ -6,7 +6,7 @@ This file is the **single source of truth** for AI agents working on this projec
 
 **Project:** QAgent - Self-Healing QA Agent
 **Description:** A self-improving QA agent that automatically tests web applications, identifies bugs, applies fixes to the app's code, and verifies the fixes – all without human intervention. It combines automated bug-finding and fixing in a closed-loop system that iterates until all tests pass.
-**Status:** Phase 8 - Complete (Dashboard UI & GitHub OAuth)
+**Status:** Active development and maintenance
 
 ### Why This Matters
 
@@ -28,7 +28,7 @@ This file is the **single source of truth** for AI agents working on this projec
 | Orchestration | **Custom Orchestrator (ADK/A2A-compatible)** | Multi-agent workflow coordination (ADK/A2A integration planned) |
 | Dashboard | **Marimo** | Interactive analytics and live visualization |
 | Demo App | **Next.js** | Target application for testing/fixing |
-| LLM | **OpenAI/Anthropic** | Patch generation and diagnosis |
+| LLM | **OpenAI / Gemini / Anthropic** | Patch generation and diagnosis |
 
 ---
 
@@ -46,7 +46,7 @@ This file is the **single source of truth** for AI agents working on this projec
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     PATCHPILOT LOOP                             │
+│                     QAGENT LOOP                             │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │   ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐ │
@@ -226,7 +226,7 @@ The `.claude/skills/` directory contains domain-specific knowledge modules:
 
 The agent follows the **Ralph Loop** cycle for iterative development:
 
-1. **Read** - Load CLAUDE.md, TASKS.md, relevant skills
+1. **Read** - Load `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and relevant skills
 2. **Analyze** - Understand current phase requirements
 3. **Plan** - Break down into small, testable increments
 4. **Execute** - Implement one increment at a time
@@ -239,7 +239,6 @@ The agent follows the **Ralph Loop** cycle for iterative development:
 
 ### Always
 - Read CLAUDE.md at session start
-- Check TASKS.md before starting work
 - Write tests before marking tasks complete
 - Commit working code with descriptive messages
 - Keep secrets out of version control
@@ -264,7 +263,7 @@ The agent follows the **Ralph Loop** cycle for iterative development:
 ## File Structure
 
 ```
-weavehacks/
+QAgent/
 ├── .claude/
 │   ├── settings.json
 │   └── skills/
@@ -333,7 +332,6 @@ weavehacks/
 ├── AGENTS.md
 ├── CLAUDE.md
 ├── GEMINI.md
-├── TASKS.md
 ├── README.md
 ├── middleware.ts           # Next.js auth middleware
 └── .env.example
@@ -343,21 +341,8 @@ weavehacks/
 
 ## Current Focus
 
-**Active Phase:** Production Ready
-**Current Task:** Maintenance, mobile app development, and improvements
+**Active Phase:** Active development and maintenance
 **Blockers:** None
-
----
-
-## Demo Script (3 Minutes)
-
-| Time | Section | Content |
-|------|---------|---------|
-| 0:00-0:20 | Intro | Show buggy app, explain QAgent concept |
-| 0:20-1:10 | Detection | Run Tester agent, show failure capture |
-| 1:10-2:10 | Fix | Show diagnosis, patch generation, Vercel deploy |
-| 2:10-2:40 | Verify | Re-run test, show success, Weave dashboard |
-| 2:40-3:00 | Wrap-up | Summary, sponsor credits, metrics improvement |
 
 ---
 
@@ -373,4 +358,4 @@ weavehacks/
 
 ---
 
-*Last updated: February 2026*
+*Last updated: March 2026*

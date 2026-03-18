@@ -9,7 +9,7 @@
 *   **Agents:** TypeScript, Node.js, custom orchestrator (ADK/A2A-compatible; ADK planned)
 *   **Browser Automation:** Browserbase, Stagehand (AI-powered)
 *   **Data/Knowledge:** Redis (Vector Store for embeddings)
-*   **AI/LLM:** OpenAI GPT-4 (Patch generation)
+*   **AI/LLM:** OpenAI, Google Gemini, and Anthropic (patch generation and diagnosis)
 *   **Observability:** W&B Weave (Tracing & Evaluation)
 *   **Dashboard:** Marimo (Python-based reactive notebooks)
 
@@ -25,14 +25,14 @@ The system operates in a loop:
 ## Directory Structure
 
 *   `agents/`: Source code for the specific agents (Tester, Triage, Fixer, Verifier) and the Orchestrator.
-*   `app/`: The Next.js demo application that acts as the target for testing and fixing.
+*   `app/`: The Next.js application that hosts the public landing page, dashboard, and API routes.
 *   `dashboard/`: Marimo application (`app.py`) for visualizing agent performance and metrics.
 *   `lib/`: Shared utilities, including clients for Redis, Browserbase, and Weave.
 *   `docs/`: Extensive documentation including ADRs (`ARCHITECTURE.md`) and PRD (`PRD.md`).
 *   `prompts/`: Markdown files containing system prompts and workflow guides (e.g., `ralph-loop.md`).
-*   `scripts/`: Utility scripts for initialization (`init-redis.ts`) and demos (`run-demo.ts`).
+*   `scripts/`: Utility scripts such as Redis initialization (`init-redis.ts`).
 *   `tests/`: Unit and E2E tests for the agents and the system itself.
-*   `.claude/skills/`: Domain-specific knowledge modules for the AI assistant.
+*   `.claude/skills/`: Domain-specific knowledge modules for the AI assistant, including `qagent-agents/`.
 
 ## Operational Commands
 
@@ -43,8 +43,7 @@ The system operates in a loop:
 ### Running the System
 *   **Demo App:** `pnpm dev` (Starts Next.js at localhost:3000)
 *   **Agent Orchestrator:** `pnpm run agent` (Starts the QAgent agent loop)
-*   **Dashboard:** `pnpm run dashboard` (Starts Marimo dashboard at localhost:2718)
-*   **Full Demo:** `pnpm run demo` (Runs the scripted demo flow)
+*   **Dashboard:** `pnpm run dashboard` (Starts the Marimo dashboard)
 
 ### Testing & Maintenance
 *   **E2E Tests:** `pnpm run test:e2e`
@@ -57,9 +56,9 @@ The system operates in a loop:
 *   **Package Manager:** Uses `pnpm`.
 *   **Style:** TypeScript for agents/app, Python for dashboard. Follow existing patterns in `agents/` for new agent capabilities.
 *   **Workflow:**
-    *   Check `TASKS.md` for current phase and active tasks.
+    *   Start with `AGENTS.md`, `CLAUDE.md`, and this file for current project context.
     *   Refer to `docs/ARCHITECTURE.md` when making structural changes.
-    *   Use `CLAUDE.md` and `prompts/ralph-loop.md` for AI-assisted development workflows.
+    *   Use `prompts/ralph-loop.md` for the iterative development workflow.
 *   **Observability:** All agent actions should be traced using Weave. Ensure new agent methods are wrapped with Weave decorators/loggers.
 
 ## Important Notes

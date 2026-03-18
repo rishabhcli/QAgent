@@ -1,20 +1,20 @@
-# Skill: PatchPilot Agents
+# Skill: QAgent Agents
 
 ## When to Use This Skill
 
 Use this skill when:
 - Implementing any of the four core agents
 - Understanding agent interfaces and data flow
-- Working on the PatchPilot loop logic
+- Working on the QAgent loop logic
 - Debugging agent interactions
 
-This is the **primary skill** for PatchPilot development.
+This is the **primary skill** for QAgent development.
 
 ---
 
 ## Overview
 
-PatchPilot consists of four cooperating agents:
+QAgent consists of four cooperating agents:
 
 1. **Tester Agent** - Runs E2E tests, captures failures
 2. **Triage Agent** - Diagnoses failures, queries knowledge base
@@ -165,7 +165,7 @@ interface VerificationResult {
 
 ---
 
-## The PatchPilot Loop
+## The QAgent Loop
 
 ```
                     ┌─────────────────────┐
@@ -292,6 +292,6 @@ function classifyError(error: string): FailureType {
 
 ## References
 
-- [PatchPilot Paper](https://arxiv.org/html/2502.02747v1)
+- [QAgent Paper](https://arxiv.org/html/2502.02747v1)
 - [docs/DESIGN.md](../../docs/DESIGN.md) - Agent data structures
 - [docs/ARCHITECTURE.md](../../docs/ARCHITECTURE.md) - System design

@@ -609,7 +609,7 @@ export default function RunDetailPage({
                   <EmptyState
                     variant="no-data"
                     title="No tests defined"
-                    description="Add or generate test specifications to give PatchPilot stable validation coverage."
+                    description="Add or generate test specifications to give QAgent stable validation coverage."
                     compact
                   />
                 ) : (
@@ -674,7 +674,7 @@ export default function RunDetailPage({
                   <EmptyState
                     variant="no-data"
                     title="No patches generated yet"
-                    description="Patch details appear here when PatchPilot generates a diff or opens a pull request."
+                    description="Patch details appear here when QAgent generates a diff or opens a pull request."
                     compact
                   />
                 ) : (

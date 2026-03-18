@@ -17,14 +17,14 @@ const sessionState = vi.hoisted(() => ({
     repos: [
       {
         id: 1,
-        name: 'weavehacks',
-        fullName: 'rishabh/weavehacks',
+        name: 'test-repo',
+        fullName: 'user/test-repo',
       },
     ],
     primaryRepo: {
       id: 1,
-      name: 'weavehacks',
-      fullName: 'rishabh/weavehacks',
+      name: 'test-repo',
+      fullName: 'user/test-repo',
     },
     isLoading: false,
     selectedRepoIds: [1],
@@ -45,7 +45,7 @@ describe('Sidebar', () => {
   it('renders the authenticated shell navigation and repo context', () => {
     render(<Sidebar />);
 
-    expect(screen.getByText('PatchPilot')).toBeInTheDocument();
+    expect(screen.getByText('QAgent')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute(
       'href',
       '/dashboard'
@@ -57,6 +57,6 @@ describe('Sidebar', () => {
     );
     expect(screen.getByText('Connected')).toBeInTheDocument();
     expect(screen.getByText('@rishabh')).toBeInTheDocument();
-    expect(screen.getByText('rishabh/weavehacks')).toBeInTheDocument();
+    expect(screen.getByText('user/test-repo')).toBeInTheDocument();
   });
 });

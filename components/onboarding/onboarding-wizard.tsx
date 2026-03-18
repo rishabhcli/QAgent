@@ -1,249 +1,217 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  X, 
-  ArrowRight, 
-  ArrowLeft, 
-  Sparkles, 
-  Rocket, 
-  TestTube2, 
-  GitBranch,
-  CheckCircle,
-  Zap
+import {
+  X,
+  CheckCircle2,
+  Circle,
+  Github,
+  FolderGit2,
+  TestTube2,
+  Play,
+  ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-interface OnboardingStep {
-  id: string;
+/* ------------------------------------------------------------------ */
+/*  Types                                                              */
+/* ------------------------------------------------------------------ */
+
+export interface SetupChecklistProps {
+  isAuthenticated: boolean;
+  hasSelectedRepo: boolean;
+  hasTests: boolean;
+  hasRuns: boolean;
+  onDismiss: () => void;
+}
+
+interface Step {
+  key: string;
   title: string;
   description: string;
   icon: React.ElementType;
-  gradient: string;
+  actionLabel: string;
+  actionHref: string;
+  completed: boolean;
 }
 
-const steps: OnboardingStep[] = [
-  {
-    id: 'welcome',
-    title: 'Welcome to PatchPilot',
-    description: 'Your AI-powered QA agent that automatically tests, detects bugs, and fixes them. Let\'s take a quick tour!',
-    icon: Zap,
-    gradient: 'from-violet-500 to-purple-600',
-  },
-  {
-    id: 'tests',
-    title: 'Define Test Specs',
-    description: 'Create test specifications using natural language. Describe what to test and PatchPilot will run them against your app.',
-    icon: TestTube2,
-    gradient: 'from-emerald-500 to-teal-600',
-  },
-  {
-    id: 'runs',
-    title: 'Start Test Runs',
-    description: 'Launch a run to trigger the agent loop. PatchPilot will test your app, detect failures, and generate fixes automatically.',
-    icon: Rocket,
-    gradient: 'from-blue-500 to-cyan-600',
-  },
-  {
-    id: 'patches',
-    title: 'Review & Apply Patches',
-    description: 'Review generated patches before deploying. Track all fixes in the patches history and learn from past improvements.',
-    icon: GitBranch,
-    gradient: 'from-orange-500 to-amber-600',
-  },
-  {
-    id: 'ready',
-    title: 'You\'re All Set!',
-    description: 'Start by connecting your GitHub repository and creating your first test spec. PatchPilot is ready to heal your codebase.',
-    icon: Sparkles,
-    gradient: 'from-pink-500 to-rose-600',
-  },
-];
+/* ------------------------------------------------------------------ */
+/*  Reduced-motion helper                                              */
+/* ------------------------------------------------------------------ */
 
-const STORAGE_KEY = 'qagent_onboarding_complete';
+function useReducedMotion(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
 
-export function OnboardingWizard() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [mounted, setMounted] = useState(false);
+/* ------------------------------------------------------------------ */
+/*  SetupChecklist                                                     */
+/* ------------------------------------------------------------------ */
 
-  useEffect(() => {
-    setMounted(true);
-    // Check localStorage safely after mount
-    try {
-      const completed = localStorage.getItem(STORAGE_KEY);
-      if (!completed) {
-        // Show onboarding after a short delay for better UX
-        const timer = setTimeout(() => setIsOpen(true), 1000);
-        return () => clearTimeout(timer);
-      }
-    } catch {
-      // localStorage not available, skip onboarding
-    }
-  }, []);
+export function SetupChecklist({
+  isAuthenticated,
+  hasSelectedRepo,
+  hasTests,
+  hasRuns,
+  onDismiss,
+}: SetupChecklistProps) {
+  const prefersReducedMotion = useReducedMotion();
 
-  const handleNext = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      handleComplete();
-    }
-  };
+  const steps: Step[] = useMemo(
+    () => [
+      {
+        key: 'github',
+        title: 'Connect GitHub',
+        description: 'Authenticate with GitHub so QAgent can access your repositories.',
+        icon: Github,
+        actionLabel: 'Connect GitHub',
+        actionHref: '/api/auth/github',
+        completed: isAuthenticated,
+      },
+      {
+        key: 'repo',
+        title: 'Select a repository',
+        description: 'Choose which repo QAgent should test and patch.',
+        icon: FolderGit2,
+        actionLabel: 'Select repo',
+        actionHref: '/dashboard/settings',
+        completed: hasSelectedRepo,
+      },
+      {
+        key: 'test',
+        title: 'Create a test spec',
+        description: 'Define at least one test so the agent knows what to verify.',
+        icon: TestTube2,
+        actionLabel: 'Create test',
+        actionHref: '/dashboard/tests',
+        completed: hasTests,
+      },
+      {
+        key: 'run',
+        title: 'Run your first pipeline',
+        description: 'Kick off the test-fix-verify loop and watch QAgent work.',
+        icon: Play,
+        actionLabel: 'Start run',
+        actionHref: '/dashboard/runs',
+        completed: hasRuns,
+      },
+    ],
+    [isAuthenticated, hasSelectedRepo, hasTests, hasRuns],
+  );
 
-  const handlePrev = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
+  const completedCount = steps.filter((s) => s.completed).length;
 
-  const handleComplete = () => {
-    try {
-      localStorage.setItem(STORAGE_KEY, 'true');
-    } catch {
-      // localStorage not available
-    }
-    setIsOpen(false);
-  };
-
-  const handleSkip = () => {
-    try {
-      localStorage.setItem(STORAGE_KEY, 'true');
-    } catch {
-      // localStorage not available
-    }
-    setIsOpen(false);
-  };
-
-  if (!mounted || !isOpen) return null;
-
-  const step = steps[currentStep];
-  const Icon = step.icon;
+  const motionProps = prefersReducedMotion
+    ? {}
+    : {
+        initial: { opacity: 0, height: 0 },
+        animate: { opacity: 1, height: 'auto' },
+        exit: { opacity: 0, height: 0 },
+        transition: { duration: 0.3, ease: 'easeInOut' as const },
+      };
 
   return (
     <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          />
+      <motion.div {...motionProps} className="overflow-hidden">
+        <div className="rounded-2xl border border-border/80 bg-card shadow-sm">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 pt-5 pb-4">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight">
+                Get started with QAgent
+              </h2>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                {completedCount} of {steps.length} complete
+              </p>
+            </div>
 
-          {/* Modal */}
-          <motion.div
-            className="fixed inset-0 z-[201] flex items-center justify-center p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="relative w-full max-w-lg rounded-3xl border border-white/10 bg-card/95 backdrop-blur-xl shadow-2xl overflow-hidden"
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              transition={{ type: 'spring', duration: 0.5 }}
+            <button
+              onClick={onDismiss}
+              className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              aria-label="Dismiss setup checklist"
             >
-              {/* Close Button */}
-              <button
-                onClick={handleSkip}
-                className="absolute top-4 right-4 p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors z-10"
-                aria-label="Skip onboarding"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <X className="h-4 w-4" />
+            </button>
+          </div>
 
-              {/* Content */}
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={step.id}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                  className="p-8"
+          {/* Progress bar */}
+          <div className="mx-6 mb-4 h-1.5 overflow-hidden rounded-full bg-secondary">
+            <div
+              className="h-full rounded-full bg-primary transition-all duration-500"
+              style={{ width: `${(completedCount / steps.length) * 100}%` }}
+            />
+          </div>
+
+          {/* Steps */}
+          <ul className="divide-y divide-border/60 border-t border-border/60">
+            {steps.map((step) => {
+              const StepIcon = step.icon;
+
+              return (
+                <li
+                  key={step.key}
+                  className="flex items-center gap-4 px-6 py-4"
                 >
-                  {/* Icon */}
-                  <motion.div 
-                    className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${step.gradient} flex items-center justify-center mb-6 mx-auto`}
-                    initial={{ scale: 0.5, rotate: -10 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    transition={{ type: 'spring', duration: 0.5 }}
+                  {/* Status icon */}
+                  {step.completed ? (
+                    <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-primary" />
+                  ) : (
+                    <Circle className="h-5 w-5 flex-shrink-0 text-muted-foreground/50" />
+                  )}
+
+                  {/* Icon + text */}
+                  <div
+                    className={`flex flex-1 items-center gap-3 ${
+                      step.completed ? 'opacity-60' : ''
+                    }`}
                   >
-                    <Icon className="h-10 w-10 text-white" />
-                  </motion.div>
+                    <div className="rounded-lg bg-primary/10 p-1.5">
+                      <StepIcon className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p
+                        className={`text-sm font-medium ${
+                          step.completed
+                            ? 'text-muted-foreground line-through'
+                            : 'text-foreground'
+                        }`}
+                      >
+                        {step.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {step.description}
+                      </p>
+                    </div>
+                  </div>
 
-                  {/* Text */}
-                  <h2 className="text-2xl font-bold text-center mb-3">
-                    {step.title}
-                  </h2>
-                  <p className="text-muted-foreground text-center max-w-sm mx-auto">
-                    {step.description}
-                  </p>
-                </motion.div>
-              </AnimatePresence>
-
-              {/* Footer */}
-              <div className="px-8 pb-8">
-                {/* Progress Dots */}
-                <div className="flex justify-center gap-2 mb-6">
-                  {steps.map((s, i) => (
-                    <button
-                      key={s.id}
-                      onClick={() => setCurrentStep(i)}
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        i === currentStep 
-                          ? 'w-8 bg-primary' 
-                          : i < currentStep 
-                            ? 'w-2 bg-primary/50' 
-                            : 'w-2 bg-secondary'
-                      }`}
-                      aria-label={`Go to step ${i + 1}`}
-                    />
-                  ))}
-                </div>
-
-                {/* Navigation Buttons */}
-                <div className="flex items-center justify-between gap-4">
-                  <Button
-                    variant="ghost"
-                    onClick={currentStep === 0 ? handleSkip : handlePrev}
-                    className="text-muted-foreground"
-                  >
-                    {currentStep === 0 ? (
-                      'Skip tour'
-                    ) : (
-                      <>
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back
-                      </>
-                    )}
-                  </Button>
-
-                  <Button 
-                    onClick={handleNext}
-                    className={`bg-gradient-to-r ${step.gradient} hover:opacity-90`}
-                  >
-                    {currentStep === steps.length - 1 ? (
-                      <>
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        Get Started
-                      </>
-                    ) : (
-                      <>
-                        Next
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        </>
-      )}
+                  {/* Action */}
+                  {!step.completed && (
+                    <Link href={step.actionHref}>
+                      <Button variant="outline" size="sm" className="gap-1.5 whitespace-nowrap">
+                        {step.actionLabel}
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Button>
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </motion.div>
     </AnimatePresence>
   );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Backward-compatible wrapper                                        */
+/*  Kept so that existing imports (e.g. dashboard layout) still work.  */
+/*  Renders nothing — the checklist is now rendered inline on the       */
+/*  dashboard page where it has access to the required data props.     */
+/* ------------------------------------------------------------------ */
+
+export function OnboardingWizard() {
+  return null;
 }

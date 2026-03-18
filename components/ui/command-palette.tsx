@@ -7,7 +7,6 @@ import {
   ArrowRight,
   BookOpen,
   Brain,
-  ExternalLink,
   GitBranch,
   Github,
   HelpCircle,
@@ -44,10 +43,9 @@ interface RecentCommand {
   timestamp: number;
 }
 
-const GITHUB_REPO_URL = 'https://github.com/rishabhcli/weavehacks';
+const GITHUB_REPO_URL = 'https://github.com/rishabhcli/QAgent';
 const README_URL = `${GITHUB_REPO_URL}#readme`;
-const DEMO_URL = `${GITHUB_REPO_URL}/blob/main/docs/DEMO_SCRIPT.md`;
-const RECENT_COMMANDS_KEY = 'patchpilot_recent_commands';
+const RECENT_COMMANDS_KEY = 'qagent_recent_commands';
 const MAX_RECENT_COMMANDS = 5;
 
 function useRecentCommands() {
@@ -244,20 +242,11 @@ export function CommandPalette() {
       {
         id: 'help-docs',
         label: 'Open Documentation',
-        description: 'View the PatchPilot README',
+        description: 'View the QAgent README',
         icon: BookOpen,
         action: () => window.open(README_URL, '_blank', 'noopener,noreferrer'),
         category: 'help',
-        keywords: ['docs', 'readme', 'documentation'],
-      },
-      {
-        id: 'help-demo',
-        label: 'Open Demo Script',
-        description: 'Review the demo flow and talk track',
-        icon: ExternalLink,
-        action: () => window.open(DEMO_URL, '_blank', 'noopener,noreferrer'),
-        category: 'help',
-        keywords: ['demo', 'script', 'presentation'],
+        keywords: ['docs', 'readme', 'documentation', 'getting started', 'guide', 'quick start'],
       },
       {
         id: 'help-github',
@@ -393,11 +382,11 @@ export function CommandPalette() {
       setShowShortcuts(detail?.mode === 'shortcuts');
     };
 
-    document.addEventListener('patchpilot:open-command-palette', handleOpen);
+    document.addEventListener('qagent:open-command-palette', handleOpen);
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      document.removeEventListener('patchpilot:open-command-palette', handleOpen);
+      document.removeEventListener('qagent:open-command-palette', handleOpen);
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [handleKeyDown]);

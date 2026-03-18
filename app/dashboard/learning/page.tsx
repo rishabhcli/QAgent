@@ -66,7 +66,7 @@ export default function LearningPage() {
         success('Learning metrics refreshed');
       }
     } catch {
-      showError('Failed to load learning data', 'PatchPilot could not fetch self-improvement metrics.');
+      showError('Failed to load learning data', 'QAgent could not fetch self-improvement metrics.');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -97,7 +97,7 @@ export default function LearningPage() {
           <div>
             <p className="text-sm font-medium text-foreground">Self-improvement signals</p>
             <p className="text-sm text-muted-foreground">
-              Track how PatchPilot reuses prior knowledge, improves pass rate, and shortens time to a verified fix.
+              Track how QAgent reuses prior knowledge, improves pass rate, and shortens time to a verified fix.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -184,7 +184,7 @@ export default function LearningPage() {
           <EmptyState
             icon={Sparkles}
             title="No learning data yet"
-            description="Learning metrics appear once PatchPilot has completed enough runs to measure reuse and improvement trends."
+            description="Learning metrics appear once QAgent has completed enough runs to measure reuse and improvement trends."
             compact={false}
           />
         )}

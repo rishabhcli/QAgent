@@ -1,4 +1,4 @@
-const DEV_SESSION_SECRET_GLOBAL_KEY = '__PATCHPILOT_DEV_SESSION_SECRET__';
+const DEV_SESSION_SECRET_GLOBAL_KEY = '__QAGENT_DEV_SESSION_SECRET__';
 const TEST_FALLBACK_SECRET = 'test-session-secret';
 
 type GlobalWithSecret = typeof globalThis & {

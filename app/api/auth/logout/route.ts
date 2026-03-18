@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { decrypt } from '@/lib/auth/session';
 import { blacklistSession, revokeRefreshToken } from '@/lib/auth/token-store';
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-
 async function revokeTokens(request: NextRequest): Promise<void> {
   // Blacklist current JWT
   const sessionToken = request.cookies.get('qagent_session')?.value;
@@ -33,7 +31,7 @@ function clearCookies(response: NextResponse): void {
 
 export async function GET(request: NextRequest) {
   await revokeTokens(request);
-  const response = NextResponse.redirect(`${APP_URL}/`);
+  const response = NextResponse.redirect(new URL('/', request.nextUrl.origin));
   clearCookies(response);
   return response;
 }

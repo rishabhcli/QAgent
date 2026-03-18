@@ -35,8 +35,8 @@ QAgent is a multi-agent system that creates a closed-loop for automated bug dete
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/weavehacks.git
-cd weavehacks
+git clone https://github.com/rishabhcli/QAgent.git
+cd QAgent
 
 # Install dependencies
 pnpm install
@@ -82,7 +82,7 @@ marimo run dashboard/app.py
 ## Project Structure
 
 ```
-weavehacks/
+QAgent/
 ├── .claude/
 │   └── skills/               # Domain-specific knowledge modules
 │       ├── browserbase-stagehand/
@@ -169,15 +169,9 @@ See [.env.example](./.env.example) for required environment variables:
 - `WANDB_API_KEY` - Weights & Biases API key
 - `GOOGLE_CLOUD_PROJECT` - Google Cloud project (reserved for ADK/A2A integration)
 
-## Demo
+## Getting Started
 
-The system demonstrates its capabilities in a 3-minute flow:
-
-1. **Intro** (0:00-0:20): Show buggy app, explain concept
-2. **Detection** (0:20-1:10): Run tests, capture failure
-3. **Fix** (1:10-2:10): Diagnose, generate patch, deploy
-4. **Verify** (2:10-2:40): Re-run test, show success, dashboard
-5. **Wrap-up** (2:40-3:00): Summary and sponsor credits
+See the [Quick Start](#quick-start) section above for setup instructions. Once running, connect a GitHub repository through the dashboard and start your first QAgent run.
 
 ## References
 

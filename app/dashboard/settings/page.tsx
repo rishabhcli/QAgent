@@ -8,6 +8,7 @@ import { Header } from '@/components/dashboard/header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/toaster';
 
 interface GitHubUser {
@@ -57,6 +58,7 @@ function SettingsPageContent() {
   const [session, setSession] = useState<SessionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedRepos, setSelectedRepos] = useState<Set<number>>(new Set());
+  const [repoSearch, setRepoSearch] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
@@ -68,6 +70,7 @@ function SettingsPageContent() {
       setMessage({ type: 'success', text: 'GitHub account connected successfully!' });
     } else if (error) {
       const errorMessages: Record<string, string> = {
+        github_oauth_not_configured: 'GitHub OAuth is not configured for this environment.',
         invalid_state: 'Invalid OAuth state. Please try again.',
         no_code: 'No authorization code received.',
         oauth_failed: 'OAuth authentication failed. Please try again.',
@@ -117,7 +120,7 @@ function SettingsPageContent() {
       setMessage({ type: 'success', text: 'GitHub account disconnected.' });
     } catch {
       setMessage({ type: 'error', text: 'Failed to disconnect.' });
-      showError('Failed to disconnect', 'PatchPilot could not clear the GitHub session.');
+      showError('Failed to disconnect', 'QAgent could not clear the GitHub session.');
     }
   };
 
@@ -147,8 +150,47 @@ function SettingsPageContent() {
       success('Repository selection updated');
     } catch {
       setMessage({ type: 'error', text: 'Failed to save repository selection.' });
-      showError('Failed to save selection', 'PatchPilot could not update the selected repositories.');
+      showError('Failed to save selection', 'QAgent could not update the selected repositories.');
     }
+  };
+
+  const repos = session?.repos || [];
+  const selectedRepoIds = Array.from(selectedRepos);
+
+  const filteredRepos = repos.filter(repo =>
+    repo.fullName.toLowerCase().includes(repoSearch.toLowerCase())
+  );
+
+  const saveRepoSelection = async (newSelected: Set<number>) => {
+    setSelectedRepos(newSelected);
+    try {
+      await fetch('/api/auth/session', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ selectedRepoIds: Array.from(newSelected) }),
+      });
+      setSession((current) =>
+        current
+          ? { ...current, selectedRepoIds: Array.from(newSelected) }
+          : current
+      );
+      success('Repository selection updated');
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to save repository selection.' });
+      showError('Failed to save selection', 'QAgent could not update the selected repositories.');
+    }
+  };
+
+  const handleSelectAllVisible = () => {
+    const newSelected = new Set(selectedRepos);
+    for (const repo of filteredRepos) {
+      newSelected.add(repo.id);
+    }
+    void saveRepoSelection(newSelected);
+  };
+
+  const handleClearSelection = () => {
+    void saveRepoSelection(new Set());
   };
 
   const isConnected = session?.authenticated && session?.user;
@@ -256,7 +298,7 @@ function SettingsPageContent() {
                 </div>
 
                 {/* Repository Selection */}
-                {session.repos && session.repos.length > 0 && (
+                {repos.length > 0 && (
                   <div className="pt-4">
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="text-sm font-medium">Select Repositories</h4>
@@ -265,8 +307,29 @@ function SettingsPageContent() {
                         Refresh
                       </Button>
                     </div>
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {session.repos.map((repo) => (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          placeholder="Search repositories..."
+                          value={repoSearch}
+                          onChange={(e) => setRepoSearch(e.target.value)}
+                          className="h-8 text-sm"
+                        />
+                        <span className="whitespace-nowrap text-xs text-muted-foreground">
+                          {selectedRepoIds.length} of {repos.length} selected
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={handleSelectAllVisible}>
+                          Select all
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={handleClearSelection}>
+                          Clear
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="space-y-2 max-h-64 overflow-y-auto mt-3">
+                      {filteredRepos.map((repo) => (
                         <div
                           key={repo.id}
                           className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
@@ -325,7 +388,7 @@ function SettingsPageContent() {
                 <div className="space-y-1">
                   <p className="text-sm font-semibold text-foreground">Set the deployed URL when launching a run</p>
                   <p className="text-sm text-muted-foreground">
-                    PatchPilot validates code first. If you provide a public deployment URL in the new-run dialog, it will also run Browserbase validation against that environment.
+                    QAgent validates code first. If you provide a public deployment URL in the new-run dialog, it will also run Browserbase validation against that environment.
                   </p>
                 </div>
               </div>

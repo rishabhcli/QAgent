@@ -15,8 +15,8 @@ export const landingSmokeSpec: TestSpec = {
   url: `${BASE_URL}/`,
   steps: [
     {
-      action: 'Verify the public landing page loads with the PatchPilot hero content',
-      expected: 'PatchPilot',
+      action: 'Verify the public landing page loads with the QAgent hero content',
+      expected: 'QAgent',
     },
     {
       action: 'Verify the primary call to action is available',

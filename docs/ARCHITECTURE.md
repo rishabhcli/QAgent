@@ -518,7 +518,7 @@ Create a simple Next.js application with 2-3 pages and intentional bugs that can
                                     │ Triggers QAgent
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                            PATCHPILOT SYSTEM                             │
+│                            QAGENT SYSTEM                             │
 │  ┌───────────────────────────────────────────────────────────────────┐  │
 │  │              ORCHESTRATOR (Custom, ADK-compatible)                 │  │
 │  │                                                                    │  │

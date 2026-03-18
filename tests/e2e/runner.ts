@@ -24,16 +24,16 @@ interface RunnerResult {
 
 const LOCAL_SMOKE_USER = {
   id: 1,
-  login: 'patchpilot',
-  name: 'PatchPilot',
-  avatarUrl: 'https://github.com/identicons/patchpilot.png',
+  login: 'qagent',
+  name: 'QAgent',
+  avatarUrl: 'https://github.com/identicons/qagent.png',
 };
 
 const LOCAL_SMOKE_REPO = {
   id: 101,
   name: 'demo',
-  fullName: 'patchpilot/demo',
-  url: 'https://github.com/patchpilot/demo',
+  fullName: 'qagent/demo',
+  url: 'https://github.com/qagent/demo',
   defaultBranch: 'main',
 };
 

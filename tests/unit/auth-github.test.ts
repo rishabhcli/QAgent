@@ -16,7 +16,10 @@ global.fetch = mockFetch;
 
 // Import after setting env vars
 import {
+  getAppOrigin,
   getGitHubAuthUrl,
+  getGitHubCallbackUrl,
+  isGitHubOAuthConfigured,
   exchangeCodeForToken,
   getGitHubUser,
   getGitHubRepos,
@@ -34,14 +37,14 @@ describe('GitHub Auth', () => {
 
   describe('getGitHubAuthUrl()', () => {
     it('should construct correct OAuth URL', () => {
-      const url = getGitHubAuthUrl('random-state');
+      const url = getGitHubAuthUrl('random-state', 'http://localhost:3000');
 
       expect(url).toContain('https://github.com/login/oauth/authorize');
       expect(url).toContain('client_id=');
     });
 
     it('should include all required parameters', () => {
-      const url = getGitHubAuthUrl('test-state');
+      const url = getGitHubAuthUrl('test-state', 'http://localhost:3000');
 
       expect(url).toContain('client_id=');
       expect(url).toContain('redirect_uri=');
@@ -50,7 +53,7 @@ describe('GitHub Auth', () => {
     });
 
     it('should encode state parameter', () => {
-      const url = getGitHubAuthUrl('state-with-special=chars&more');
+      const url = getGitHubAuthUrl('state-with-special=chars&more', 'http://localhost:3000');
 
       // State should be URL encoded
       expect(url).toContain('state=');
@@ -58,16 +61,50 @@ describe('GitHub Auth', () => {
     });
 
     it('should include repo and read:user scope', () => {
-      const url = getGitHubAuthUrl('state');
+      const url = getGitHubAuthUrl('state', 'http://localhost:3000');
 
       expect(url).toContain('scope=repo');
       expect(url).toContain('read%3Auser');
     });
 
     it('should use correct redirect URI', () => {
-      const url = getGitHubAuthUrl('state');
+      const url = getGitHubAuthUrl('state', 'http://localhost:3000');
 
       expect(url).toContain('redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fauth%2Fgithub%2Fcallback');
+    });
+  });
+
+  describe('origin helpers', () => {
+    it('should normalize the provided origin', () => {
+      const previousAppUrl = process.env.NEXT_PUBLIC_APP_URL;
+      delete process.env.NEXT_PUBLIC_APP_URL;
+
+      try {
+        expect(getAppOrigin('http://localhost:3000/dashboard')).toBe('http://localhost:3000');
+      } finally {
+        process.env.NEXT_PUBLIC_APP_URL = previousAppUrl;
+      }
+    });
+
+    it('should build the callback URL from the provided origin', () => {
+      const previousAppUrl = process.env.NEXT_PUBLIC_APP_URL;
+      delete process.env.NEXT_PUBLIC_APP_URL;
+
+      try {
+        expect(getGitHubCallbackUrl('https://qagent.dev')).toBe(
+          'https://qagent.dev/api/auth/github/callback'
+        );
+      } finally {
+        process.env.NEXT_PUBLIC_APP_URL = previousAppUrl;
+      }
+    });
+
+    it('should report OAuth as configured when both GitHub credentials are present', () => {
+      expect(isGitHubOAuthConfigured()).toBe(true);
+    });
+
+    it('should prefer NEXT_PUBLIC_APP_URL when it is configured', () => {
+      expect(getAppOrigin('https://qagent.dev')).toBe('http://localhost:3000');
     });
   });
 
@@ -119,6 +156,25 @@ describe('GitHub Auth', () => {
         expect.objectContaining({
           method: 'POST',
           body: expect.stringContaining('client_id'),
+        })
+      );
+    });
+
+    it('should include an explicit redirect URI when provided', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ access_token: 'token' }),
+      });
+
+      await exchangeCodeForToken({
+        code: 'code',
+        redirectUri: 'http://localhost:3000/api/auth/github/callback',
+      });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://github.com/login/oauth/access_token',
+        expect.objectContaining({
+          body: expect.stringContaining('"redirect_uri":"http://localhost:3000/api/auth/github/callback"'),
         })
       );
     });

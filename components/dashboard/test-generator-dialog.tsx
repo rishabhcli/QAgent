@@ -27,7 +27,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils/cn';
 import type { TestSpec } from '@/lib/types';
@@ -91,8 +90,6 @@ export function TestGeneratorDialog({
   const [step, setStep] = useState<GeneratorStep>('input');
   const [url, setUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [progress, setProgress] = useState(0);
-  const [progressText, setProgressText] = useState('');
   const [result, setResult] = useState<GenerateResponse | null>(null);
   const [selectedFlows, setSelectedFlows] = useState<Set<number>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
@@ -101,8 +98,6 @@ export function TestGeneratorDialog({
     setStep('input');
     setUrl('');
     setError(null);
-    setProgress(0);
-    setProgressText('');
     setResult(null);
     setSelectedFlows(new Set());
     setIsSaving(false);
@@ -113,30 +108,8 @@ export function TestGeneratorDialog({
 
     setStep('generating');
     setError(null);
-    setProgress(10);
-    setProgressText('Connecting to browser...');
 
     try {
-      // Simulate progress updates
-      const progressInterval = setInterval(() => {
-        setProgress((p) => {
-          if (p < 30) {
-            setProgressText('Navigating to website...');
-            return p + 2;
-          } else if (p < 50) {
-            setProgressText('Discovering interactive elements...');
-            return p + 1;
-          } else if (p < 70) {
-            setProgressText('Analyzing user flows...');
-            return p + 0.5;
-          } else if (p < 85) {
-            setProgressText('Generating test specifications...');
-            return p + 0.3;
-          }
-          return p;
-        });
-      }, 500);
-
       const response = await fetch('/api/tests/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -151,8 +124,6 @@ export function TestGeneratorDialog({
         }),
       });
 
-      clearInterval(progressInterval);
-
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'Failed to generate tests');
@@ -160,8 +131,6 @@ export function TestGeneratorDialog({
 
       const data: GenerateResponse = await response.json();
       setResult(data);
-      setProgress(100);
-      setProgressText('Complete!');
 
       // Auto-select high confidence flows
       const autoSelected = new Set<number>();
@@ -233,7 +202,7 @@ export function TestGeneratorDialog({
                 Auto-Generate Tests
               </DialogTitle>
               <DialogDescription>
-                Enter a URL and PatchPilot will crawl your app to discover user flows
+                Enter a URL and QAgent will crawl your app to discover user flows
                 and automatically generate test specifications.
               </DialogDescription>
             </DialogHeader>
@@ -253,7 +222,7 @@ export function TestGeneratorDialog({
                   className="font-mono"
                 />
                 <p className="text-xs text-muted-foreground">
-                  PatchPilot will navigate your app and discover testable user flows
+                  QAgent will navigate your app and discover testable user flows
                 </p>
               </div>
 
@@ -290,17 +259,14 @@ export function TestGeneratorDialog({
                 Discovering Flows
               </DialogTitle>
               <DialogDescription>
-                PatchPilot is crawling your application to discover user flows...
+                QAgent is crawling your application to discover user flows...
               </DialogDescription>
             </DialogHeader>
 
             <div className="py-8 space-y-6">
-              <div className="space-y-3">
-                <Progress value={progress} className="h-2" />
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">{progressText}</span>
-                  <span className="font-medium">{Math.round(progress)}%</span>
-                </div>
+              <div className="flex items-center gap-3 py-4">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                <span className="text-sm text-muted-foreground">Generating test specs...</span>
               </div>
 
               <div className="flex items-center justify-center">

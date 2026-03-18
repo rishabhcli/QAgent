@@ -31,7 +31,7 @@ export default function TestsPage() {
         const data = await res.json();
         setTestSpecs(data.testSpecs || []);
       } else {
-        showError('Failed to load test specs', 'PatchPilot could not fetch your saved test definitions.');
+        showError('Failed to load test specs', 'QAgent could not fetch your saved test definitions.');
       }
     } catch {
       showError('Failed to load test specs', 'Check your connection and try again.');
@@ -85,7 +85,7 @@ export default function TestsPage() {
           <div>
             <p className="text-sm font-medium text-foreground">Test specifications</p>
             <p className="text-sm text-muted-foreground">
-              Define manual flows or auto-generate them so PatchPilot has reliable coverage targets.
+              Define manual flows or auto-generate them so QAgent has reliable coverage targets.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -161,7 +161,7 @@ export default function TestsPage() {
           <EmptyState
             icon={TestTube2}
             title="No test specs yet"
-            description="Create test specifications that PatchPilot will use to automatically test your application and find bugs."
+            description="Create test specifications that QAgent will use to automatically test your application and find bugs."
             action={
               <Link href="/dashboard/tests/new">
                 <Button>

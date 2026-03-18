@@ -175,7 +175,7 @@ export function Sidebar() {
                     transition={{ duration: 0.15 }}
                     className="min-w-0 overflow-hidden"
                   >
-                    <p className="truncate text-sm font-semibold text-foreground">PatchPilot</p>
+                    <p className="truncate text-sm font-semibold text-foreground">QAgent</p>
                     <p className="truncate text-xs text-muted-foreground">Self-healing QA operations</p>
                   </motion.div>
                 )}

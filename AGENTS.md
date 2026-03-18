@@ -1,14 +1,14 @@
-# PatchPilot - AGENTS.md
+# QAgent - AGENTS.md
 
-> **AI Agent Guide**: This file is the primary reference for AI coding agents working on PatchPilot. Read this before starting any work.
+> **AI Agent Guide**: This file is the primary reference for AI coding agents working on QAgent. Read this before starting any work.
 
 ---
 
 ## Project Overview
 
-**PatchPilot** is a self-healing QA agent that automatically tests web applications, identifies bugs, applies fixes, and verifies the fixes – all without human intervention. It creates a closed-loop system that iterates until all tests pass.
+**QAgent** is a self-healing QA agent that automatically tests web applications, identifies bugs, applies fixes, and verifies the fixes – all without human intervention. It creates a closed-loop system that iterates until all tests pass.
 
-### The PatchPilot Loop
+### The QAgent Loop
 
 ```
 ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
@@ -47,7 +47,7 @@
 | **Vector Memory** | Redis Stack (with vector search) | Store failure traces and enable semantic lookup |
 | **Observability** | W&B Weave | Trace agent runs, log metrics, evaluate improvements |
 | **Dashboard** | Marimo | Interactive analytics and live visualization |
-| **LLM** | OpenAI GPT-4o / Google Gemini | Patch generation and diagnosis |
+| **LLM** | OpenAI / Google Gemini / Anthropic | Patch generation and diagnosis |
 | **Authentication** | GitHub OAuth | Dashboard access control |
 | **Mobile** | React Native (Expo) | Mobile companion app |
 
@@ -56,7 +56,7 @@
 ## Project Structure
 
 ```
-weavehacks/
+QAgent/
 ├── .claude/
 │   └── skills/               # Domain-specific knowledge modules
 │       ├── browserbase-stagehand/   # Browser automation patterns
@@ -65,8 +65,10 @@ weavehacks/
 │       ├── wandb-weave/             # Tracing and evaluation
 │       ├── google-adk/              # ADK/A2A integration patterns
 │       ├── marimo-dashboards/       # Reactive notebooks
-│       └── patchpilot-agents/       # Agent implementations
+│       └── qagent-agents/           # Agent implementation patterns
 ├── agents/                   # Agent implementations
+│   ├── analyzer/            # Run analysis and summarization
+│   ├── crawler/             # Autonomous crawl and discovery flows
 │   ├── tester/              # E2E test execution with Stagehand
 │   ├── triage/              # Failure diagnosis and root cause analysis
 │   ├── fixer/               # LLM-powered patch generation
@@ -74,13 +76,14 @@ weavehacks/
 │   ├── orchestrator/        # Workflow coordination (main entry point)
 │   └── adk/                 # ADK workflow & agents (planned integration)
 ├── app/                     # Next.js App Router
-│   ├── api/                 # API routes (auth, runs, patches, webhooks)
+│   ├── api/                 # API routes (auth, runs, patches, tests, webhooks)
 │   ├── dashboard/           # Dashboard UI pages
-│   └── demo/                # Demo app (intentionally buggy for testing)
+│   └── layout.tsx           # App shell and metadata
 ├── components/              # React components
 │   ├── dashboard/           # Dashboard-specific components
 │   ├── diagnostics/         # Diagnostic views
 │   ├── monitoring/          # Monitoring components
+│   ├── onboarding/          # First-run guidance and setup
 │   ├── patches/             # Patch management UI
 │   ├── runs/                # Run tracking components
 │   ├── ui/                  # Shared UI components (shadcn/ui style)
@@ -89,16 +92,16 @@ weavehacks/
 │   ├── auth/                # Authentication utilities (GitHub OAuth)
 │   ├── browserbase/         # Browser automation utilities
 │   ├── dashboard/           # Dashboard data helpers
+│   ├── git/                 # Local git workflow helpers
 │   ├── github/              # GitHub API integration
 │   ├── hooks/               # React hooks
-│   ├── llm/                 # LLM provider abstractions
+│   ├── notifications/       # Toasts and notification helpers
+│   ├── providers/           # React providers
 │   ├── queue/               # Job queue processing
 │   ├── redis/               # Redis vector store client
 │   ├── redteam/             # Adversarial testing suite
 │   ├── tracetriage/         # Trace analysis and self-improvement
 │   ├── utils/               # Shared utilities
-│   ├── vercel/              # Vercel deployment utilities
-│   ├── voice/               # Voice processing
 │   └── weave/               # W&B Weave logging and tracing
 ├── mobile/                  # React Native mobile app
 ├── dashboard/               # Marimo analytics dashboard (app.py)
@@ -129,9 +132,7 @@ pnpm install
 pnpm dev                    # Starts Next.js dev server on localhost:3000
 
 # Agent workflow
-pnpm run agent              # Start the PatchPilot orchestrator
-pnpm run demo               # Run demo script
-pnpm run demo:dry           # Run demo script in dry-run mode
+pnpm run agent              # Start the QAgent orchestrator
 
 # Testing
 pnpm test                   # Run unit tests with Vitest
@@ -213,14 +214,6 @@ pnpm redis:init             # Initialize Redis schema
 - Run: `pnpm run test:e2e`
 - Framework: Stagehand (AI-powered browser automation)
 
-### Test Specs for Demo App
-The demo app (`app/demo/`) has 3 intentional bugs:
-1. **Bug 1** (`cart/page.tsx`): Missing onClick handler on checkout button
-2. **Bug 2** (`api/checkout/route.ts`): Calls non-existent `/api/payments`
-3. **Bug 3** (`signup/page.tsx`): Null reference on `preferences.newsletter`
-
----
-
 ## Environment Variables
 
 Copy `.env.example` to `.env.local` and fill in required values:
@@ -285,7 +278,7 @@ Copy `.env.example` to `.env.local` and fill in required values:
 - Records successful fixes in Redis
 
 ### Orchestrator (`agents/orchestrator/`)
-- Coordinates the full PatchPilot loop
+- Coordinates the full QAgent loop
 - Handles iteration limits and failure recovery
 - Logs metrics to Weave
 - Entry point: `pnpm run agent`
@@ -296,12 +289,12 @@ Copy `.env.example` to `.env.local` and fill in required values:
 
 Follow this iterative workflow for development:
 
-1. **Read** - Load CLAUDE.md, TASKS.md, relevant skills
+1. **Read** - Load `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and relevant skills
 2. **Analyze** - Understand current phase requirements
 3. **Plan** - Break down into small, testable increments
 4. **Execute** - Implement one increment at a time
 5. **Validate** - Test, lint, verify acceptance criteria
-6. **Loop** - Update tasks, commit, return to step 1
+6. **Loop** - Update documentation as needed, commit, and return to step 1
 
 ---
 
@@ -327,8 +320,9 @@ Follow this iterative workflow for development:
 
 | File | Purpose |
 |------|---------|
+| `AGENTS.md` | Primary repo guide for coding agents |
 | `CLAUDE.md` | Detailed tech stack, phase roadmap, always/never rules |
-| `TASKS.md` | Phase-scoped task tracker with status |
+| `GEMINI.md` | Compact project context for Gemini CLI |
 | `lib/types.ts` | All TypeScript interfaces and types |
 | `prompts/ralph-loop.md` | Development workflow prompts |
 | `.claude/skills/` | Domain-specific implementation guides |
@@ -382,7 +376,7 @@ Follow this iterative workflow for development:
 
 ## References
 
-- [PatchPilot Paper](https://arxiv.org/html/2502.02747v1) - Five-step agentic patching framework
+- [QAgent Paper](https://arxiv.org/html/2502.02747v1) - Five-step agentic patching framework
 - [Stagehand Docs](https://www.stagehand.dev/) - AI-powered browser automation
 - [Browserbase Docs](https://docs.browserbase.com/) - Cloud browser infrastructure
 - [Redis Vector Search](https://redis.io/docs/stack/search/reference/vectors/) - Semantic similarity
@@ -391,4 +385,4 @@ Follow this iterative workflow for development:
 
 ---
 
-*Last updated: February 2026*
+*Last updated: March 2026*

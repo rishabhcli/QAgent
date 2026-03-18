@@ -3,7 +3,7 @@
 ## When to Use This Skill
 
 Use this skill when:
-- Creating the PatchPilot analytics dashboard
+- Creating the QAgent analytics dashboard
 - Visualizing agent metrics
 - Building interactive charts for demo
 - Connecting to Weave data
@@ -16,7 +16,7 @@ Do NOT use this skill when:
 
 ## Overview
 
-Marimo is a reactive Python notebook that can be deployed as a web app. For PatchPilot:
+Marimo is a reactive Python notebook that can be deployed as a web app. For QAgent:
 - Fetch metrics from W&B Weave
 - Display pass rate, time-to-fix, iterations
 - Create live-updating charts
@@ -84,7 +84,7 @@ import weave
 import pandas as pd
 
 def fetch_runs():
-    client = weave.init('patchpilot')
+    client = weave.init('qagent')
     runs = client.runs()
     return pd.DataFrame([{
         'run_id': r.id,
@@ -167,7 +167,7 @@ def pass_rate_chart(df):
 ## Related Skills
 
 - `wandb-weave/` - Data source for dashboard
-- `patchpilot-agents/` - Understanding metrics
+- `qagent-agents/` - Understanding metrics
 
 ---
 

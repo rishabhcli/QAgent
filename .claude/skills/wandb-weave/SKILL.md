@@ -17,7 +17,7 @@ Do NOT use this skill when:
 
 ## Overview
 
-Weights & Biases Weave provides observability for LLM applications. For PatchPilot, it:
+Weights & Biases Weave provides observability for LLM applications. For QAgent, it:
 - Creates trace trees showing agent interactions
 - Logs inputs/outputs of every function
 - Tracks metrics like pass rate, time-to-fix
@@ -35,10 +35,10 @@ Key features:
 
 ### Traces
 
-A trace is a tree of function calls. In PatchPilot:
+A trace is a tree of function calls. In QAgent:
 
 ```
-Run: patchpilot-run-123
+Run: qagent-run-123
 ├── Orchestrator.run()
 │   ├── TesterAgent.runTest()
 │   │   └── [inputs, outputs, duration]
@@ -85,7 +85,7 @@ weave.log({
 import weave from 'weave';
 
 await weave.init({
-  project: 'patchpilot',
+  project: 'qagent',
   entity: process.env.WANDB_ENTITY
 });
 ```
@@ -194,7 +194,7 @@ console.log('Accuracy:', evaluation.scores.mean);
 ## Related Skills
 
 - `marimo-dashboards/` - Visualizing Weave data
-- `patchpilot-agents/` - Where to add tracing
+- `qagent-agents/` - Where to add tracing
 
 ---
 

@@ -152,7 +152,7 @@ async function captureFailure(): Promise<FailureEvidence> {
 
 ## Related Skills
 
-- `patchpilot-agents/` - Agent implementation patterns
+- `qagent-agents/` - Agent implementation patterns
 - `wandb-weave/` - Logging test results
 
 ---

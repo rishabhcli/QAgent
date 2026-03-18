@@ -68,7 +68,7 @@ export function WeaveStatus() {
 
         setStatus({
           enabled: data.enabled,
-          projectUrl: data.metrics?.links?.project || null,
+          projectUrl: data.links?.project || data.metrics?.links?.project || null,
           features: {
             tracing: true,
             evaluations: true,
@@ -145,7 +145,7 @@ export function WeaveStatus() {
           <div>
             <h3 className="font-semibold">W&B Weave Integration</h3>
             <p className="text-xs text-muted-foreground">
-              Built for WeaveHacks 2026 - Best Use of Weave
+              W&B Weave observability integration
             </p>
           </div>
         </div>
@@ -203,6 +203,13 @@ export function WeaveStatus() {
           enabled={status?.features.selfImprove || false}
         />
       </div>
+
+      {/* Empty metrics state */}
+      {status && status.metrics.totalTraces === 0 && status.metrics.successRate === 0 && status.metrics.avgDuration === 0 && (
+        <div className="rounded-lg border border-border/50 bg-card/30 p-4 text-center">
+          <p className="text-sm text-muted-foreground">No trace data yet. Run your first pipeline to see metrics here.</p>
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div className="flex flex-wrap gap-2">

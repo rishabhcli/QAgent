@@ -56,7 +56,7 @@ export default function RunsPage() {
         const data = await response.json();
         setRuns(data.runs || []);
       } else {
-        showError('Failed to load runs', 'PatchPilot could not fetch the run history.');
+        showError('Failed to load runs', 'QAgent could not fetch the run history.');
       }
     } catch {
       showError('Failed to load runs', 'Check your connection and try again.');

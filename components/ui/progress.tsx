@@ -16,9 +16,6 @@ const progressVariants = cva(
         success: 'bg-emerald-500/20',
         warning: 'bg-amber-500/20',
         info: 'bg-sky-500/20',
-        neon: 'bg-brand/20',
-        'neon-magenta': 'bg-brand-strong/20',
-        'neon-green': 'bg-emerald-500/20',
       },
     },
     defaultVariants: {
@@ -33,13 +30,10 @@ const indicatorVariants = cva(
     variants: {
       variant: {
         default: 'bg-primary',
-        brand: 'bg-brand shadow-[0_0_18px_hsl(var(--brand-glow)/0.18)]',
+        brand: 'bg-brand shadow-[0_0_18px_hsl(var(--brand)/0.18)]',
         success: 'bg-emerald-500',
         warning: 'bg-amber-500',
         info: 'bg-sky-500',
-        neon: 'bg-brand shadow-[0_0_18px_hsl(var(--brand-glow)/0.18)]',
-        'neon-magenta': 'bg-brand-strong shadow-[0_0_18px_hsl(var(--brand-strong)/0.18)]',
-        'neon-green': 'bg-emerald-500',
       },
     },
     defaultVariants: {

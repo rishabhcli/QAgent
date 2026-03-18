@@ -75,7 +75,7 @@ export default function MonitoringPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load monitoring data';
       setError(message);
-      showError('Failed to load monitoring data', 'PatchPilot could not refresh repository monitoring.');
+      showError('Failed to load monitoring data', 'QAgent could not refresh repository monitoring.');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -247,7 +247,7 @@ export default function MonitoringPage() {
           ) : (
             <div className="grid gap-4">
               {configs.map((config) => (
-                <div key={config.repoId} onClick={() => setSelectedRepo(config.repoId)} className="cursor-pointer">
+                <div key={config.repoId} onClick={() => setSelectedRepo(config.repoId)} className={`cursor-pointer rounded-lg transition-all ${selectedRepo === config.repoId ? 'ring-2 ring-primary border-primary/50' : ''}`}>
                   <RepoConfigCard
                     config={config}
                     onToggle={(enabled) => handleToggle(config.repoId, enabled)}

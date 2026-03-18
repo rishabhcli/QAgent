@@ -40,13 +40,6 @@
     --brand-foreground: 0 0% 100%;
     --brand-strong: 262 83% 60%;
     --brand-soft: 224 100% 97%;
-    --brand-glow: 224 83% 54%;
-    --neon-cyan: var(--brand);
-    --neon-magenta: var(--brand-strong);
-    --neon-pink: var(--brand-soft);
-    --neon-green: var(--success);
-    --neon-orange: var(--warning);
-    --neon-yellow: var(--warning);
   }
 
   .dark {
@@ -85,13 +78,6 @@
     --brand-foreground: 0 0% 100%;
     --brand-strong: 262 83% 68%;
     --brand-soft: 224 18% 16%;
-    --brand-glow: 220 90% 64%;
-    --neon-cyan: var(--brand);
-    --neon-magenta: var(--brand-strong);
-    --neon-pink: var(--brand-soft);
-    --neon-green: var(--success);
-    --neon-orange: var(--warning);
-    --neon-yellow: var(--warning);
   }
 }
 
@@ -178,22 +164,6 @@
 
   .status-running {
     @apply bg-primary/10 text-primary border-primary/20;
-  }
-
-  .btn-primary {
-    @apply bg-primary text-primary-foreground hover:bg-primary/90;
-  }
-
-  .btn-secondary {
-    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
-  }
-
-  .btn-outline {
-    @apply border border-input bg-background hover:bg-accent hover:text-accent-foreground;
-  }
-
-  .btn-ghost {
-    @apply hover:bg-accent hover:text-accent-foreground;
   }
 
   .page-container {
