@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { SignJWT, jwtVerify } from 'jose';
 import type { Session, GitHubUser, GitHubRepo, SessionPayload } from '@/lib/types';
 import { getSessionSecret } from '@/lib/auth/session-secret';
+import { isSessionBlacklisted } from '@/lib/auth/token-store';
 
 const SESSION_COOKIE = 'qagent_session';
 
@@ -25,6 +26,16 @@ export async function decrypt(input: string): Promise<SessionPayload> {
   return payload as unknown as SessionPayload;
 }
 
+export async function validateSessionToken(input: string): Promise<SessionPayload> {
+  const payload = await decrypt(input);
+
+  if (payload.jti && (await isSessionBlacklisted(payload.jti))) {
+    throw new Error('Session revoked');
+  }
+
+  return payload;
+}
+
 export async function getSession(): Promise<Session | null> {
   const cookieStore = await cookies();
   const sessionToken = cookieStore.get(SESSION_COOKIE)?.value;
@@ -32,7 +43,7 @@ export async function getSession(): Promise<Session | null> {
   if (!sessionToken) return null;
 
   try {
-    const payload = await decrypt(sessionToken);
+    const payload = await validateSessionToken(sessionToken);
     return {
       user: payload.user,
       accessToken: payload.accessToken,

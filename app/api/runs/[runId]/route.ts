@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getSession } from '@/lib/auth/session';
 import { getRunAsync, cancelRun, deleteRun, updateRunStatus } from '@/lib/dashboard/run-store';
 import { emitRunError } from '@/lib/dashboard/sse-emitter';
 import { cancelQueuedRunByActualRunId } from '@/lib/redis/queue';
@@ -9,11 +10,17 @@ export async function GET(
   { params }: { params: Promise<{ runId: string }> }
 ) {
   const { runId } = await params;
+  const session = await getSession();
+  const userId = session?.user?.id;
+
+  if (userId === undefined) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   // Use async version to check Redis fallback
   const run = await getRunAsync(runId);
 
-  if (!run) {
+  if (!run || run.ownerId !== userId) {
     return NextResponse.json({ error: 'Run not found' }, { status: 404 });
   }
 
@@ -26,15 +33,22 @@ export async function DELETE(
   { params }: { params: Promise<{ runId: string }> }
 ) {
   const { runId } = await params;
+  const session = await getSession();
+  const userId = session?.user?.id;
+
+  if (userId === undefined) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const run = await getRunAsync(runId);
 
-  if (!run) {
+  if (!run || run.ownerId !== userId) {
     return NextResponse.json({ error: 'Run not found' }, { status: 404 });
   }
 
   // If running, abort and mark as cancelled
   if (run.status === 'running' || run.status === 'pending') {
-    const cancelled = cancelRun(runId) || await cancelQueuedRunByActualRunId(runId);
+    const cancelled = cancelRun(runId) || (await cancelQueuedRunByActualRunId(runId));
     if (!cancelled) {
       return NextResponse.json({ error: 'Run could not be cancelled' }, { status: 409 });
     }

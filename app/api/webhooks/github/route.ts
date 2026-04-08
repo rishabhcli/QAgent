@@ -19,6 +19,30 @@ import { enqueueRun } from '@/lib/redis/queue';
 import { getMonitoringConfig } from '@/lib/redis/monitoring-config';
 import type { GitHubPushEvent, GitHubPullRequestEvent } from '@/lib/types';
 
+function getRepoIdFromPayload(payload: unknown): string | null {
+  if (typeof payload !== 'object' || payload === null) {
+    return null;
+  }
+
+  const repository = (payload as { repository?: { id?: unknown } }).repository;
+  if (!repository?.id) {
+    return null;
+  }
+
+  return repository.id.toString();
+}
+
+async function resolveWebhookSecret(repoId: string | null): Promise<string | null> {
+  const legacySecret = process.env.GITHUB_WEBHOOK_SECRET || null;
+
+  if (!repoId) {
+    return legacySecret;
+  }
+
+  const config = await getMonitoringConfig(repoId);
+  return config?.webhookSecret || legacySecret;
+}
+
 /**
  * POST /api/webhooks/github
  * Handle incoming GitHub webhooks
@@ -30,35 +54,26 @@ export async function POST(request: NextRequest) {
   // Get raw body for signature verification
   const rawBody = await request.text();
 
-  // Get global webhook secret
-  const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
+  // Parse the payload
+  let payload: unknown;
+  try {
+    payload = JSON.parse(rawBody);
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+  }
+
+  const repoId = getRepoIdFromPayload(payload);
+  const webhookSecret = await resolveWebhookSecret(repoId);
   if (!webhookSecret) {
-    console.error('[Webhook] GITHUB_WEBHOOK_SECRET not configured');
-    return NextResponse.json(
-      { error: 'Webhook secret not configured' },
-      { status: 500 }
-    );
+    console.error('[Webhook] No webhook secret configured for delivery', deliveryId);
+    return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
   }
 
   // Verify signature
   const signature = request.headers.get('x-hub-signature-256');
   if (!verifyWebhookSignature(rawBody, signature, webhookSecret)) {
     console.warn(`[Webhook] Invalid signature for delivery ${deliveryId}`);
-    return NextResponse.json(
-      { error: 'Invalid signature' },
-      { status: 401 }
-    );
-  }
-
-  // Parse the payload
-  let payload: unknown;
-  try {
-    payload = JSON.parse(rawBody);
-  } catch {
-    return NextResponse.json(
-      { error: 'Invalid JSON payload' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
   // Check if this event type triggers runs
@@ -81,10 +96,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     console.error('[Webhook] Error processing event:', error);
-    return NextResponse.json(
-      { error: 'Failed to process webhook' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to process webhook' }, { status: 500 });
   }
 }
 

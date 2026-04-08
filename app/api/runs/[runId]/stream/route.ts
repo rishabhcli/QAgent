@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { getSession } from '@/lib/auth/session';
 import { getRunAsync } from '@/lib/dashboard/run-store';
 import { sseEmitter } from '@/lib/dashboard/sse-emitter';
 import type { RunEvent } from '@/lib/types';
@@ -9,9 +10,16 @@ export async function GET(
   { params }: { params: Promise<{ runId: string }> }
 ) {
   const { runId } = await params;
+  const session = await getSession();
+  const userId = session?.user?.id;
+
+  if (userId === undefined) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
   const run = await getRunAsync(runId);
 
-  if (!run) {
+  if (!run || run.ownerId !== userId) {
     return new Response('Run not found', { status: 404 });
   }
 

@@ -79,6 +79,7 @@ export async function saveMonitoringConfig(config: MonitoringConfig): Promise<vo
  * Create a new monitoring config
  */
 export async function createMonitoringConfig(params: {
+  ownerId?: number;
   repoId: string;
   repoFullName: string;
   schedule?: MonitoringSchedule;
@@ -87,6 +88,7 @@ export async function createMonitoringConfig(params: {
 }): Promise<MonitoringConfig> {
   const now = new Date();
   const config: MonitoringConfig = {
+    ownerId: params.ownerId,
     repoId: params.repoId,
     repoFullName: params.repoFullName,
     enabled: true,
@@ -255,6 +257,9 @@ export function calculateNextRunTime(schedule: MonitoringSchedule): Date {
 /**
  * Toggle monitoring for a repo
  */
-export async function toggleMonitoring(repoId: string, enabled: boolean): Promise<MonitoringConfig | null> {
+export async function toggleMonitoring(
+  repoId: string,
+  enabled: boolean
+): Promise<MonitoringConfig | null> {
   return updateMonitoringConfig(repoId, { enabled });
 }

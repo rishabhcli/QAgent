@@ -57,12 +57,7 @@ export interface ConsoleLog {
 // Diagnosis Types
 // ============================================================================
 
-export type FailureType =
-  | 'UI_BUG'
-  | 'BACKEND_ERROR'
-  | 'TEST_FLAKY'
-  | 'DATA_ERROR'
-  | 'UNKNOWN';
+export type FailureType = 'UI_BUG' | 'BACKEND_ERROR' | 'TEST_FLAKY' | 'DATA_ERROR' | 'UNKNOWN';
 
 export interface DiagnosisReport {
   failureId: string;
@@ -399,6 +394,7 @@ export interface DiagnosticsEvent extends RunEvent {
 export type MonitoringSchedule = 'hourly' | 'daily' | 'weekly' | 'on_push';
 
 export interface MonitoringConfig {
+  ownerId?: number;
   repoId: string;
   repoFullName: string;
   enabled: boolean;
@@ -514,9 +510,9 @@ export interface GitHubPullRequestEvent {
 import type { ChildProcess } from 'child_process';
 
 export interface ClonedRepo {
-  repoPath: string;           // Temp directory with cloned repo
-  devServerPort: number;      // Port dev server runs on
-  devServerUrl: string;       // e.g., http://localhost:3456
+  repoPath: string; // Temp directory with cloned repo
+  devServerPort: number; // Port dev server runs on
+  devServerUrl: string; // e.g., http://localhost:3456
   devServerProcess: ChildProcess;
   cleanup: () => Promise<void>;
 }

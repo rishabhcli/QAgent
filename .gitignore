@@ -47,9 +47,6 @@ temp/
 credentials.json
 secrets.json
 
-# pnpm
-pnpm-lock.yaml
-
 # Vercel
 .vercel
 

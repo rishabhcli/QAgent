@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession, destroySession, decrypt, updateSelectedRepos } from '@/lib/auth/session';
+import {
+  getSession,
+  destroySession,
+  validateSessionToken,
+  updateSelectedRepos,
+} from '@/lib/auth/session';
 import { getGitHubRepos } from '@/lib/auth/github';
 
 export async function GET(request: NextRequest) {
@@ -10,7 +15,7 @@ export async function GET(request: NextRequest) {
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.slice('Bearer '.length);
       try {
-        const payload = await decrypt(token);
+        const payload = await validateSessionToken(token);
         session = {
           user: payload.user,
           accessToken: payload.accessToken,
@@ -63,6 +68,25 @@ export async function PATCH(request: NextRequest) {
     if (!selectedRepoIds) {
       return NextResponse.json(
         { error: 'selectedRepoIds must be an array of numeric repository IDs' },
+        { status: 400 }
+      );
+    }
+
+    const repos =
+      session.repos.length > 0
+        ? session.repos
+        : session.accessToken
+          ? await getGitHubRepos(session.accessToken)
+          : [];
+    const allowedRepoIds = new Set(repos.map((repo) => repo.id));
+    const invalidRepoIds = selectedRepoIds.filter((repoId: number) => !allowedRepoIds.has(repoId));
+
+    if (invalidRepoIds.length > 0) {
+      return NextResponse.json(
+        {
+          error: 'selectedRepoIds contains repositories that are not accessible to this user',
+          invalidRepoIds,
+        },
         { status: 400 }
       );
     }

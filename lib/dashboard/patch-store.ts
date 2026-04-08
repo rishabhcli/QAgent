@@ -3,6 +3,7 @@ import type { GitHubMergeMethod } from '@/lib/github/patches';
 import { getRedisClient, isRedisAvailable } from '@/lib/redis/client';
 
 export interface PatchWithDetails extends Patch {
+  ownerId?: number;
   status: 'pending' | 'applied' | 'rejected';
   runId: string;
   createdAt: Date;
@@ -117,7 +118,11 @@ export async function addPatch(patch: PatchWithDetails): Promise<void> {
   await persistPatch(patch);
 }
 
-export async function addPatchFromRun(runId: string, patch: Patch): Promise<void> {
+export async function addPatchFromRun(
+  runId: string,
+  patch: Patch,
+  ownerId?: number
+): Promise<void> {
   const existing = await getPatch(patch.id);
   if (existing) {
     return;
@@ -125,6 +130,7 @@ export async function addPatchFromRun(runId: string, patch: Patch): Promise<void
 
   await persistPatch({
     ...patch,
+    ownerId,
     mergeMethod: patch.mergeMethod as GitHubMergeMethod | undefined,
     runId,
     status: 'pending',

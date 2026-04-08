@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type Ref } from 'react';
 import { Box, Globe, Loader2, Rocket, Sparkles, Wand2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -27,9 +27,10 @@ import { useToast } from '@/components/ui/toaster';
 
 interface NewRunDialogProps {
   onRunCreated?: (runId: string) => void;
+  triggerRef?: Ref<HTMLButtonElement>;
 }
 
-export function NewRunDialog({ onRunCreated }: NewRunDialogProps) {
+export function NewRunDialog({ onRunCreated, triggerRef }: NewRunDialogProps) {
   const router = useRouter();
   const { selectedRepos, primaryRepo, isAuthenticated } = useSession();
   const { error: showError, info, success } = useToast();
@@ -80,7 +81,7 @@ export function NewRunDialog({ onRunCreated }: NewRunDialogProps) {
         body: JSON.stringify({
           repoId: String(selectedRepository.id),
           repoName: selectedRepository.fullName,
-          targetUrl: sandboxMode ? undefined : (targetUrl || undefined),
+          targetUrl: sandboxMode ? undefined : targetUrl || undefined,
           maxIterations: 5,
           cloudMode: true,
           sandboxMode,
@@ -123,6 +124,7 @@ export function NewRunDialog({ onRunCreated }: NewRunDialogProps) {
         <Button
           className="min-h-11 bg-[linear-gradient(135deg,hsl(var(--primary)),hsl(var(--primary)/0.75))] shadow-lg shadow-primary/20"
           data-new-run-trigger
+          ref={triggerRef}
         >
           <Rocket className="mr-2 h-4 w-4" />
           New Run
@@ -135,7 +137,8 @@ export function NewRunDialog({ onRunCreated }: NewRunDialogProps) {
             Start a QAgent run
           </DialogTitle>
           <DialogDescription>
-            QAgent will inspect your repository, run validations, generate fixes, and open GitHub pull requests for review or auto-merge.
+            QAgent will inspect your repository, run validations, generate fixes, and open GitHub
+            pull requests for review or auto-merge.
           </DialogDescription>
         </DialogHeader>
 
@@ -146,9 +149,12 @@ export function NewRunDialog({ onRunCreated }: NewRunDialogProps) {
                 <Wand2 className="h-5 w-5" />
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-semibold text-foreground">Automated code analysis and repair</p>
+                <p className="text-sm font-semibold text-foreground">
+                  Automated code analysis and repair
+                </p>
                 <p className="text-sm text-muted-foreground">
-                  The run checks repository health, diagnoses failures, generates targeted patches, and routes the result into GitHub pull requests.
+                  The run checks repository health, diagnoses failures, generates targeted patches,
+                  and routes the result into GitHub pull requests.
                 </p>
               </div>
             </div>
@@ -173,7 +179,8 @@ export function NewRunDialog({ onRunCreated }: NewRunDialogProps) {
               <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-4">
                 <p className="text-sm font-medium text-foreground">No repositories connected</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Connect GitHub and choose at least one repository in settings before starting a run.
+                  Connect GitHub and choose at least one repository in settings before starting a
+                  run.
                 </p>
                 <Button
                   variant="outline"
@@ -201,11 +208,21 @@ export function NewRunDialog({ onRunCreated }: NewRunDialogProps) {
                   : 'border-border/80 bg-muted/30 hover:border-border'
               }`}
             >
-              <div className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-md border ${
-                sandboxMode ? 'border-primary bg-primary text-primary-foreground' : 'border-border'
-              }`}>
+              <div
+                className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-md border ${
+                  sandboxMode
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border'
+                }`}
+              >
                 {sandboxMode && (
-                  <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg
+                    viewBox="0 0 12 12"
+                    className="h-3 w-3"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
                     <path d="M2 6l3 3 5-5" />
                   </svg>
                 )}
@@ -216,7 +233,8 @@ export function NewRunDialog({ onRunCreated }: NewRunDialogProps) {
                   <span className="text-sm font-semibold text-foreground">Run from source</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Clone the repo into a cloud sandbox, start the dev server, and test the running UI automatically. No deployed URL needed.
+                  Clone the repo into a cloud sandbox, start the dev server, and test the running UI
+                  automatically. No deployed URL needed.
                 </p>
               </div>
             </button>
@@ -238,7 +256,8 @@ export function NewRunDialog({ onRunCreated }: NewRunDialogProps) {
                 className="min-h-11 font-mono text-sm"
               />
               <p className="text-xs text-muted-foreground">
-                Provide a public deployment if you want Browserbase validation against a live environment. Leave this blank to run repository-first checks only.
+                Provide a public deployment if you want Browserbase validation against a live
+                environment. Leave this blank to run repository-first checks only.
               </p>
             </div>
           )}
@@ -255,7 +274,11 @@ export function NewRunDialog({ onRunCreated }: NewRunDialogProps) {
           <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isGenerating}>
             Cancel
           </Button>
-          <Button onClick={handleQuickStart} disabled={isGenerating || !selectedRepository || !isAuthenticated} className="min-h-11">
+          <Button
+            onClick={handleQuickStart}
+            disabled={isGenerating || !selectedRepository || !isAuthenticated}
+            className="min-h-11"
+          >
             {isGenerating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

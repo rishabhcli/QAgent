@@ -131,12 +131,14 @@ export default function DashboardPage() {
       if (runsRes.ok) {
         const data = await runsRes.json();
         setRuns(data.runs || []);
-        setStats(data.stats || {
-          totalRuns: 0,
-          passRate: 0,
-          patchesApplied: 0,
-          avgIterations: 0,
-        });
+        setStats(
+          data.stats || {
+            totalRuns: 0,
+            passRate: 0,
+            patchesApplied: 0,
+            avgIterations: 0,
+          }
+        );
       }
 
       if (patchesRes?.ok) {
@@ -173,9 +175,11 @@ export default function DashboardPage() {
 
   // Track if there's an active run using a ref to avoid re-render loops
   const hasActiveRunRef = useRef(false);
-  
+
   useEffect(() => {
-    hasActiveRunRef.current = runs.some((run) => run.status === 'running' || run.status === 'pending');
+    hasActiveRunRef.current = runs.some(
+      (run) => run.status === 'running' || run.status === 'pending'
+    );
   }, [runs]);
 
   useEffect(() => {
@@ -193,8 +197,10 @@ export default function DashboardPage() {
   // Lightweight check for whether any test specs exist (for the setup checklist)
   useEffect(() => {
     fetch('/api/tests', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((data) => setHasTests(Array.isArray(data) && data.length > 0))
+      .then((r) => (r.ok ? r.json() : { testSpecs: [] }))
+      .then((data: { testSpecs?: unknown[] }) =>
+        setHasTests(Array.isArray(data.testSpecs) && data.testSpecs.length > 0)
+      )
       .catch(() => {});
   }, []);
 
@@ -203,7 +209,7 @@ export default function DashboardPage() {
 
   const handleRunCreated = (runId: string) => {
     success('Run created', 'Redirecting to run details...', {
-      action: { label: 'View Run', onClick: () => router.push(`/dashboard/runs/${runId}`) }
+      action: { label: 'View Run', onClick: () => router.push(`/dashboard/runs/${runId}`) },
     });
     router.push(`/dashboard/runs/${runId}`);
   };
@@ -215,7 +221,7 @@ export default function DashboardPage() {
     const date = new Date(dateString);
     const now = new Date();
     const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
+
     if (seconds < 60) return 'Just now';
     if (seconds < 3600) return `${Math.floor(seconds / 60)} min ago`;
     if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
@@ -275,7 +281,8 @@ export default function DashboardPage() {
                 Operate the full test-fix-verify loop from one place
               </h1>
               <p className="max-w-2xl text-muted-foreground">
-                Monitor repository health, launch repair runs, and review patches and pull requests without leaving the QAgent workspace.
+                Monitor repository health, launch repair runs, and review patches and pull requests
+                without leaving the QAgent workspace.
               </p>
               <div className="mt-4 flex flex-wrap gap-2 text-sm text-muted-foreground">
                 <span className="rounded-full border border-border/80 bg-muted/40 px-3 py-1">
@@ -335,7 +342,11 @@ export default function DashboardPage() {
           />
           <StatCard
             title="Knowledge Base"
-            value={learningMetrics?.knowledgeReuseRate ? `${Math.round(learningMetrics.knowledgeReuseRate)}%` : '\u2014'}
+            value={
+              learningMetrics?.knowledgeReuseRate
+                ? `${Math.round(learningMetrics.knowledgeReuseRate)}%`
+                : '\u2014'
+            }
             description="Pattern reuse rate"
             icon={Brain}
             href="/dashboard/learning"
@@ -373,7 +384,13 @@ export default function DashboardPage() {
                     variant="default"
                     title="No runs yet"
                     description="Start your first run to see QAgent in action"
-                    action={{ label: 'Start First Run', onClick: () => document.querySelector<HTMLButtonElement>('[data-new-run-trigger]')?.click() }}
+                    action={{
+                      label: 'Start First Run',
+                      onClick: () =>
+                        document
+                          .querySelector<HTMLButtonElement>('[data-new-run-trigger]')
+                          ?.click(),
+                    }}
                     compact
                   />
                 ) : (
@@ -381,9 +398,10 @@ export default function DashboardPage() {
                     {recentRuns.map((run) => {
                       const config = statusConfig[run.status];
                       const StatusIcon = config.icon;
-                      const passRate = run.testsTotal > 0 
-                        ? Math.round((run.testsPassed / run.testsTotal) * 100) 
-                        : 0;
+                      const passRate =
+                        run.testsTotal > 0
+                          ? Math.round((run.testsPassed / run.testsTotal) * 100)
+                          : 0;
 
                       return (
                         <Link
@@ -416,7 +434,15 @@ export default function DashboardPage() {
                                 {run.patchesApplied} patch{run.patchesApplied !== 1 ? 'es' : ''}
                               </p>
                             </div>
-                            <Badge variant={run.status === 'completed' ? 'default' : run.status === 'failed' ? 'destructive' : 'secondary'}>
+                            <Badge
+                              variant={
+                                run.status === 'completed'
+                                  ? 'default'
+                                  : run.status === 'failed'
+                                    ? 'destructive'
+                                    : 'secondary'
+                              }
+                            >
                               {config.label}
                             </Badge>
                           </div>
@@ -466,8 +492,22 @@ export default function DashboardPage() {
                             <p className="text-xs text-muted-foreground">{patch.description}</p>
                           </div>
                         </div>
-                        <Badge variant={patch.merged || patch.status === 'applied' ? 'default' : patch.mergeError ? 'warning' : 'secondary'}>
-                          {patch.merged ? 'Merged' : patch.prUrl ? patch.mergeError ? 'PR Open' : 'PR Created' : patch.status}
+                        <Badge
+                          variant={
+                            patch.merged || patch.status === 'applied'
+                              ? 'default'
+                              : patch.mergeError
+                                ? 'warning'
+                                : 'secondary'
+                          }
+                        >
+                          {patch.merged
+                            ? 'Merged'
+                            : patch.prUrl
+                              ? patch.mergeError
+                                ? 'PR Open'
+                                : 'PR Created'
+                              : patch.status}
                         </Badge>
                       </div>
                     ))}
@@ -493,28 +533,28 @@ export default function DashboardPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-2">
-                <QuickActionButton 
-                  href="/dashboard/runs" 
-                  icon={Play} 
-                  label="Start New Run" 
+                <QuickActionButton
+                  href="/dashboard/runs"
+                  icon={Play}
+                  label="Start New Run"
                   description="Run tests on your app"
                 />
-                <QuickActionButton 
-                  href="/dashboard/monitoring" 
-                  icon={Radio} 
-                  label="Setup Monitoring" 
+                <QuickActionButton
+                  href="/dashboard/monitoring"
+                  icon={Radio}
+                  label="Setup Monitoring"
                   description="Configure continuous testing"
                 />
-                <QuickActionButton 
-                  href="/dashboard/learning" 
-                  icon={Brain} 
-                  label="View Learning" 
+                <QuickActionButton
+                  href="/dashboard/learning"
+                  icon={Brain}
+                  label="View Learning"
                   description="See improvement metrics"
                 />
-                <QuickActionButton 
-                  href="/dashboard/settings" 
-                  icon={Settings} 
-                  label="Settings" 
+                <QuickActionButton
+                  href="/dashboard/settings"
+                  icon={Settings}
+                  label="Settings"
                   description="Configure integrations"
                 />
               </CardContent>
@@ -534,14 +574,21 @@ export default function DashboardPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {!learningMetrics || (learningMetrics.improvementPercent === 0 && learningMetrics.firstTryRate === 0 && learningMetrics.knowledgeReuseRate === 0) ? (
+                {!learningMetrics ||
+                (learningMetrics.improvementPercent === 0 &&
+                  learningMetrics.firstTryRate === 0 &&
+                  learningMetrics.knowledgeReuseRate === 0) ? (
                   <div className="text-center py-2">
-                    <p className="text-sm text-muted-foreground">Complete your first run to see learning metrics.</p>
+                    <p className="text-sm text-muted-foreground">
+                      Complete your first run to see learning metrics.
+                    </p>
                     <Button
                       variant="ghost"
                       size="sm"
                       className="mt-2"
-                      onClick={() => document.querySelector<HTMLButtonElement>('[data-new-run-trigger]')?.click()}
+                      onClick={() =>
+                        document.querySelector<HTMLButtonElement>('[data-new-run-trigger]')?.click()
+                      }
                     >
                       <Plus className="mr-1 h-3 w-3" />
                       Start a run
@@ -651,7 +698,9 @@ function StatCard({
             <Icon className="h-4 w-4 text-primary" />
           </div>
           {trend && (
-            <div className={`flex items-center text-xs font-medium ${trend.isPositive ? 'text-emerald-500' : 'text-red-500'}`}>
+            <div
+              className={`flex items-center text-xs font-medium ${trend.isPositive ? 'text-emerald-500' : 'text-red-500'}`}
+            >
               {trend.isPositive ? '↑' : '↓'} {trend.value}%
             </div>
           )}

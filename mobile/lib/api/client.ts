@@ -1,9 +1,27 @@
 import * as SecureStore from 'expo-secure-store';
 
-// API URL from environment or default
-export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://qagent.vercel.app';
-// OAuth base URL (can point to production even if API_URL is local)
-export const OAUTH_URL = process.env.EXPO_PUBLIC_OAUTH_URL || API_URL;
+const LOCAL_API_URL = 'http://localhost:3000';
+
+function isSafeLocalFallback() {
+  return typeof __DEV__ !== 'undefined' ? __DEV__ : process.env.NODE_ENV !== 'production';
+}
+
+function resolveApiUrl() {
+  const configuredUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+
+  if (configuredUrl) {
+    return configuredUrl;
+  }
+
+  if (isSafeLocalFallback()) {
+    return LOCAL_API_URL;
+  }
+
+  throw new Error('EXPO_PUBLIC_API_URL must be set for production builds.');
+}
+
+export const API_URL = resolveApiUrl();
+export const OAUTH_URL = process.env.EXPO_PUBLIC_OAUTH_URL?.trim() || API_URL;
 
 const TOKEN_KEY = 'qagent_access_token';
 
@@ -14,10 +32,7 @@ interface FetchOptions extends RequestInit {
 /**
  * API client for making requests to the QAgent backend
  */
-export async function apiClient<T>(
-  endpoint: string,
-  options: FetchOptions = {}
-): Promise<T> {
+export async function apiClient<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
   const { authenticated = true, ...fetchOptions } = options;
 
   const headers: HeadersInit = {
@@ -100,7 +115,8 @@ export const api = {
     }),
 
   // Session
-  getSession: () => apiClient<{ authenticated: boolean; user?: any; repos?: any[] }>('/api/auth/session'),
+  getSession: () =>
+    apiClient<{ authenticated: boolean; user?: any; repos?: any[] }>('/api/auth/session'),
 
   // Patches
   getPatches: () => apiClient<{ patches: any[] }>('/api/patches'),

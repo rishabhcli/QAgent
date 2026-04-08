@@ -165,7 +165,7 @@ export function addRunPatch(runId: string, patch: Patch): void {
   if (run) {
     run.patches.push(patch);
     persistRun(run);
-    addPatchFromRun(runId, patch).catch((err) => {
+    addPatchFromRun(runId, patch, run.ownerId).catch((err) => {
       console.warn('Failed to store patch details:', err);
     });
   }
@@ -234,7 +234,7 @@ export function getRunStats(): {
 
   return {
     totalRuns: allRuns.length,
-    passRate: completedRuns.length / allRuns.length * 100,
+    passRate: (completedRuns.length / allRuns.length) * 100,
     patchesApplied: totalPatches,
     avgIterations: totalIterations / allRuns.length,
   };

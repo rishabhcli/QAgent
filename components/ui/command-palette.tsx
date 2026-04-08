@@ -344,6 +344,21 @@ export function CommandPalette() {
         return;
       }
 
+      if (filteredCommands.length === 0) {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          if (showShortcuts) {
+            setShowShortcuts(false);
+          } else {
+            setIsOpen(false);
+            setSearch('');
+          }
+        } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Enter') {
+          event.preventDefault();
+        }
+        return;
+      }
+
       switch (event.key) {
         case 'ArrowDown':
           event.preventDefault();
@@ -351,7 +366,9 @@ export function CommandPalette() {
           break;
         case 'ArrowUp':
           event.preventDefault();
-          setSelectedIndex((previous) => (previous - 1 + filteredCommands.length) % filteredCommands.length);
+          setSelectedIndex(
+            (previous) => (previous - 1 + filteredCommands.length) % filteredCommands.length
+          );
           break;
         case 'Enter':
           event.preventDefault();
@@ -375,7 +392,10 @@ export function CommandPalette() {
 
   useEffect(() => {
     const handleOpen = (event: Event) => {
-      const detail = 'detail' in event ? (event as CustomEvent<{ mode?: 'search' | 'shortcuts' }>).detail : undefined;
+      const detail =
+        'detail' in event
+          ? (event as CustomEvent<{ mode?: 'search' | 'shortcuts' }>).detail
+          : undefined;
       setIsOpen(true);
       setSearch('');
       setSelectedIndex(0);
@@ -423,10 +443,16 @@ export function CommandPalette() {
           >
             <div className="overflow-hidden rounded-[1.5rem] border border-border/80 bg-card/95 shadow-[0_30px_120px_-40px_rgba(15,23,42,0.55)] backdrop-blur-xl">
               <div className="flex items-center gap-3 border-b border-border/80 px-5 py-4">
-                {showShortcuts ? <Keyboard className="h-5 w-5 text-primary" /> : <Search className="h-5 w-5 text-primary" />}
+                {showShortcuts ? (
+                  <Keyboard className="h-5 w-5 text-primary" />
+                ) : (
+                  <Search className="h-5 w-5 text-primary" />
+                )}
                 <input
                   type="text"
-                  placeholder={showShortcuts ? 'Keyboard shortcuts' : 'Search commands, routes, and actions'}
+                  placeholder={
+                    showShortcuts ? 'Keyboard shortcuts' : 'Search commands, routes, and actions'
+                  }
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   className="flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground"
@@ -458,7 +484,9 @@ export function CommandPalette() {
                       <Search className="h-7 w-7" />
                     </div>
                     <p className="font-medium text-foreground">No results found</p>
-                    <p className="mt-1 text-sm text-muted-foreground">Try a different search term.</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Try a different search term.
+                    </p>
                   </div>
                 ) : (
                   Object.entries(groupedCommands).map(([group, items]) => (
@@ -489,12 +517,18 @@ export function CommandPalette() {
                 <div className="flex items-center justify-between border-t border-border/80 bg-muted/20 px-5 py-3 text-xs text-muted-foreground">
                   <div className="flex items-center gap-4">
                     <span className="flex items-center gap-1">
-                      <kbd className="rounded-lg border border-border/70 bg-background/80 px-2 py-1">↑</kbd>
-                      <kbd className="rounded-lg border border-border/70 bg-background/80 px-2 py-1">↓</kbd>
+                      <kbd className="rounded-lg border border-border/70 bg-background/80 px-2 py-1">
+                        ↑
+                      </kbd>
+                      <kbd className="rounded-lg border border-border/70 bg-background/80 px-2 py-1">
+                        ↓
+                      </kbd>
                       <span className="ml-1">navigate</span>
                     </span>
                     <span className="flex items-center gap-1">
-                      <kbd className="rounded-lg border border-border/70 bg-background/80 px-2 py-1">↵</kbd>
+                      <kbd className="rounded-lg border border-border/70 bg-background/80 px-2 py-1">
+                        ↵
+                      </kbd>
                       <span>select</span>
                     </span>
                   </div>
@@ -547,7 +581,9 @@ function CommandRow({
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{command.label}</p>
-        {command.description && <p className="truncate text-xs text-muted-foreground">{command.description}</p>}
+        {command.description && (
+          <p className="truncate text-xs text-muted-foreground">{command.description}</p>
+        )}
       </div>
       <div className="flex items-center gap-3">
         {command.shortcut && (
@@ -555,7 +591,9 @@ function CommandRow({
             {command.shortcut}
           </span>
         )}
-        <ArrowRight className={cn('h-4 w-4', isSelected ? 'text-primary' : 'text-muted-foreground')} />
+        <ArrowRight
+          className={cn('h-4 w-4', isSelected ? 'text-primary' : 'text-muted-foreground')}
+        />
       </div>
     </button>
   );

@@ -14,12 +14,19 @@ import { cleanupStaleProcessing } from '@/lib/redis/queue';
 /**
  * Verify cron request is authorized
  */
-function verifyCronAuth(request: NextRequest): boolean {
-  const cronSecret = request.headers.get('authorization');
-  const expectedSecret = `Bearer ${process.env.CRON_SECRET}`;
-  const isVercelCron = request.headers.get('x-vercel-cron') === '1';
+function getCronAuthorizationError(request: NextRequest): string | null {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    return 'CRON_SECRET is not configured';
+  }
 
-  return isVercelCron || cronSecret === expectedSecret;
+  const authHeader = request.headers.get('authorization');
+  const expectedSecret = `Bearer ${cronSecret}`;
+  if (authHeader !== expectedSecret) {
+    return 'Unauthorized';
+  }
+
+  return null;
 }
 
 /**
@@ -27,10 +34,11 @@ function verifyCronAuth(request: NextRequest): boolean {
  * Daily cleanup cron
  */
 export async function GET(request: NextRequest) {
-  if (!verifyCronAuth(request)) {
+  const authError = getCronAuthorizationError(request);
+  if (authError) {
     return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
+      { error: authError },
+      { status: authError === 'Unauthorized' ? 401 : 503 }
     );
   }
 

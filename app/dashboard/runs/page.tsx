@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Play, CheckCircle, XCircle, Clock, Filter, RefreshCw, Loader2 } from 'lucide-react';
@@ -48,6 +48,8 @@ export default function RunsPage() {
   const [runs, setRuns] = useState<Run[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const hasActiveRunRef = useRef(false);
+  const newRunTriggerRef = useRef<HTMLButtonElement>(null);
 
   const fetchRuns = useCallback(async () => {
     try {
@@ -67,17 +69,23 @@ export default function RunsPage() {
   }, [showError]);
 
   useEffect(() => {
+    hasActiveRunRef.current = runs.some(
+      (run) => run.status === 'running' || run.status === 'pending'
+    );
+  }, [runs]);
+
+  useEffect(() => {
     fetchRuns();
 
-    // Poll for updates every 5 seconds if there are running runs
+    // Poll for updates every 5 seconds only while there are active runs.
     const interval = setInterval(() => {
-      if (runs.some((run) => run.status === 'running' || run.status === 'pending')) {
+      if (hasActiveRunRef.current) {
         fetchRuns();
       }
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [fetchRuns, runs]);
+  }, [fetchRuns]);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -106,7 +114,7 @@ export default function RunsPage() {
     const start = new Date(startedAt).getTime();
     const end = completedAt ? new Date(completedAt).getTime() : Date.now();
     const seconds = Math.floor((end - start) / 1000);
-    
+
     if (seconds < 60) return `${seconds}s`;
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -131,13 +139,17 @@ export default function RunsPage() {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
                   <Filter className="mr-2 h-4 w-4" />
-                  {filter === 'all' ? 'All Status' : statusConfig[filter as keyof typeof statusConfig]?.label}
+                  {filter === 'all'
+                    ? 'All Status'
+                    : statusConfig[filter as keyof typeof statusConfig]?.label}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem onClick={() => setFilter('all')}>All Status</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setFilter('running')}>Running</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setFilter('completed')}>Completed</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilter('completed')}>
+                  Completed
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setFilter('failed')}>Failed</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -146,7 +158,7 @@ export default function RunsPage() {
               Refresh
             </Button>
           </div>
-          <NewRunDialog onRunCreated={handleRunCreated} />
+          <NewRunDialog onRunCreated={handleRunCreated} triggerRef={newRunTriggerRef} />
         </div>
 
         {/* Runs List */}
@@ -172,7 +184,10 @@ export default function RunsPage() {
                     }
                     action={
                       filter === 'all'
-                        ? { label: 'Start your first run', onClick: () => document.querySelector<HTMLButtonElement>('[data-new-run-trigger]')?.click() }
+                        ? {
+                            label: 'Start your first run',
+                            onClick: () => newRunTriggerRef.current?.click(),
+                          }
                         : undefined
                     }
                     compact
@@ -181,16 +196,15 @@ export default function RunsPage() {
                   filteredRuns.map((run) => {
                     const config = statusConfig[run.status];
                     const StatusIcon = config.icon;
-                    const passRate = run.testsTotal > 0 
-                      ? Math.round((run.testsPassed / run.testsTotal) * 100) 
-                      : 0;
-                    
+                    const passRate =
+                      run.testsTotal > 0 ? Math.round((run.testsPassed / run.testsTotal) * 100) : 0;
+
                     return (
                       <Link
                         key={run.id}
                         href={`/dashboard/runs/${run.id}`}
-                          className="flex items-center justify-between rounded-2xl border border-border/70 bg-card/80 p-4 transition-all hover:border-primary/20 hover:bg-accent/40"
-                        >
+                        className="flex items-center justify-between rounded-2xl border border-border/70 bg-card/80 p-4 transition-all hover:border-primary/20 hover:bg-accent/40"
+                      >
                         <div className="flex items-center gap-4">
                           <div
                             className={`p-2.5 rounded-lg ${

@@ -5,6 +5,10 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+const tokenStoreMocks = vi.hoisted(() => ({
+  isSessionBlacklisted: vi.fn(),
+}));
+
 // Mock next/headers - factory must not reference variables defined later
 vi.mock('next/headers', () => ({
   cookies: vi.fn().mockResolvedValue({
@@ -29,8 +33,20 @@ vi.mock('jose', () => ({
   jwtVerify: vi.fn(),
 }));
 
+vi.mock('@/lib/auth/token-store', () => ({
+  isSessionBlacklisted: tokenStoreMocks.isSessionBlacklisted,
+}));
+
 // Import after mocks
-import { encrypt, decrypt, getSession, createSession, destroySession, updateSessionRepos } from '@/lib/auth/session';
+import {
+  encrypt,
+  decrypt,
+  validateSessionToken,
+  getSession,
+  createSession,
+  destroySession,
+  updateSessionRepos,
+} from '@/lib/auth/session';
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 import type { GitHubUser, GitHubRepo } from '@/lib/types';
@@ -84,6 +100,7 @@ describe('Session Management', () => {
         repos: mockRepos,
       },
     } as any);
+    tokenStoreMocks.isSessionBlacklisted.mockResolvedValue(false);
   });
 
   describe('encrypt()', () => {
@@ -142,6 +159,18 @@ describe('Session Management', () => {
     });
   });
 
+  describe('validateSessionToken()', () => {
+    it('should reject revoked sessions', async () => {
+      mockJwtVerify.mockResolvedValueOnce({
+        payload: { user: mockUser, accessToken: 'token', repos: [], jti: 'revoked-jti' },
+        protectedHeader: { alg: 'HS256' },
+      } as never);
+      tokenStoreMocks.isSessionBlacklisted.mockResolvedValueOnce(true);
+
+      await expect(validateSessionToken('revoked-token')).rejects.toThrow('Session revoked');
+    });
+  });
+
   describe('getSession()', () => {
     it('should return null when no cookie', async () => {
       mockCookieStore.get.mockReturnValue(undefined);
@@ -165,6 +194,19 @@ describe('Session Management', () => {
     it('should return null on decrypt error', async () => {
       mockCookieStore.get.mockReturnValue({ value: 'invalid-token' });
       mockJwtVerify.mockRejectedValueOnce(new Error('Token expired'));
+
+      const session = await getSession();
+
+      expect(session).toBeNull();
+    });
+
+    it('should return null when the session token is revoked', async () => {
+      mockCookieStore.get.mockReturnValue({ value: 'revoked-token' });
+      mockJwtVerify.mockResolvedValueOnce({
+        payload: { user: mockUser, accessToken: 'token', repos: [], jti: 'revoked-jti' },
+        protectedHeader: { alg: 'HS256' },
+      } as never);
+      tokenStoreMocks.isSessionBlacklisted.mockResolvedValueOnce(true);
 
       const session = await getSession();
 

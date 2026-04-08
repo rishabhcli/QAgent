@@ -1,28 +1,28 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
-import { getSessionKey } from '@/lib/auth/session';
+import { getSessionSecret } from '@/lib/auth/session-secret';
 
 const SESSION_COOKIE = 'qagent_session';
+
+function getSessionKey(): Uint8Array {
+  return new TextEncoder().encode(getSessionSecret());
+}
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   // Public paths that don't require auth
-  const publicPaths = [
-    '/_next',
-    '/api/auth',
-    '/static',
-    '/favicon.ico',
-  ];
+  const publicPaths = ['/_next', '/api/auth', '/static', '/favicon.ico'];
 
   // Allow public paths
-  if (publicPaths.some(p => path.startsWith(p)) || path === '/') {
+  if (publicPaths.some((p) => path.startsWith(p)) || path === '/') {
     return NextResponse.next();
   }
 
   // Check if it's the dashboard or protected API
-  const isProtectedPath = path.startsWith('/dashboard') || (path.startsWith('/api') && !path.startsWith('/api/auth'));
+  const isProtectedPath =
+    path.startsWith('/dashboard') || (path.startsWith('/api') && !path.startsWith('/api/auth'));
 
   if (!isProtectedPath) {
     return NextResponse.next();

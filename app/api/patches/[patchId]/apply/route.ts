@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPatch, updatePatchStatus } from '@/lib/dashboard/patch-store';
 import { getSession } from '@/lib/auth/session';
+import { isRepoAllowed } from '@/lib/auth/repo-access';
 import { createPatchPR } from '@/lib/github/patches';
 
 export const dynamic = 'force-dynamic';
@@ -11,9 +12,18 @@ export async function POST(
   { params }: { params: Promise<{ patchId: string }> }
 ) {
   const { patchId } = await params;
+
+  // Get session for GitHub access
+  const session = await getSession();
+  const userId = session?.user?.id;
+
+  if (userId === undefined || !session?.accessToken) {
+    return NextResponse.json({ error: 'GitHub authentication required' }, { status: 401 });
+  }
+
   const patch = await getPatch(patchId);
 
-  if (!patch) {
+  if (!patch || patch.ownerId !== userId) {
     return NextResponse.json({ error: 'Patch not found' }, { status: 404 });
   }
 
@@ -21,24 +31,9 @@ export async function POST(
     return NextResponse.json({ error: 'Patch already applied' }, { status: 400 });
   }
 
-  // Get session for GitHub access
-  const session = await getSession();
-
-  if (!session || !session.accessToken) {
-    return NextResponse.json(
-      { error: 'GitHub authentication required' },
-      { status: 401 }
-    );
-  }
-
   try {
     const body = await request.json().catch(() => ({}));
-    const {
-      repoOwner,
-      repoName,
-      autoMerge = true,
-      mergeMethod,
-    } = body;
+    const { repoOwner, repoName, autoMerge = true, mergeMethod } = body;
 
     if (!repoOwner || !repoName) {
       return NextResponse.json(
@@ -48,6 +43,13 @@ export async function POST(
     }
 
     const repoFullName = `${repoOwner}/${repoName}`;
+    const repoAllowed = await isRepoAllowed(session, {
+      repoFullName,
+    });
+
+    if (!repoAllowed) {
+      return NextResponse.json({ error: 'Repository access is not authorized' }, { status: 403 });
+    }
 
     // Full workflow: create branch, apply patch, commit, and create PR
     const result = await createPatchPR(
@@ -78,18 +80,14 @@ export async function POST(
     );
 
     // Update patch status. A created but unmerged PR remains pending.
-    await updatePatchStatus(
-      patchId,
-      result.merged ? 'applied' : 'pending',
-      {
-        prUrl: result.prUrl,
-        prNumber: result.prNumber,
-        merged: result.merged,
-        mergeMethod: result.mergeMethod,
-        mergeCommitSha: result.mergeCommitSha,
-        mergeError: result.mergeError,
-      }
-    );
+    await updatePatchStatus(patchId, result.merged ? 'applied' : 'pending', {
+      prUrl: result.prUrl,
+      prNumber: result.prNumber,
+      merged: result.merged,
+      mergeMethod: result.mergeMethod,
+      mergeCommitSha: result.mergeCommitSha,
+      mergeError: result.mergeError,
+    });
 
     return NextResponse.json({
       success: true,
@@ -108,15 +106,9 @@ export async function POST(
 
     // Check if it's a GitHub API error
     if (error instanceof Error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 422 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 422 });
     }
 
-    return NextResponse.json(
-      { error: 'Failed to apply patch' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to apply patch' }, { status: 500 });
   }
 }

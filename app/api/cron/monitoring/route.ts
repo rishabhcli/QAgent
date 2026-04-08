@@ -15,15 +15,19 @@ import { processQueuedRun } from '@/lib/queue/processor';
 /**
  * Verify cron request is authorized
  */
-function verifyCronAuth(request: NextRequest): boolean {
-  // Vercel cron jobs include this header
-  const cronSecret = request.headers.get('authorization');
-  const expectedSecret = `Bearer ${process.env.CRON_SECRET}`;
+function getCronAuthorizationError(request: NextRequest): string | null {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    return 'CRON_SECRET is not configured';
+  }
 
-  // Also check for Vercel's internal cron header
-  const isVercelCron = request.headers.get('x-vercel-cron') === '1';
+  const authHeader = request.headers.get('authorization');
+  const expectedSecret = `Bearer ${cronSecret}`;
+  if (authHeader !== expectedSecret) {
+    return 'Unauthorized';
+  }
 
-  return isVercelCron || cronSecret === expectedSecret;
+  return null;
 }
 
 /**
@@ -32,10 +36,11 @@ function verifyCronAuth(request: NextRequest): boolean {
  */
 export async function GET(request: NextRequest) {
   // Verify authorization
-  if (!verifyCronAuth(request)) {
+  const authError = getCronAuthorizationError(request);
+  if (authError) {
     return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
+      { error: authError },
+      { status: authError === 'Unauthorized' ? 401 : 503 }
     );
   }
 
@@ -116,13 +121,11 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   // Verify authorization
-  const authHeader = request.headers.get('authorization');
-  const expectedSecret = `Bearer ${process.env.CRON_SECRET}`;
-
-  if (authHeader !== expectedSecret) {
+  const authError = getCronAuthorizationError(request);
+  if (authError) {
     return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
+      { error: authError },
+      { status: authError === 'Unauthorized' ? 401 : 503 }
     );
   }
 

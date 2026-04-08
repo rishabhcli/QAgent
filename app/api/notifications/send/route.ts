@@ -21,12 +21,19 @@ interface PushNotificationPayload {
  */
 export async function POST(request: NextRequest) {
   try {
-    // Check for internal API key or session
+    // This route is intended for trusted internal callers only.
     const authHeader = request.headers.get('authorization');
-    const internalKey = process.env.INTERNAL_API_KEY;
+    const internalKey = process.env.INTERNAL_API_KEY?.trim();
 
-    // Allow internal calls or authenticated users
-    if (authHeader !== `Bearer ${internalKey}` && !authHeader?.startsWith('Bearer ')) {
+    if (!internalKey) {
+      console.error('INTERNAL_API_KEY is not configured');
+      return NextResponse.json(
+        { error: 'Notification delivery is not configured' },
+        { status: 503 }
+      );
+    }
+
+    if (authHeader !== `Bearer ${internalKey}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

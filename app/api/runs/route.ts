@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth/session';
-import {
-  createRun,
-  getAllRunsAsync,
-  getRunStatsAsync,
-} from '@/lib/dashboard/run-store';
+import { isRepoAllowed } from '@/lib/auth/repo-access';
+import { createRun, getAllRunsAsync } from '@/lib/dashboard/run-store';
 import { enqueueRun } from '@/lib/redis/queue';
 import { isRedisAvailable } from '@/lib/redis/client';
 import { scheduleQueueProcessing } from '@/lib/queue/dispatcher';
@@ -16,6 +13,10 @@ export async function GET(request: NextRequest) {
   const session = await getSession();
   const userId = session?.user?.id;
 
+  if (userId === undefined) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const { searchParams } = request.nextUrl;
   const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
   const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)));
@@ -23,11 +24,7 @@ export async function GET(request: NextRequest) {
   const repoIdFilter = searchParams.get('repoId');
   const searchQuery = searchParams.get('search');
 
-  let runs = await getAllRunsAsync();
-
-  if (userId !== undefined) {
-    runs = runs.filter((r) => r.ownerId === userId);
-  }
+  let runs = (await getAllRunsAsync()).filter((run) => run.ownerId === userId);
 
   if (statusFilter) {
     runs = runs.filter((run) => run.status === statusFilter);
@@ -48,7 +45,15 @@ export async function GET(request: NextRequest) {
   const totalPages = Math.ceil(total / limit);
   const offset = (page - 1) * limit;
   const paginatedRuns = runs.slice(offset, offset + limit);
-  const stats = await getRunStatsAsync(repoIdFilter || undefined);
+  const completedRuns = runs.filter((run) => run.status === 'completed');
+  const totalPatches = runs.reduce((sum, run) => sum + run.patches.length, 0);
+  const totalIterations = runs.reduce((sum, run) => sum + run.iteration, 0);
+  const stats = {
+    totalRuns: total,
+    passRate: total === 0 ? 0 : (completedRuns.length / total) * 100,
+    patchesApplied: totalPatches,
+    avgIterations: total === 0 ? 0 : totalIterations / total,
+  };
 
   return NextResponse.json({
     runs: paginatedRuns.map((run) => ({
@@ -79,6 +84,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getSession();
     const body = await request.json();
     const {
       repoId,
@@ -94,11 +100,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Repository is required' }, { status: 400 });
     }
 
-    const session = await getSession();
     const githubToken = cloudMode ? session?.accessToken || undefined : undefined;
 
     if (cloudMode && !githubToken) {
       return NextResponse.json({ error: 'GitHub authentication required' }, { status: 401 });
+    }
+
+    if ((cloudMode || sandboxMode) && repoName) {
+      if (!session?.user) {
+        return NextResponse.json({ error: 'GitHub authentication required' }, { status: 401 });
+      }
+
+      const repoAllowed = await isRepoAllowed(session, {
+        repoId,
+        repoFullName: repoName,
+      });
+
+      if (!repoAllowed) {
+        return NextResponse.json({ error: 'Repository access is not authorized' }, { status: 403 });
+      }
     }
 
     const resolvedRepoId = repoId || (cloudMode ? repoName : 'local');
@@ -112,9 +132,12 @@ export async function POST(request: NextRequest) {
     });
 
     const adHocConfig = {
-      mode: sandboxMode && repoName && githubToken ? ('sandbox' as const)
-        : cloudMode && repoName && githubToken ? ('code' as const)
-        : ('local' as const),
+      mode:
+        sandboxMode && repoName && githubToken
+          ? ('sandbox' as const)
+          : cloudMode && repoName && githubToken
+            ? ('code' as const)
+            : ('local' as const),
       runId: run.id,
       maxIterations,
       targetUrl: targetUrl || undefined,

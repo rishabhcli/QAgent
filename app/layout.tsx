@@ -21,27 +21,34 @@ export const metadata: Metadata = {
     default: 'QAgent',
     template: '%s | QAgent',
   },
-  description: 'Automated QA that tests your web app, fixes bugs, and verifies patches — end to end.',
+  description:
+    'Automated QA that tests your web app, fixes bugs, and verifies patches — end to end.',
   applicationName: 'QAgent',
-  keywords: ['QAgent', 'QA automation', 'self-healing', 'browser testing', 'GitHub PRs', 'automated testing'],
+  keywords: [
+    'QAgent',
+    'QA automation',
+    'self-healing',
+    'browser testing',
+    'GitHub PRs',
+    'automated testing',
+  ],
   creator: 'QAgent',
   publisher: 'QAgent',
   icons: {
     icon: '/favicon.svg',
-    apple: '/apple-touch-icon.png',
   },
   openGraph: {
     title: 'QAgent — Self-Healing QA for Engineering Teams',
-    description: 'Automated QA that tests your web app, fixes bugs, and verifies patches — end to end.',
+    description:
+      'Automated QA that tests your web app, fixes bugs, and verifies patches — end to end.',
     siteName: 'QAgent',
     type: 'website',
-    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'QAgent — Self-Healing QA' }],
   },
   twitter: {
-    card: 'summary_large_image',
+    card: 'summary',
     title: 'QAgent — Self-Healing QA for Engineering Teams',
-    description: 'Automated QA that tests your web app, fixes bugs, and verifies patches — end to end.',
-    images: ['/og.png'],
+    description:
+      'Automated QA that tests your web app, fixes bugs, and verifies patches — end to end.',
   },
 };
 
@@ -54,7 +61,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${GeistSans.variable} ${GeistMono.variable}`}
+      suppressHydrationWarning
+    >
       <body className={`${GeistSans.className} app-shell font-sans antialiased`}>
         <script
           dangerouslySetInnerHTML={{
