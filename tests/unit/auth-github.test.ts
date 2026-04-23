@@ -48,7 +48,6 @@ describe('GitHub Auth', () => {
 
       expect(url).toContain('client_id=');
       expect(url).toContain('redirect_uri=');
-      expect(url).toContain('scope=');
       expect(url).toContain('state=');
     });
 
@@ -60,17 +59,29 @@ describe('GitHub Auth', () => {
       expect(url).not.toContain('state=state-with-special=chars&more');
     });
 
-    it('should include repo and read:user scope', () => {
+    it('should omit scope when no scopes are configured', () => {
       const url = getGitHubAuthUrl('state', 'http://localhost:3000');
 
-      expect(url).toContain('scope=repo');
-      expect(url).toContain('read%3Auser');
+      expect(url).not.toContain('scope=');
+    });
+
+    it('should include configured scopes when provided', () => {
+      process.env.GITHUB_AUTH_SCOPES = 'repo read:user';
+
+      try {
+        const url = getGitHubAuthUrl('state', 'http://localhost:3000');
+
+        expect(url).toContain('scope=repo');
+        expect(url).toContain('read%3Auser');
+      } finally {
+        delete process.env.GITHUB_AUTH_SCOPES;
+      }
     });
 
     it('should use correct redirect URI', () => {
       const url = getGitHubAuthUrl('state', 'http://localhost:3000');
 
-      expect(url).toContain('redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fauth%2Fgithub%2Fcallback');
+      expect(url).toContain('redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fapi%2Fauth%2Fcallback%2Fgithub');
     });
   });
 
@@ -92,7 +103,7 @@ describe('GitHub Auth', () => {
 
       try {
         expect(getGitHubCallbackUrl('https://qagent.dev')).toBe(
-          'https://qagent.dev/api/auth/github/callback'
+          'https://qagent.dev/api/auth/callback/github'
         );
       } finally {
         process.env.NEXT_PUBLIC_APP_URL = previousAppUrl;
@@ -168,13 +179,13 @@ describe('GitHub Auth', () => {
 
       await exchangeCodeForToken({
         code: 'code',
-        redirectUri: 'http://localhost:3000/api/auth/github/callback',
+        redirectUri: 'http://localhost:3000/api/auth/callback/github',
       });
 
       expect(mockFetch).toHaveBeenCalledWith(
         'https://github.com/login/oauth/access_token',
         expect.objectContaining({
-          body: expect.stringContaining('"redirect_uri":"http://localhost:3000/api/auth/github/callback"'),
+          body: expect.stringContaining('"redirect_uri":"http://localhost:3000/api/auth/callback/github"'),
         })
       );
     });

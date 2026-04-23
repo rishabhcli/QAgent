@@ -5,6 +5,7 @@ import './globals.css';
 import { ToastProvider } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/lib/providers/theme-provider';
 import { CommandPalette } from '@/components/ui/command-palette';
+import { CreativeCursor } from '@/components/ui/creative-cursor';
 
 const DEFAULT_DEV_APP_ORIGIN = 'http://localhost:3000';
 const CANONICAL_DEV_APP_ORIGIN = (() => {
@@ -79,6 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <ThemeProvider>
           <ToastProvider>
+            <CreativeCursor />
             {children}
             <CommandPalette />
           </ToastProvider>

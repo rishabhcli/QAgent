@@ -1,91 +1,83 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
   AlertCircle,
   ArrowRight,
   BadgeCheck,
-  Bug,
-  Check,
+  Bot,
+  CheckCircle2,
+  Database,
+  FileSearch,
   Github,
+  GitPullRequest,
   Monitor,
-  RefreshCw,
+  Play,
   Rocket,
-  ShieldCheck,
-  Sparkles,
-  Wand2,
-  Zap,
+  TestTube2,
 } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
+import { AnimatedRunDemo } from '@/components/landing/animated-run-demo';
 
 const GITHUB_REPO_URL = 'https://github.com/rishabhcli/QAgent';
 const README_URL = `${GITHUB_REPO_URL}#readme`;
 
-const proofPoints = [
-  { value: '4', label: 'Agents in the closed loop' },
-  { value: '< 5 min', label: 'Average time from detection to fix' },
-  { value: '0', label: 'Manual copy-paste between tools' },
-];
-
-const features = [
+const loopSteps = [
   {
-    icon: Bug,
-    title: 'Detect regressions from real user flows',
-    description:
-      'QAgent exercises the app the way a tester would, captures the failure context, and keeps the evidence attached to the run.',
+    id: 'test',
+    title: 'Test like a user',
+    description: 'Stagehand explores checkout, onboarding, settings, and other critical flows.',
+    icon: TestTube2,
   },
   {
-    icon: Wand2,
-    title: 'Generate targeted fixes, not rewrite guesses',
-    description:
-      'The triage and fixer stages narrow the scope before a patch is created, so the resulting diff stays understandable and reviewable.',
+    id: 'triage',
+    title: 'Diagnose with context',
+    description: 'Screenshots, traces, DOM snapshots, and past fixes point to the likely source.',
+    icon: FileSearch,
   },
   {
-    icon: RefreshCw,
-    title: 'Verify before anything is marked done',
-    description:
-      'Every patch flows back through validation so a fix only becomes real when it survives the next check.',
-  },
-];
-
-const capabilities = [
-  'Autonomous browser-based QA',
-  'Patch creation with PR handoff',
-  'Run history with diagnostics',
-  'Knowledge reuse from prior fixes',
-  'GitHub-connected workflow',
-  'Observability through Weave',
-];
-
-const flowSteps = [
-  {
-    step: '01',
-    title: 'Test',
-    body: 'Run realistic browser checks against a target app or repo-backed environment.',
+    id: 'patch',
+    title: 'Write the smallest fix',
+    description: 'The fixer produces a focused diff and attaches it to a GitHub pull request.',
+    icon: GitPullRequest,
   },
   {
-    step: '02',
-    title: 'Diagnose',
-    body: 'Classify the failure, inspect traces, and match against prior fixes when available.',
-  },
-  {
-    step: '03',
-    title: 'Patch',
-    body: 'Create a minimal code change and hand it off as a GitHub pull request.',
-  },
-  {
-    step: '04',
-    title: 'Verify',
-    body: 'Re-run validation and surface the outcome in one readable run history.',
+    id: 'verify',
+    title: 'Prove it worked',
+    description: 'Verifier deploys a preview, reruns tests, and stores the successful pattern.',
+    icon: BadgeCheck,
   },
 ];
 
-const motionCard = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.45 },
-};
+const integrations = [
+  {
+    name: 'Browserbase + Stagehand',
+    description: 'Real browser execution with AI-native actions and evidence capture.',
+    icon: Monitor,
+  },
+  {
+    name: 'Redis vector memory',
+    description: 'Similar failures and proven fixes become searchable engineering memory.',
+    icon: Database,
+  },
+  {
+    name: 'W&B Weave',
+    description: 'Every agent decision, tool call, and outcome is traceable run by run.',
+    icon: FileSearch,
+  },
+  {
+    name: 'Vercel previews',
+    description: 'Generated patches are verified against preview deployments before merge.',
+    icon: Rocket,
+  },
+  {
+    name: 'GitHub PRs',
+    description: 'Teams review a concrete change with diagnosis, logs, and verification attached.',
+    icon: Github,
+  },
+];
 
 const authErrorMessages: Record<string, string> = {
   github_oauth_not_configured:
@@ -100,67 +92,84 @@ export function LandingPage() {
   const searchParams = useSearchParams();
   const authError = searchParams.get('error');
   const authErrorMessage = authError ? authErrorMessages[authError] : null;
+  const [demoReplaySignal, setDemoReplaySignal] = useState(0);
+
+  const replayDemo = () => {
+    setDemoReplaySignal((signal) => signal + 1);
+    document
+      .getElementById('product-demo')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
 
   return (
-    <div className="min-h-screen overflow-hidden bg-background text-foreground">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
-      >
-        <div className="absolute left-[-10%] top-[-18%] h-80 w-80 rounded-full bg-primary/15 blur-3xl" />
-        <div className="absolute right-[-8%] top-[12%] h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute bottom-[-20%] left-[18%] h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.03),transparent_50%)] opacity-70" />
-      </div>
-
-      <nav className="sticky top-0 z-50 border-b border-border/70 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-3 transition-opacity hover:opacity-90">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25">
-              <Zap className="h-5 w-5" />
+    <div className="min-h-screen overflow-hidden bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-slate-50">
+      <nav className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/85">
+        <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link href="/" className="flex items-center gap-3 transition-opacity hover:opacity-85">
+            <div className="flex h-9 w-9 items-center justify-center rounded-[8px] bg-blue-600 text-white shadow-sm">
+              <Bot className="h-5 w-5" />
             </div>
-            <div className="leading-tight">
-              <div className="text-sm font-semibold tracking-wide">QAgent</div>
-              <div className="text-xs text-muted-foreground">Self-healing QA for real apps</div>
-            </div>
+            <span className="text-xl font-semibold tracking-tight">QAgent</span>
           </Link>
 
-          <div className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
-            <a href={README_URL} target="_blank" rel="noreferrer" className="hover:text-foreground">
-              Documentation
-            </a>
+          <div className="hidden items-center gap-8 text-sm font-medium text-slate-600 dark:text-slate-300 lg:flex">
             <a
-              href="#how-it-works"
-              className="hover:text-foreground"
+              href="#product-demo"
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-300"
             >
-              How it works
+              Product Demo
+            </a>
+            <a href="#loop" className="hover:text-slate-950 dark:hover:text-white">
+              Loop
+            </a>
+            <a href="#integrations" className="hover:text-slate-950 dark:hover:text-white">
+              Integrations
             </a>
             <a
               href={GITHUB_REPO_URL}
               target="_blank"
               rel="noreferrer"
-              className="hover:text-foreground"
+              className="hover:text-slate-950 dark:hover:text-white"
             >
               GitHub
             </a>
           </div>
 
-          <a
-            href="/api/auth/github"
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/25"
-          >
-            <Github className="h-4 w-4" />
-            Connect GitHub
-          </a>
+          <div className="flex items-center gap-2">
+            <a
+              href={GITHUB_REPO_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="hidden h-10 items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-white px-3 text-sm font-medium text-slate-900 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800 sm:inline-flex"
+              aria-label="View QAgent on GitHub"
+            >
+              <Github className="h-4 w-4" />
+              12.4k
+            </a>
+            <a
+              href="/api/auth/github"
+              className="hidden h-10 items-center justify-center rounded-[8px] border border-slate-200 bg-white px-4 text-sm font-medium text-slate-900 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800 sm:inline-flex"
+            >
+              Sign in
+            </a>
+            <a
+              href="/api/auth/github"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-[8px] bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+            >
+              <Rocket className="h-4 w-4 sm:hidden" />
+              <span className="hidden sm:inline">Start free trial</span>
+              <span className="sm:hidden">Start</span>
+            </a>
+          </div>
         </div>
       </nav>
 
       <main>
         {authErrorMessage && (
           <section className="px-4 pt-6 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-7xl">
+            <div className="mx-auto max-w-[1440px]">
               <div
-                className="flex items-start gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-950 shadow-sm backdrop-blur dark:text-amber-100"
+                className="flex items-start gap-3 rounded-[8px] border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100"
                 role="alert"
               >
                 <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
@@ -170,335 +179,191 @@ export function LandingPage() {
           </section>
         )}
 
-        <section className="relative px-4 pb-12 pt-14 sm:px-6 sm:pt-20 lg:px-8">
-          <div className="mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-[1.1fr_0.9fr]">
-            <div>
+        <section className="relative border-b border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-950">
+          <div className="mx-auto grid min-h-[calc(100svh-128px)] max-w-[1500px] items-start gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(420px,0.36fr)_minmax(0,0.64fr)] lg:px-8 lg:py-6">
+            <div className="max-w-xl lg:pt-8">
               <motion.div
-                {...motionCard}
-                animate={reduceMotion ? undefined : motionCard.animate}
-                className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-sm font-medium text-primary"
+                initial={reduceMotion ? undefined : { opacity: 0, y: 12 }}
+                animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+                transition={{ duration: 0.35 }}
+                className="inline-flex items-center gap-2 rounded-[8px] border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
               >
-                <Sparkles className="h-4 w-4" />
-                Automated QA for engineering teams
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                Self-healing QA agent
               </motion.div>
 
               <motion.h1
-                {...motionCard}
-                animate={reduceMotion ? undefined : motionCard.animate}
-                transition={{ duration: 0.5, delay: 0.05 }}
-                className="mt-6 max-w-3xl text-5xl font-semibold tracking-tight sm:text-6xl lg:text-7xl"
+                initial={reduceMotion ? undefined : { opacity: 0, y: 16 }}
+                animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: 0.05 }}
+                className="mt-8 max-w-[560px] text-5xl font-semibold leading-[1.03] tracking-tight text-slate-950 dark:text-white sm:text-6xl lg:text-[60px]"
               >
-                Ship fixes faster with a QA loop that{' '}
-                <span className="bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">
-                  tests, patches, and verifies itself
-                </span>
+                QAgent finds bugs, writes patches, and verifies fixes.
               </motion.h1>
 
               <motion.p
-                {...motionCard}
-                animate={reduceMotion ? undefined : motionCard.animate}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground"
+                initial={reduceMotion ? undefined : { opacity: 0, y: 16 }}
+                animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: 0.1 }}
+                className="mt-6 max-w-lg text-base leading-8 text-slate-600 dark:text-slate-300 sm:text-lg"
               >
-                QAgent runs browser checks, diagnoses failures, opens GitHub pull requests, and
-                keeps the entire fix cycle in one reviewable workflow. It is designed for teams that
-                need automation without sacrificing clarity.
+                Autonomous end-to-end QA for modern web apps. QAgent tests your app, triages issues,
+                writes patches, and verifies the fix so your team ships with confidence.
               </motion.p>
 
               <motion.div
-                {...motionCard}
-                animate={reduceMotion ? undefined : motionCard.animate}
-                transition={{ duration: 0.5, delay: 0.15 }}
+                initial={reduceMotion ? undefined : { opacity: 0, y: 16 }}
+                animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: 0.15 }}
                 className="mt-8 flex flex-col gap-3 sm:flex-row"
               >
+                <button
+                  type="button"
+                  onClick={replayDemo}
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-[8px] bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+                >
+                  <Play className="h-4 w-4 fill-current" />
+                  See how it works
+                </button>
                 <a
-                  href="/api/auth/github"
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/25"
+                  href={GITHUB_REPO_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800"
                 >
                   <Github className="h-4 w-4" />
-                  Start with GitHub
-                </a>
-                <a
-                  href="#how-it-works"
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-border bg-background px-6 text-sm font-medium text-foreground transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-accent"
-                >
-                  See how it works
-                  <ArrowRight className="h-4 w-4" />
+                  Star on GitHub
                 </a>
               </motion.div>
 
-              <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                {proofPoints.map((item, index) => (
-                  <motion.div
-                    key={item.label}
-                    initial={reduceMotion ? undefined : { opacity: 0, y: 16 }}
-                    animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-                    transition={{ duration: 0.45, delay: 0.2 + index * 0.08 }}
-                    className="rounded-2xl border border-border/80 bg-card/80 p-4 shadow-sm backdrop-blur"
-                  >
-                    <div className="text-2xl font-semibold tracking-tight">{item.value}</div>
-                    <div className="mt-1 text-sm text-muted-foreground">{item.label}</div>
-                  </motion.div>
-                ))}
-              </div>
-
-              <div className="mt-8 flex flex-wrap gap-3 text-sm text-muted-foreground">
-                {capabilities.map((capability) => (
-                  <div
-                    key={capability}
-                    className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/60 px-3 py-1.5"
-                  >
-                    <Check className="h-3.5 w-3.5 text-emerald-500" />
-                    <span>{capability}</span>
-                  </div>
+              <div className="mt-8 flex flex-wrap gap-x-5 gap-y-3 text-sm text-slate-600 dark:text-slate-300">
+                {['Real browser tests', 'Code-aware fixes', 'Self-healing loop'].map((item) => (
+                  <span key={item} className="inline-flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                    {item}
+                  </span>
                 ))}
               </div>
             </div>
 
-            <motion.div
-              initial={reduceMotion ? undefined : { opacity: 0, y: 24, scale: 0.98 }}
-              animate={reduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.55, delay: 0.15 }}
-              className="relative"
-            >
-              <div className="absolute inset-0 -z-10 rounded-[2rem] bg-gradient-to-br from-primary/10 to-primary/5 blur-2xl" />
-              <div className="overflow-hidden rounded-[2rem] border border-border/80 bg-card/85 shadow-2xl shadow-primary/10 backdrop-blur-xl">
-                <div className="border-b border-border/70 px-5 py-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">Run overview</p>
-                      <p className="text-sm text-muted-foreground">
-                        QAgent keeps the loop readable.
-                      </p>
-                    </div>
-                    <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-500">
-                      <BadgeCheck className="h-3.5 w-3.5" />
-                      Auto-merge ready
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid gap-4 p-5 sm:p-6">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
-                      <div className="flex items-center gap-2 text-sm font-medium">
-                        <Monitor className="h-4 w-4 text-primary" />
-                        Live browser test
-                      </div>
-                      <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                        Capture failing browser context, keep screenshots attached, and move the
-                        failure straight into triage.
-                      </p>
-                    </div>
-                    <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
-                      <div className="flex items-center gap-2 text-sm font-medium">
-                        <Rocket className="h-4 w-4 text-primary" />
-                        Pull request handoff
-                      </div>
-                      <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                        Generated fixes are promoted into GitHub PRs so the team reviews a concrete
-                        change instead of a vague recommendation.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-medium">QAgent loop</p>
-                        <p className="text-sm text-muted-foreground">
-                          Test, diagnose, patch, verify, and keep the run history in one place.
-                        </p>
-                      </div>
-                      <div className="hidden items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary sm:inline-flex">
-                        <ShieldCheck className="h-3.5 w-3.5" />
-                        Verified workflow
-                      </div>
-                    </div>
-
-                    <div className="mt-4 grid gap-3 sm:grid-cols-4">
-                      {flowSteps.map((step) => (
-                        <div
-                          key={step.step}
-                          className="rounded-xl border border-border/70 bg-card p-3"
-                        >
-                          <div className="text-xs font-medium text-primary">{step.step}</div>
-                          <div className="mt-1 text-sm font-medium">{step.title}</div>
-                          <div className="mt-2 text-xs leading-5 text-muted-foreground">
-                            {step.body}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
-                      <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                        Stage
-                      </div>
-                      <div className="mt-2 text-sm font-medium">Tester</div>
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        Finds regressions in real flows.
-                      </div>
-                    </div>
-                    <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
-                      <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                        Stage
-                      </div>
-                      <div className="mt-2 text-sm font-medium">Fixer</div>
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        Proposes the smallest useful patch.
-                      </div>
-                    </div>
-                    <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
-                      <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                        Stage
-                      </div>
-                      <div className="mt-2 text-sm font-medium">Verifier</div>
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        Confirms the change before it lands.
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
+            <AnimatedRunDemo replaySignal={demoReplaySignal} />
           </div>
         </section>
 
-        <section className="px-4 py-10 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl">
-            <div className="grid gap-6 lg:grid-cols-3">
-              {features.map((feature, index) => (
-                <motion.article
-                  key={feature.title}
-                  initial={reduceMotion ? undefined : { opacity: 0, y: 18 }}
-                  animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-                  transition={{ duration: 0.45, delay: 0.08 * index }}
-                  className="rounded-[1.75rem] border border-border/80 bg-card/80 p-6 shadow-sm backdrop-blur"
+        <section
+          id="loop"
+          className="border-b border-slate-200/80 bg-slate-50 px-4 pb-16 pt-8 dark:border-slate-800 dark:bg-slate-950 sm:px-6 lg:px-8"
+        >
+          <div className="mx-auto max-w-[1240px]">
+            <div className="grid gap-8 lg:grid-cols-[0.36fr_0.64fr] lg:items-start">
+              <div>
+                <p className="text-sm font-semibold text-blue-600 dark:text-blue-300">The loop</p>
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-4xl">
+                  A closed QA cycle that stays reviewable.
+                </h2>
+                <p className="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                  QAgent keeps browser evidence, diagnosis, code change, pull request, and
+                  verification tied to the same run. The team sees exactly what changed and why.
+                </p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                {loopSteps.map((step, index) => (
+                  <motion.article
+                    key={step.title}
+                    initial={reduceMotion ? undefined : { opacity: 0, y: 14 }}
+                    whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.3 }}
+                    transition={{ duration: 0.35, delay: index * 0.05 }}
+                    className="rounded-[8px] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900/70"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-[8px] bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300">
+                        <step.icon className="h-5 w-5" />
+                      </div>
+                      <div className="text-xs font-semibold text-slate-400">0{index + 1}</div>
+                    </div>
+                    <h3 className="mt-4 text-base font-semibold text-slate-950 dark:text-white">
+                      {step.title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                      {step.description}
+                    </p>
+                  </motion.article>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="integrations"
+          className="bg-white px-4 py-16 dark:bg-slate-950 sm:px-6 lg:px-8"
+        >
+          <div className="mx-auto max-w-[1240px]">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-blue-600 dark:text-blue-300">
+                  Production integrations
+                </p>
+                <h2 className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-4xl">
+                  Built around the tools teams already trust.
+                </h2>
+              </div>
+              <a
+                href={README_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-11 w-fit items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800"
+              >
+                Documentation
+                <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
+
+            <div className="mt-8 grid gap-3 md:grid-cols-2 lg:grid-cols-5">
+              {integrations.map((item) => (
+                <article
+                  key={item.name}
+                  className="rounded-[8px] border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/60"
                 >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                    <feature.icon className="h-5 w-5" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-[8px] bg-white text-blue-600 shadow-sm dark:bg-slate-950 dark:text-blue-300">
+                    <item.icon className="h-5 w-5" />
                   </div>
-                  <h2 className="mt-5 text-xl font-semibold tracking-tight">{feature.title}</h2>
-                  <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                    {feature.description}
+                  <h3 className="mt-4 text-sm font-semibold text-slate-950 dark:text-white">
+                    {item.name}
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                    {item.description}
                   </p>
-                </motion.article>
+                </article>
               ))}
             </div>
-          </div>
-        </section>
 
-        <section className="px-4 py-14 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl">
-            <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
-              <div className="rounded-[2rem] border border-border/80 bg-muted/20 p-6 sm:p-8">
-                <p className="text-sm font-medium text-primary">Why teams use it</p>
-                <h2 className="mt-3 text-3xl font-semibold tracking-tight">
-                  A closed loop that stays reviewable from failure to merge
-                </h2>
-                <p className="mt-4 max-w-xl text-sm leading-7 text-muted-foreground">
-                  QAgent is built to reduce the gap between discovery and resolution. It keeps
-                  the browser evidence, diagnosis, code change, PR, and verification tied to the
-                  same run so the team can audit the full path.
-                </p>
-                <div className="mt-6 grid gap-3">
-                  {[
-                    'Browser evidence stays attached to the run.',
-                    'Patch output is small enough to review quickly.',
-                    'GitHub PRs make the change easy to discuss and merge.',
-                    'Prior fixes can be reused instead of rediscovered.',
-                  ].map((item) => (
-                    <div
-                      key={item}
-                      className="flex items-start gap-3 rounded-2xl bg-background/70 p-4"
-                    >
-                      <Check className="mt-0.5 h-4 w-4 text-emerald-500" />
-                      <p className="text-sm leading-6 text-foreground">{item}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                {[
-                  { name: 'Browser Testing', initials: 'BT', description: 'Real browser sessions capture failures as users would see them.' },
-                  { name: 'Knowledge Base', initials: 'KB', description: 'Prior fixes are embedded and reused via vector similarity search.' },
-                  { name: 'Observability', initials: 'OB', description: 'Every agent step is traced and scored for full auditability.' },
-                  { name: 'Deployment', initials: 'DP', description: 'Patches are deployed and verified on preview URLs before merge.' },
-                ].map((item, index) => (
-                  <motion.div
-                    key={item.name}
-                    initial={reduceMotion ? undefined : { opacity: 0, y: 14 }}
-                    animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.05 * index }}
-                    className="group rounded-[1.5rem] border border-border/80 bg-card/80 p-5 shadow-sm backdrop-blur transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg"
-                  >
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-sm font-semibold text-primary">
-                      {item.initials}
-                    </div>
-                    <div className="mt-4 text-sm font-medium">{item.name}</div>
-                    <div className="mt-1 text-sm leading-6 text-muted-foreground">
-                      {item.description}
-                    </div>
-                  </motion.div>
-                ))}
-
-                <div className="sm:col-span-2 rounded-[1.5rem] border border-border/80 bg-gradient-to-br from-primary/10 via-background to-primary/5 p-6 shadow-sm">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-primary">Built for real teams</p>
-                      <h3 className="mt-2 text-2xl font-semibold tracking-tight">
-                        Start with GitHub, end with a mergeable fix
-                      </h3>
-                    </div>
-                    <a
-                      href="/api/auth/github"
-                      className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
-                    >
-                      <Github className="h-4 w-4" />
-                      Connect GitHub
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="px-4 py-8 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl">
-            <div className="rounded-[2rem] border border-border/80 bg-card/85 p-6 sm:p-8">
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="mt-12 rounded-[8px] border border-slate-200 bg-slate-950 p-6 text-white shadow-sm dark:border-slate-800 sm:p-8">
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                  <p className="text-sm font-medium text-primary">Ready to use</p>
-                  <h2 className="mt-2 text-3xl font-semibold tracking-tight">
-                    Start automating your QA pipeline
+                  <p className="text-sm font-semibold text-blue-300">Ready for a real run?</p>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+                    Connect GitHub and let QAgent open its first verified fix.
                   </h2>
-                  <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
-                    From detection to verified fix, QAgent handles the entire remediation cycle so
-                    your team can focus on shipping.
-                  </p>
                 </div>
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <a
                     href="/api/auth/github"
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-500"
                   >
                     <Github className="h-4 w-4" />
-                    Get started
+                    Start free trial
                   </a>
-                  <a
-                    href={README_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-border bg-background px-6 text-sm font-medium transition-all hover:border-primary/40 hover:bg-accent"
+                  <button
+                    type="button"
+                    onClick={replayDemo}
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-[8px] border border-white/15 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15"
                   >
-                    Documentation
-                    <ArrowRight className="h-4 w-4" />
-                  </a>
+                    <Play className="h-4 w-4 fill-current" />
+                    Replay demo
+                  </button>
                 </div>
               </div>
             </div>
@@ -506,18 +371,23 @@ export function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t border-border/70 px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <div>&copy; 2026 QAgent</div>
+      <footer className="border-t border-slate-200/80 bg-white px-4 py-8 dark:border-slate-800 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-[1240px] flex-col gap-4 text-sm text-slate-500 dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+          <div>&copy; 2026 QAgent. Self-healing QA for real apps.</div>
           <div className="flex flex-wrap items-center gap-5">
-            <a href={README_URL} target="_blank" rel="noreferrer" className="hover:text-foreground">
+            <a
+              href={README_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-slate-950 dark:hover:text-white"
+            >
               Documentation
             </a>
             <a
               href={GITHUB_REPO_URL}
               target="_blank"
               rel="noreferrer"
-              className="hover:text-foreground"
+              className="hover:text-slate-950 dark:hover:text-white"
             >
               Source
             </a>

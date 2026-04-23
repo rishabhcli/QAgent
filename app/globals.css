@@ -191,6 +191,109 @@
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
   }
+
+  @media (hover: hover) and (pointer: fine) {
+    body.has-creative-cursor,
+    body.has-creative-cursor * {
+      cursor: none;
+    }
+  }
+
+  .creative-cursor-shell {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    --creative-cursor-ring-glow: 0.35;
+    transition: opacity 180ms ease;
+  }
+
+  .creative-cursor-shell--hidden {
+    opacity: 0;
+  }
+
+  .creative-cursor-shell--interactive {
+    --creative-cursor-ring-glow: 0.85;
+  }
+
+  .creative-cursor-shell--text {
+    --creative-cursor-ring-glow: 0.18;
+  }
+
+  .creative-cursor-dot,
+  .creative-cursor-orbit,
+  .creative-cursor-trail {
+    position: absolute;
+    left: 0;
+    top: 0;
+    will-change: transform, opacity;
+  }
+
+  .creative-cursor-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 9999px;
+    background: radial-gradient(circle at 30% 30%, hsl(var(--brand)), hsl(var(--brand)) 55%, transparent 56%);
+    transition: transform 140ms ease;
+    box-shadow: 0 0 12px hsl(var(--primary) / 0.55);
+  }
+
+  .creative-cursor-orbit {
+    width: 36px;
+    height: 36px;
+    border-radius: 9999px;
+    border: 2px solid hsl(var(--primary) / var(--creative-cursor-ring-glow));
+    transition:
+      transform 160ms ease,
+      border-color 160ms ease;
+    box-shadow: 0 0 22px hsl(var(--primary) / 0.28);
+    opacity: 0.85;
+  }
+
+  .creative-cursor-trail {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, hsl(var(--brand-strong)), hsl(var(--primary)));
+    opacity: 0;
+    transition: opacity 120ms ease;
+  }
+
+  .creative-cursor-burst {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    border-radius: 9999px;
+    border: 1px solid hsl(var(--primary) / 0.7);
+    transform: translate(-50%, -50%);
+    animation: creative-cursor-burst 0.56s ease-out forwards;
+    pointer-events: none;
+  }
+
+  @keyframes creative-cursor-burst {
+    0% {
+      transform: translate(-50%, -50%) scale(0.24);
+      opacity: 0.75;
+      box-shadow: 0 0 0 0 hsl(var(--primary) / 0.45);
+    }
+
+    100% {
+      transform: translate(-50%, -50%) scale(3.4);
+      opacity: 0;
+      box-shadow: 0 0 0 20px hsl(var(--primary) / 0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .creative-cursor-shell {
+      display: none;
+    }
+
+    body.has-creative-cursor,
+    body.has-creative-cursor * {
+      cursor: auto;
+    }
+  }
 }
 
 @layer utilities {

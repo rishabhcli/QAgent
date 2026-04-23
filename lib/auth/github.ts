@@ -1,6 +1,7 @@
 import type { GitHubUser, GitHubRepo } from '@/lib/types';
 
 const DEFAULT_APP_ORIGIN = 'http://localhost:3000';
+const DEFAULT_GITHUB_CALLBACK_PATH = '/api/auth/callback/github';
 
 function getGitHubClientId(): string {
   return process.env.GITHUB_CLIENT_ID?.trim() || '';
@@ -8,6 +9,10 @@ function getGitHubClientId(): string {
 
 function getGitHubClientSecret(): string {
   return process.env.GITHUB_CLIENT_SECRET?.trim() || '';
+}
+
+function getGitHubAuthScopes(): string {
+  return process.env.GITHUB_AUTH_SCOPES?.trim() || '';
 }
 
 export function isGitHubOAuthConfigured(): boolean {
@@ -25,16 +30,20 @@ export function getAppOrigin(origin?: string): string {
 }
 
 export function getGitHubCallbackUrl(origin?: string): string {
-  return new URL('/api/auth/github/callback', getAppOrigin(origin)).toString();
+  return new URL(DEFAULT_GITHUB_CALLBACK_PATH, getAppOrigin(origin)).toString();
 }
 
 export function getGitHubAuthUrl(state: string, origin?: string): string {
   const params = new URLSearchParams({
     client_id: getGitHubClientId(),
     redirect_uri: getGitHubCallbackUrl(origin),
-    scope: 'repo read:user',
     state,
   });
+
+  const scopes = getGitHubAuthScopes();
+  if (scopes) {
+    params.set('scope', scopes);
+  }
 
   return `https://github.com/login/oauth/authorize?${params.toString()}`;
 }
