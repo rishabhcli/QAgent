@@ -1,0 +1,1376 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sponsor Integrations - QAgent docs</title>
+  <link rel="icon" href="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%23151515%22/%3E%0A%20%20%3Cpath%20d%3D%22M16%2018h32M16%2030h22M16%2042h30%22%20stroke%3D%22%23e3dacc%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22/%3E%0A%20%20%3Ccircle%20cx%3D%2248%22%20cy%3D%2218%22%20r%3D%225%22%20fill%3D%22%23d97757%22/%3E%0A%3C/svg%3E">
+  <style>
+pre { line-height: 125%; }
+td.linenos .normal { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+.codehilite .hll { background-color: #6e7681 }
+.codehilite { background: #0d1117; color: #E6EDF3 }
+.codehilite .c { color: #8B949E; font-style: italic } /* Comment */
+.codehilite .err { color: #F85149 } /* Error */
+.codehilite .esc { color: #E6EDF3 } /* Escape */
+.codehilite .g { color: #E6EDF3 } /* Generic */
+.codehilite .k { color: #FF7B72 } /* Keyword */
+.codehilite .l { color: #A5D6FF } /* Literal */
+.codehilite .n { color: #E6EDF3 } /* Name */
+.codehilite .o { color: #FF7B72; font-weight: bold } /* Operator */
+.codehilite .x { color: #E6EDF3 } /* Other */
+.codehilite .p { color: #E6EDF3 } /* Punctuation */
+.codehilite .ch { color: #8B949E; font-style: italic } /* Comment.Hashbang */
+.codehilite .cm { color: #8B949E; font-style: italic } /* Comment.Multiline */
+.codehilite .cp { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Preproc */
+.codehilite .cpf { color: #8B949E; font-style: italic } /* Comment.PreprocFile */
+.codehilite .c1 { color: #8B949E; font-style: italic } /* Comment.Single */
+.codehilite .cs { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Special */
+.codehilite .gd { color: #FFA198; background-color: #490202 } /* Generic.Deleted */
+.codehilite .ge { color: #E6EDF3; font-style: italic } /* Generic.Emph */
+.codehilite .ges { color: #E6EDF3; font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.codehilite .gr { color: #FFA198 } /* Generic.Error */
+.codehilite .gh { color: #79C0FF; font-weight: bold } /* Generic.Heading */
+.codehilite .gi { color: #56D364; background-color: #0F5323 } /* Generic.Inserted */
+.codehilite .go { color: #8B949E } /* Generic.Output */
+.codehilite .gp { color: #8B949E } /* Generic.Prompt */
+.codehilite .gs { color: #E6EDF3; font-weight: bold } /* Generic.Strong */
+.codehilite .gu { color: #79C0FF } /* Generic.Subheading */
+.codehilite .gt { color: #FF7B72 } /* Generic.Traceback */
+.codehilite .g-Underline { color: #E6EDF3; text-decoration: underline } /* Generic.Underline */
+.codehilite .kc { color: #79C0FF } /* Keyword.Constant */
+.codehilite .kd { color: #FF7B72 } /* Keyword.Declaration */
+.codehilite .kn { color: #FF7B72 } /* Keyword.Namespace */
+.codehilite .kp { color: #79C0FF } /* Keyword.Pseudo */
+.codehilite .kr { color: #FF7B72 } /* Keyword.Reserved */
+.codehilite .kt { color: #FF7B72 } /* Keyword.Type */
+.codehilite .ld { color: #79C0FF } /* Literal.Date */
+.codehilite .m { color: #A5D6FF } /* Literal.Number */
+.codehilite .s { color: #A5D6FF } /* Literal.String */
+.codehilite .na { color: #E6EDF3 } /* Name.Attribute */
+.codehilite .nb { color: #E6EDF3 } /* Name.Builtin */
+.codehilite .nc { color: #F0883E; font-weight: bold } /* Name.Class */
+.codehilite .no { color: #79C0FF; font-weight: bold } /* Name.Constant */
+.codehilite .nd { color: #D2A8FF; font-weight: bold } /* Name.Decorator */
+.codehilite .ni { color: #FFA657 } /* Name.Entity */
+.codehilite .ne { color: #F0883E; font-weight: bold } /* Name.Exception */
+.codehilite .nf { color: #D2A8FF; font-weight: bold } /* Name.Function */
+.codehilite .nl { color: #79C0FF; font-weight: bold } /* Name.Label */
+.codehilite .nn { color: #FF7B72 } /* Name.Namespace */
+.codehilite .nx { color: #E6EDF3 } /* Name.Other */
+.codehilite .py { color: #79C0FF } /* Name.Property */
+.codehilite .nt { color: #7EE787 } /* Name.Tag */
+.codehilite .nv { color: #79C0FF } /* Name.Variable */
+.codehilite .ow { color: #FF7B72; font-weight: bold } /* Operator.Word */
+.codehilite .pm { color: #E6EDF3 } /* Punctuation.Marker */
+.codehilite .w { color: #6E7681 } /* Text.Whitespace */
+.codehilite .mb { color: #A5D6FF } /* Literal.Number.Bin */
+.codehilite .mf { color: #A5D6FF } /* Literal.Number.Float */
+.codehilite .mh { color: #A5D6FF } /* Literal.Number.Hex */
+.codehilite .mi { color: #A5D6FF } /* Literal.Number.Integer */
+.codehilite .mo { color: #A5D6FF } /* Literal.Number.Oct */
+.codehilite .sa { color: #79C0FF } /* Literal.String.Affix */
+.codehilite .sb { color: #A5D6FF } /* Literal.String.Backtick */
+.codehilite .sc { color: #A5D6FF } /* Literal.String.Char */
+.codehilite .dl { color: #79C0FF } /* Literal.String.Delimiter */
+.codehilite .sd { color: #A5D6FF } /* Literal.String.Doc */
+.codehilite .s2 { color: #A5D6FF } /* Literal.String.Double */
+.codehilite .se { color: #79C0FF } /* Literal.String.Escape */
+.codehilite .sh { color: #79C0FF } /* Literal.String.Heredoc */
+.codehilite .si { color: #A5D6FF } /* Literal.String.Interpol */
+.codehilite .sx { color: #A5D6FF } /* Literal.String.Other */
+.codehilite .sr { color: #79C0FF } /* Literal.String.Regex */
+.codehilite .s1 { color: #A5D6FF } /* Literal.String.Single */
+.codehilite .ss { color: #A5D6FF } /* Literal.String.Symbol */
+.codehilite .bp { color: #E6EDF3 } /* Name.Builtin.Pseudo */
+.codehilite .fm { color: #D2A8FF; font-weight: bold } /* Name.Function.Magic */
+.codehilite .vc { color: #79C0FF } /* Name.Variable.Class */
+.codehilite .vg { color: #79C0FF } /* Name.Variable.Global */
+.codehilite .vi { color: #79C0FF } /* Name.Variable.Instance */
+.codehilite .vm { color: #79C0FF } /* Name.Variable.Magic */
+.codehilite .il { color: #A5D6FF } /* Literal.Number.Integer.Long */
+:root {
+  --paper: #f7f5f0;
+  --paper-2: #ebe7de;
+  --surface: #fffefa;
+  --ink: #151515;
+  --muted: #77746d;
+  --line: #d5d0c6;
+  --line-strong: #1a1a18;
+  --clay: #d97757;
+  --olive: #788c5d;
+  --sky: #6a8caf;
+  --oat: #e3dacc;
+  --danger: #b94f48;
+  --shadow: 0 18px 50px rgba(20, 20, 19, 0.10);
+  --radius: 8px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --serif: Charter, "Bitstream Charter", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.58;
+}
+a { color: inherit; text-decoration-color: color-mix(in srgb, var(--clay) 65%, transparent); text-underline-offset: 0.18em; }
+button, input, select { font: inherit; }
+.window {
+  max-width: 1180px;
+  margin: 42px auto;
+  background: var(--surface);
+  border: 2px solid var(--line-strong);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.chrome {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 18px;
+  align-items: center;
+  padding: 12px 18px;
+  background: var(--paper-2);
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+.dots { display: flex; gap: 8px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; background: #d1cbc1; display: block; }
+.path-pill {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+.mode-strip { display: flex; flex-wrap: wrap; gap: 8px; }
+.mode-strip button, .copy-code {
+  border: 1px solid var(--line);
+  background: #fffefa;
+  color: var(--ink);
+  border-radius: 7px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.mode-strip button[aria-pressed="true"] {
+  background: var(--ink);
+  color: #fffefa;
+  border-color: var(--ink);
+}
+.hero {
+  padding: 34px 42px 28px;
+  border-bottom: 1px solid var(--line);
+}
+.kicker {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+h1, h2, h3 {
+  font-family: var(--serif);
+  letter-spacing: 0;
+  line-height: 1.05;
+}
+h1 {
+  margin: 0;
+  font-size: clamp(34px, 5vw, 66px);
+  max-width: 880px;
+}
+.lede {
+  margin: 16px 0 0;
+  max-width: 780px;
+  color: #4c4943;
+  font-size: 18px;
+}
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 24px;
+}
+.metric {
+  min-height: 98px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfaf6;
+}
+.metric span {
+  display: block;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+.metric strong {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--serif);
+  font-size: 30px;
+  line-height: 1;
+}
+.layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  min-height: 620px;
+}
+.sidebar {
+  border-right: 1px solid var(--line);
+  padding: 24px 18px;
+  background: #fbfaf6;
+}
+.search {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 10px 13px;
+  background: #fff;
+}
+.toc {
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.toc li { margin: 4px 0; }
+.toc a {
+  display: block;
+  padding: 7px 8px;
+  border-radius: 7px;
+  color: #3f3c37;
+  text-decoration: none;
+}
+.toc a:hover, .toc a.active { background: var(--oat); }
+.toc .lvl-3, .toc .lvl-4, .toc .lvl-5, .toc .lvl-6 { padding-left: 18px; font-size: 14px; }
+.content-shell { min-width: 0; }
+.panel { display: none; padding: 30px 42px 50px; }
+.panel.active { display: block; }
+.article {
+  max-width: 820px;
+}
+.article h1 { font-size: 42px; margin: 0 0 16px; }
+.article h2 {
+  margin: 34px 0 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 30px;
+}
+.article h3 { margin: 26px 0 10px; font-size: 23px; }
+.article p, .article li { color: #34322d; }
+.article blockquote {
+  margin: 22px 0;
+  padding: 12px 18px;
+  border-left: 5px solid var(--clay);
+  background: #f1ece4;
+}
+.article img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.table-frame { overflow-x: auto; margin: 20px 0; border: 1px solid var(--line); border-radius: var(--radius); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { background: #f0ece4; font-family: var(--mono); font-size: 12px; text-transform: uppercase; }
+.code-frame {
+  position: relative;
+  margin: 20px 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #11110f;
+  border: 1px solid #262622;
+}
+.code-frame pre {
+  margin: 0;
+  padding: 20px;
+  overflow-x: auto;
+  color: #f4f1e8;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.copy-code {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  background: #24231f;
+  color: #f8f4ea;
+  border-color: #45423a;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.map-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+  gap: 22px;
+  align-items: start;
+}
+.flow-card, .prompt-card, .index-card, .doc-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfaf6;
+  padding: 18px;
+}
+.flow-svg {
+  width: 100%;
+  min-height: 320px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #f7f4ec;
+}
+.prompt-box {
+  white-space: pre-wrap;
+  font-family: var(--mono);
+  font-size: 13px;
+  background: #11110f;
+  color: #f4f1e8;
+  border-radius: var(--radius);
+  padding: 18px;
+  overflow-x: auto;
+}
+.primary-action {
+  border: 0;
+  background: var(--clay);
+  color: white;
+  border-radius: 7px;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.secondary-action {
+  border: 1px solid var(--line-strong);
+  background: #fffefa;
+  color: var(--ink);
+  border-radius: 7px;
+  padding: 11px 15px;
+  cursor: pointer;
+}
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+.source-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.source-grid div {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  background: #fffefa;
+}
+.source-grid code { word-break: break-word; }
+.html-note {
+  margin-top: 24px;
+  padding: 14px 16px;
+  border-left: 5px solid var(--olive);
+  background: #eff1e8;
+  color: #3c442f;
+}
+.html-note.unresolved {
+  border-left-color: var(--clay);
+  background: #f7e7df;
+  color: #553225;
+}
+.missing-reference {
+  color: var(--danger);
+  text-decoration-style: dotted;
+}
+.missing-image {
+  background: #f1ece4;
+}
+.read-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 4px;
+  width: 0;
+  background: linear-gradient(90deg, var(--clay), var(--olive), var(--sky));
+  z-index: 10;
+}
+.index-hero {
+  padding: 40px 42px 30px;
+}
+.capability-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 24px 0;
+}
+.capability {
+  min-height: 150px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fffefa;
+  padding: 14px;
+}
+.capability svg { width: 54px; height: 54px; }
+.capability strong { display: block; font-family: var(--serif); font-size: 20px; }
+.capability span { display: block; color: var(--muted); font-size: 14px; }
+.doc-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 22px 0;
+}
+.chip {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #fffefa;
+  cursor: pointer;
+}
+.chip.active { background: var(--ink); color: #fffefa; border-color: var(--ink); }
+.doc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.doc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 210px;
+  text-decoration: none;
+}
+.doc-card:hover { border-color: var(--clay); transform: translateY(-1px); }
+.doc-card h2 { margin: 0; font-size: 24px; }
+.doc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.kind {
+  color: var(--clay);
+  font-family: var(--mono);
+  text-transform: uppercase;
+  font-size: 12px;
+}
+.footer-note {
+  margin-top: 30px;
+  color: var(--muted);
+  font-size: 14px;
+}
+body.focus .sidebar, body.focus .metric-grid, body.focus .chrome .path-pill { display: none; }
+body.focus .layout { grid-template-columns: 1fr; }
+body.focus .article { margin: 0 auto; }
+mark.search-hit { background: #f5d9a6; color: inherit; padding: 0 2px; }
+@media (max-width: 860px) {
+  .window { margin: 0; border-left: 0; border-right: 0; border-radius: 0; }
+  .chrome { grid-template-columns: 1fr; }
+  .dots { display: none; }
+  .hero, .index-hero, .panel { padding-left: 20px; padding-right: 20px; }
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { border-right: 0; border-bottom: 1px solid var(--line); }
+  .metric-grid, .capability-grid, .doc-grid, .map-grid, .source-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+  <div class="read-progress" aria-hidden="true"></div>
+  <main class="window" id="top">
+    <div class="chrome">
+      <div class="dots" aria-hidden="true"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+      <div class="path-pill">docs/SPONSOR_INTEGRATIONS.md -> docs-html/pages/docs/SPONSOR_INTEGRATIONS.html</div>
+      <div class="mode-strip" aria-label="View mode">
+        <button type="button" data-panel="read" aria-pressed="true">Read</button>
+        <button type="button" data-panel="map" aria-pressed="false">Map</button>
+        <button type="button" data-panel="handoff" aria-pressed="false">Handoff</button>
+      </div>
+    </div>
+
+    <section class="hero">
+      <p class="kicker">QAgent / Reference / HTML documentation mirror</p>
+      <h1>Sponsor Integrations</h1>
+      <p class="lede">QAgent integrates six sponsor technologies today and plans Google ADK integration. This document details current usage and planned alignment.</p>
+      <div class="metric-grid" aria-label="Document statistics">
+        <div class="metric"><span>Words</span><strong>1,472</strong></div>
+        <div class="metric"><span>Sections</span><strong>38</strong></div>
+        <div class="metric"><span>Code blocks</span><strong>14</strong></div>
+        <div class="metric"><span>Tables</span><strong>2</strong></div>
+      </div>
+      <div class="actions">
+        <button class="primary-action" type="button" data-copy="#handoffPrompt">Copy as prompt</button>
+        <button class="secondary-action" id="focusMode" type="button">Focus mode</button>
+        <a class="secondary-action" href="../../index.html">Back to repo index</a>
+      </div>
+    </section>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <input class="search" id="docSearch" type="search" placeholder="Search this document">
+        <ul class="toc"><li><a class="lvl-1" href="#sponsor-integrations">Sponsor Integrations</a></li>
+<li><a class="lvl-2" href="#overview">Overview</a></li>
+<li><a class="lvl-2" href="#1-browserbase-stagehand">1. Browserbase + Stagehand</a></li>
+<li><a class="lvl-3" href="#overview_1">Overview</a></li>
+<li><a class="lvl-3" href="#integration-points">Integration Points</a></li>
+<li><a class="lvl-3" href="#key-features-used">Key Features Used</a></li>
+<li><a class="lvl-3" href="#why-this-matters">Why This Matters</a></li>
+<li><a class="lvl-2" href="#2-redis">2. Redis</a></li>
+<li><a class="lvl-3" href="#overview_2">Overview</a></li>
+<li><a class="lvl-3" href="#integration-points_1">Integration Points</a></li>
+<li><a class="lvl-3" href="#key-features-used_1">Key Features Used</a></li>
+<li><a class="lvl-3" href="#why-this-matters_1">Why This Matters</a></li>
+<li><a class="lvl-2" href="#3-vercel">3. Vercel</a></li>
+<li><a class="lvl-3" href="#overview_3">Overview</a></li>
+<li><a class="lvl-3" href="#integration-points_2">Integration Points</a></li>
+<li><a class="lvl-3" href="#key-features-used_2">Key Features Used</a></li>
+<li><a class="lvl-3" href="#why-this-matters_2">Why This Matters</a></li>
+<li><a class="lvl-2" href="#4-w-b-weave">4. W&amp;B Weave</a></li>
+<li><a class="lvl-3" href="#overview_4">Overview</a></li>
+<li><a class="lvl-3" href="#integration-points_3">Integration Points</a></li>
+<li><a class="lvl-3" href="#key-features-used_3">Key Features Used</a></li>
+<li><a class="lvl-3" href="#why-this-matters_3">Why This Matters</a></li>
+<li><a class="lvl-2" href="#5-google-adk-planned">5. Google ADK (Planned)</a></li>
+<li><a class="lvl-3" href="#overview_5">Overview</a></li>
+<li><a class="lvl-3" href="#current-implementation-adk-compatible-pattern">Current Implementation (ADK-compatible Pattern)</a></li>
+<li><a class="lvl-3" href="#design-principles-used">Design Principles Used</a></li>
+<li><a class="lvl-3" href="#why-this-matters_4">Why This Matters</a></li>
+<li><a class="lvl-2" href="#6-marimo">6. Marimo</a></li>
+<li><a class="lvl-3" href="#overview_6">Overview</a></li>
+<li><a class="lvl-3" href="#integration-points_4">Integration Points</a></li>
+<li><a class="lvl-3" href="#key-features-used_4">Key Features Used</a></li>
+<li><a class="lvl-3" href="#why-this-matters_5">Why This Matters</a></li>
+<li><a class="lvl-2" href="#integration-architecture">Integration Architecture</a></li>
+<li><a class="lvl-2" href="#configuration-reference">Configuration Reference</a></li>
+<li><a class="lvl-3" href="#environment-variables">Environment Variables</a></li>
+<li><a class="lvl-3" href="#required-dependencies">Required Dependencies</a></li>
+<li><a class="lvl-2" href="#environment-variables-weavehacks-additions">Environment Variables (WeaveHacks Additions)</a></li>
+<li><a class="lvl-2" href="#sponsor-credits">Sponsor Credits</a></li></ul>
+      </aside>
+      <div class="content-shell">
+        <section class="panel active" id="read">
+          <article class="article">
+            <h1 id="sponsor-integrations">Sponsor Integrations</h1>
+<p>QAgent integrates six sponsor technologies today and plans Google ADK integration. This document details current usage and planned alignment.</p>
+<hr/>
+<h2 id="overview">Overview</h2>
+<div class="table-frame"><table>
+<thead>
+<tr>
+<th>Sponsor</th>
+<th>Integration</th>
+<th>Primary Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Browserbase</td>
+<td>Cloud browser sessions</td>
+<td>Running E2E tests</td>
+</tr>
+<tr>
+<td>Stagehand</td>
+<td>AI browser automation</td>
+<td>Natural language test actions</td>
+</tr>
+<tr>
+<td>Redis</td>
+<td>Vector database</td>
+<td>Knowledge base for patterns</td>
+</tr>
+<tr>
+<td>Vercel</td>
+<td>Deployment platform</td>
+<td>Auto-deploy after fixes</td>
+</tr>
+<tr>
+<td>W&amp;B Weave</td>
+<td>Observability</td>
+<td>Tracing all agent actions</td>
+</tr>
+<tr>
+<td>Google ADK (planned)</td>
+<td>Agent framework</td>
+<td>Multi-agent orchestration</td>
+</tr>
+<tr>
+<td>Marimo</td>
+<td>Dashboard framework</td>
+<td>Real-time analytics</td>
+</tr>
+</tbody>
+</table></div>
+<hr/>
+<h2 id="1-browserbase-stagehand">1. Browserbase + Stagehand</h2>
+<h3 id="overview_1">Overview</h3>
+<p>Browserbase provides cloud-hosted browser sessions. Stagehand adds AI-powered automation using natural language commands.</p>
+<h3 id="integration-points">Integration Points</h3>
+<p><strong>File:</strong> <code>lib/browserbase/client.ts</code></p>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">Browserbase</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'@browserbasehq/sdk'</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">bb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Browserbase</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">apiKey</span><span class="o">:</span><span class="w"> </span><span class="kt">process.env.BROWSERBASE_API_KEY</span><span class="o">!</span><span class="p">,</span>
+<span class="p">});</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">createSession</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">session</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">bb</span><span class="p">.</span><span class="nx">sessions</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">projectId</span><span class="o">:</span><span class="w"> </span><span class="kt">process.env.BROWSERBASE_PROJECT_ID</span><span class="o">!</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">browserSettings</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">viewport</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">width</span><span class="o">:</span><span class="w"> </span><span class="kt">1280</span><span class="p">,</span><span class="w"> </span><span class="nx">height</span><span class="o">:</span><span class="w"> </span><span class="kt">720</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">  </span><span class="p">});</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">session</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p><strong>File:</strong> <code>agents/tester/index.ts</code></p>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">Stagehand</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'@browserbasehq/stagehand'</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">class</span><span class="w"> </span><span class="nx">TesterAgent</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">private</span><span class="w"> </span><span class="nx">stagehand</span><span class="o">:</span><span class="w"> </span><span class="kt">Stagehand</span><span class="p">;</span>
+
+<span class="w">  </span><span class="k">async</span><span class="w"> </span><span class="nx">init</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="nx">stagehand</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">Stagehand</span><span class="p">({</span>
+<span class="w">      </span><span class="nx">env</span><span class="o">:</span><span class="w"> </span><span class="s1">'BROWSERBASE'</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">enableCaching</span><span class="o">:</span><span class="w"> </span><span class="kt">true</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">modelName</span><span class="o">:</span><span class="w"> </span><span class="s1">'gpt-4o'</span><span class="p">,</span>
+<span class="w">    </span><span class="p">});</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">stagehand</span><span class="p">.</span><span class="nx">init</span><span class="p">();</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">async</span><span class="w"> </span><span class="nx">runTest</span><span class="p">(</span><span class="nx">spec</span><span class="o">:</span><span class="w"> </span><span class="kt">TestSpec</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">await</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">stagehand</span><span class="p">.</span><span class="nx">page</span><span class="p">.</span><span class="kr">goto</span><span class="p">(</span><span class="nx">spec</span><span class="p">.</span><span class="nx">url</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="nx">step</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="nx">spec</span><span class="p">.</span><span class="nx">steps</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="c1">// Natural language actions</span>
+<span class="w">      </span><span class="k">await</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">stagehand</span><span class="p">.</span><span class="nx">act</span><span class="p">(</span><span class="nx">step</span><span class="p">.</span><span class="nx">action</span><span class="p">);</span>
+
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">step</span><span class="p">.</span><span class="nx">expected</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">stagehand</span><span class="p">.</span><span class="nx">observe</span><span class="p">(</span><span class="nx">step</span><span class="p">.</span><span class="nx">expected</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">result</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="k">return</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">captureFailure</span><span class="p">(</span><span class="nx">step</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<h3 id="key-features-used">Key Features Used</h3>
+<ul>
+<li><strong>Session Management</strong>: Create isolated browser sessions for each test</li>
+<li><strong>AI Actions</strong>: Execute tests using natural language ("click the checkout button")</li>
+<li><strong>Observation</strong>: Verify page state matches expectations</li>
+<li><strong>Screenshot Capture</strong>: Take screenshots on failure for debugging</li>
+</ul>
+<h3 id="why-this-matters">Why This Matters</h3>
+<ul>
+<li>No fragile CSS selectors - tests are written in plain English</li>
+<li>Cloud execution - no local browser dependencies</li>
+<li>AI understands page context - handles dynamic content naturally</li>
+</ul>
+<hr/>
+<h2 id="2-redis">2. Redis</h2>
+<h3 id="overview_2">Overview</h3>
+<p>Redis with vector search capabilities stores failure patterns and successful fixes. This enables semantic search for similar past issues.</p>
+<h3 id="integration-points_1">Integration Points</h3>
+<p><strong>File:</strong> <code>lib/redis/client.ts</code></p>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="k">import</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">createClient</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'redis'</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">client</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">createClient</span><span class="p">({</span>
+<span class="w">  </span><span class="nx">url</span><span class="o">:</span><span class="w"> </span><span class="kt">process.env.REDIS_URL</span><span class="p">,</span>
+<span class="p">});</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">createIndex</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">await</span><span class="w"> </span><span class="nx">client</span><span class="p">.</span><span class="nx">ft</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="s1">'idx:failures'</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="s1">'$.embedding'</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s1">'VECTOR'</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">ALGORITHM</span><span class="o">:</span><span class="w"> </span><span class="s1">'HNSW'</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">TYPE</span><span class="o">:</span><span class="w"> </span><span class="s1">'FLOAT32'</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">DIM</span><span class="o">:</span><span class="w"> </span><span class="kt">1536</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">DISTANCE_METRIC</span><span class="o">:</span><span class="w"> </span><span class="s1">'COSINE'</span><span class="p">,</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="s1">'$.errorMessage'</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s1">'TEXT'</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="s1">'$.file'</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s1">'TAG'</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">ON</span><span class="o">:</span><span class="w"> </span><span class="s1">'JSON'</span><span class="p">,</span><span class="w"> </span><span class="nx">PREFIX</span><span class="o">:</span><span class="w"> </span><span class="s1">'failure:'</span><span class="w"> </span><span class="p">});</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p><strong>File:</strong> <code>lib/redis/embeddings.ts</code></p>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">OpenAI</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'openai'</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">generateEmbedding</span><span class="p">(</span><span class="nx">text</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="kt">number</span><span class="p">[]</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">openai</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">OpenAI</span><span class="p">();</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">openai</span><span class="p">.</span><span class="nx">embeddings</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">model</span><span class="o">:</span><span class="w"> </span><span class="s1">'text-embedding-3-small'</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">input</span><span class="o">:</span><span class="w"> </span><span class="kt">text</span><span class="p">,</span>
+<span class="w">  </span><span class="p">});</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">response</span><span class="p">.</span><span class="nx">data</span><span class="p">[</span><span class="mf">0</span><span class="p">].</span><span class="nx">embedding</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">findSimilarIssues</span><span class="p">(</span><span class="nx">errorMessage</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">5</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">embedding</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">generateEmbedding</span><span class="p">(</span><span class="nx">errorMessage</span><span class="p">);</span>
+
+<span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">results</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">client</span><span class="p">.</span><span class="nx">ft</span><span class="p">.</span><span class="nx">search</span><span class="p">(</span><span class="s1">'idx:failures'</span><span class="p">,</span><span class="w"> </span><span class="sb">`*=&gt;[KNN </span><span class="si">${</span><span class="nx">k</span><span class="si">}</span><span class="sb"> @embedding $BLOB]`</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">PARAMS</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">BLOB</span><span class="o">:</span><span class="w"> </span><span class="kt">Buffer.from</span><span class="p">(</span><span class="ow">new</span><span class="w"> </span><span class="nb">Float32Array</span><span class="p">(</span><span class="nx">embedding</span><span class="p">).</span><span class="nx">buffer</span><span class="p">)</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="nx">RETURN</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s1">'errorMessage'</span><span class="p">,</span><span class="w"> </span><span class="s1">'file'</span><span class="p">,</span><span class="w"> </span><span class="s1">'fix'</span><span class="p">],</span>
+<span class="w">    </span><span class="nx">DIALECT</span><span class="o">:</span><span class="w"> </span><span class="kt">2</span><span class="p">,</span>
+<span class="w">  </span><span class="p">});</span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">results</span><span class="p">.</span><span class="nx">documents</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<h3 id="key-features-used_1">Key Features Used</h3>
+<ul>
+<li><strong>Vector Search (HNSW)</strong>: Fast approximate nearest neighbor search</li>
+<li><strong>JSON Documents</strong>: Store structured failure data with metadata</li>
+<li><strong>Semantic Similarity</strong>: Find similar bugs even with different wording</li>
+</ul>
+<h3 id="why-this-matters_1">Why This Matters</h3>
+<ul>
+<li>Learning from experience - similar bugs get fixed faster</li>
+<li>Pattern recognition - common fix patterns are reused</li>
+<li>Continuous improvement - knowledge base grows over time</li>
+</ul>
+<hr/>
+<h2 id="3-vercel">3. Vercel</h2>
+<h3 id="overview_3">Overview</h3>
+<p>Vercel provides instant deployments after QAgent applies fixes. The Verifier Agent triggers deployments programmatically.</p>
+<h3 id="integration-points_2">Integration Points</h3>
+<p><strong>File:</strong> <code>agents/verifier/index.ts</code></p>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="k">export</span><span class="w"> </span><span class="kd">class</span><span class="w"> </span><span class="nx">VerifierAgent</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">async</span><span class="w"> </span><span class="nx">deployToVercel</span><span class="p">(</span><span class="nx">projectRoot</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">DeploymentResult</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">response</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span>
+<span class="w">      </span><span class="sb">`https://api.vercel.com/v13/deployments`</span><span class="p">,</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">method</span><span class="o">:</span><span class="w"> </span><span class="s1">'POST'</span><span class="p">,</span>
+<span class="w">        </span><span class="nx">headers</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="s1">'Authorization'</span><span class="o">:</span><span class="w"> </span><span class="sb">`Bearer </span><span class="si">${</span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">VERCEL_TOKEN</span><span class="si">}</span><span class="sb">`</span><span class="p">,</span>
+<span class="w">          </span><span class="s1">'Content-Type'</span><span class="o">:</span><span class="w"> </span><span class="s1">'application/json'</span><span class="p">,</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="nx">body</span><span class="o">:</span><span class="w"> </span><span class="kt">JSON.stringify</span><span class="p">({</span>
+<span class="w">          </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">process.env.VERCEL_PROJECT_ID</span><span class="p">,</span>
+<span class="w">          </span><span class="nx">gitSource</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s1">'github'</span><span class="p">,</span>
+<span class="w">            </span><span class="nx">repoId</span><span class="o">:</span><span class="w"> </span><span class="kt">process.env.GITHUB_REPO_ID</span><span class="p">,</span>
+<span class="w">            </span><span class="nx">ref</span><span class="o">:</span><span class="w"> </span><span class="s1">'main'</span><span class="p">,</span>
+<span class="w">          </span><span class="p">},</span>
+<span class="w">        </span><span class="p">}),</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">response</span><span class="p">.</span><span class="nx">json</span><span class="p">();</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">async</span><span class="w"> </span><span class="nx">waitForDeployment</span><span class="p">(</span><span class="nx">deploymentId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="kt">string</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Poll until deployment is ready</span>
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="kc">true</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="kd">const</span><span class="w"> </span><span class="nx">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">getDeploymentStatus</span><span class="p">(</span><span class="nx">deploymentId</span><span class="p">);</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">status</span><span class="p">.</span><span class="nx">readyState</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="s1">'READY'</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">status</span><span class="p">.</span><span class="nx">url</span><span class="p">;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">      </span><span class="k">await</span><span class="w"> </span><span class="nx">sleep</span><span class="p">(</span><span class="mf">5000</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<h3 id="key-features-used_2">Key Features Used</h3>
+<ul>
+<li><strong>API Deployments</strong>: Trigger deploys programmatically after fixes</li>
+<li><strong>Preview URLs</strong>: Get unique URLs for each deployment</li>
+<li><strong>Git Integration</strong>: Deployments linked to commits</li>
+</ul>
+<h3 id="why-this-matters_2">Why This Matters</h3>
+<ul>
+<li>Instant verification - test fixes on real infrastructure</li>
+<li>No manual deploy steps - fully automated pipeline</li>
+<li>Rollback capability - easy to revert bad fixes</li>
+</ul>
+<hr/>
+<h2 id="4-w-b-weave">4. W&amp;B Weave</h2>
+<h3 id="overview_4">Overview</h3>
+<p>Weave provides observability for the entire agent pipeline. Every action is traced and logged for debugging and improvement.</p>
+<h3 id="integration-points_3">Integration Points</h3>
+<p><strong>File:</strong> <code>lib/weave/index.ts</code></p>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="k">import</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="kr">as</span><span class="w"> </span><span class="nx">weave</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'weave'</span><span class="p">;</span>
+
+<span class="kd">let</span><span class="w"> </span><span class="nx">weaveClient</span><span class="o">:</span><span class="w"> </span><span class="kt">weave.WeaveClient</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">null</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+
+<span class="k">export</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">initWeave</span><span class="p">(</span><span class="nx">projectName</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">WANDB_API_KEY</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">weaveClient</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">weave</span><span class="p">.</span><span class="nx">init</span><span class="p">(</span><span class="nx">projectName</span><span class="p">);</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`Weave initialized: </span><span class="si">${</span><span class="nx">projectName</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">op</span><span class="o">&lt;</span><span class="nx">T</span><span class="w"> </span><span class="k">extends</span><span class="w"> </span><span class="p">(</span><span class="nx">...args</span><span class="o">:</span><span class="w"> </span><span class="kt">any</span><span class="p">[])</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">any</span><span class="o">&gt;</span><span class="p">(</span>
+<span class="w">  </span><span class="nx">fn</span><span class="o">:</span><span class="w"> </span><span class="kt">T</span><span class="p">,</span>
+<span class="w">  </span><span class="nx">options</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="p">}</span>
+<span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nx">T</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="nx">weaveClient</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="nx">fn</span><span class="p">;</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">weave</span><span class="p">.</span><span class="nx">op</span><span class="p">(</span><span class="nx">fn</span><span class="p">,</span><span class="w"> </span><span class="nx">options</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p><strong>File:</strong> <code>lib/weave/tracing.ts</code></p>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">traceAgent</span><span class="p">(</span><span class="nx">agentName</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="p">(</span><span class="nx">target</span><span class="o">:</span><span class="w"> </span><span class="kt">any</span><span class="p">,</span><span class="w"> </span><span class="nx">propertyKey</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">descriptor</span><span class="o">:</span><span class="w"> </span><span class="kt">PropertyDescriptor</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">original</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">descriptor</span><span class="p">.</span><span class="nx">value</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nx">descriptor</span><span class="p">.</span><span class="nx">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="p">(</span><span class="nx">...args</span><span class="o">:</span><span class="w"> </span><span class="kt">any</span><span class="p">[])</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="kd">const</span><span class="w"> </span><span class="nx">span</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">weave</span><span class="p">.</span><span class="nx">startSpan</span><span class="p">(</span><span class="sb">`</span><span class="si">${</span><span class="nx">agentName</span><span class="si">}</span><span class="sb">.</span><span class="si">${</span><span class="nx">propertyKey</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">      </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">const</span><span class="w"> </span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">original</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span><span class="k">this</span><span class="p">,</span><span class="w"> </span><span class="nx">args</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">span</span><span class="p">.</span><span class="nx">setAttribute</span><span class="p">(</span><span class="s1">'success'</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">result</span><span class="p">;</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">error</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">span</span><span class="p">.</span><span class="nx">setAttribute</span><span class="p">(</span><span class="s1">'error'</span><span class="p">,</span><span class="w"> </span><span class="nx">error</span><span class="p">.</span><span class="nx">message</span><span class="p">);</span>
+<span class="w">        </span><span class="k">throw</span><span class="w"> </span><span class="nx">error</span><span class="p">;</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">finally</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">span</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">descriptor</span><span class="p">;</span>
+<span class="w">  </span><span class="p">};</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p><strong>File:</strong> <code>lib/weave/metrics.ts</code></p>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="k">export</span><span class="w"> </span><span class="kd">interface</span><span class="w"> </span><span class="nx">RunMetrics</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">testsTotal</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">testsPassed</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">testsFailed</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">bugsFound</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">bugsFixed</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">iterationsTotal</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">durationMs</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">success</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">export</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">logRunMetrics</span><span class="p">(</span><span class="nx">metrics</span><span class="o">:</span><span class="w"> </span><span class="kt">RunMetrics</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">weaveClient</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">weave</span><span class="p">.</span><span class="nx">log</span><span class="p">({</span>
+<span class="w">      </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s1">'run_metrics'</span><span class="p">,</span>
+<span class="w">      </span><span class="p">...</span><span class="nx">metrics</span><span class="p">,</span>
+<span class="w">      </span><span class="nx">timestamp</span><span class="o">:</span><span class="w"> </span><span class="kt">new</span><span class="w"> </span><span class="nb">Date</span><span class="p">().</span><span class="nx">toISOString</span><span class="p">(),</span>
+<span class="w">    </span><span class="p">});</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<h3 id="key-features-used_3">Key Features Used</h3>
+<ul>
+<li><strong>Function Tracing</strong>: Automatic spans for all agent operations</li>
+<li><strong>Metrics Logging</strong>: Track pass rates, fix times, iterations</li>
+<li><strong>LLM Logging</strong>: See what prompts were sent, what responses received</li>
+</ul>
+<h3 id="why-this-matters_3">Why This Matters</h3>
+<ul>
+<li>Debug failures - see exactly where and why agents failed</li>
+<li>Track improvement - measure how system gets better over time</li>
+<li>Optimize prompts - analyze LLM responses to improve</li>
+</ul>
+<hr/>
+<h2 id="5-google-adk-planned">5. Google ADK (Planned)</h2>
+<h3 id="overview_5">Overview</h3>
+<p>Google Agent Development Kit integration is planned. The current Orchestrator is custom but follows ADK-style sequencing to keep interfaces compatible for a future ADK/A2A migration.</p>
+<h3 id="current-implementation-adk-compatible-pattern">Current Implementation (ADK-compatible Pattern)</h3>
+<p><strong>File:</strong> <code>agents/orchestrator/index.ts</code></p>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="c1">// Custom orchestrator with ADK-compatible sequencing</span>
+<span class="k">export</span><span class="w"> </span><span class="kd">class</span><span class="w"> </span><span class="nx">Orchestrator</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">private</span><span class="w"> </span><span class="nx">agents</span><span class="o">:</span><span class="w"> </span><span class="kt">Map</span><span class="o">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">Agent</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Map</span><span class="p">();</span>
+
+<span class="w">  </span><span class="kr">constructor</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Register agents in execution order</span>
+<span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="nx">agents</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s1">'tester'</span><span class="p">,</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">TesterAgent</span><span class="p">());</span>
+<span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="nx">agents</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s1">'triage'</span><span class="p">,</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">TriageAgent</span><span class="p">());</span>
+<span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="nx">agents</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s1">'fixer'</span><span class="p">,</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">FixerAgent</span><span class="p">());</span>
+<span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="nx">agents</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s1">'verifier'</span><span class="p">,</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">VerifierAgent</span><span class="p">());</span>
+<span class="w">  </span><span class="p">}</span>
+
+<span class="w">  </span><span class="k">async</span><span class="w"> </span><span class="nx">runPipeline</span><span class="p">(</span><span class="nx">config</span><span class="o">:</span><span class="w"> </span><span class="kt">OrchestratorConfig</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Sequential execution with context passing (ADK-compatible pattern)</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="nx">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">testSpecs</span><span class="o">:</span><span class="w"> </span><span class="kt">config.testSpecs</span><span class="w"> </span><span class="p">};</span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">name</span><span class="p">,</span><span class="w"> </span><span class="nx">agent</span><span class="p">]</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="k">this</span><span class="p">.</span><span class="nx">agents</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`Running agent: </span><span class="si">${</span><span class="nx">name</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
+<span class="w">      </span><span class="nx">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">agent</span><span class="p">.</span><span class="nx">execute</span><span class="p">(</span><span class="nx">context</span><span class="p">);</span>
+
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">context</span><span class="p">.</span><span class="nx">complete</span><span class="p">)</span><span class="w"> </span><span class="k">break</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">context</span><span class="p">.</span><span class="nx">result</span><span class="p">;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<h3 id="design-principles-used">Design Principles Used</h3>
+<ul>
+<li><strong>Agent Registry</strong>: Central management of agent instances</li>
+<li><strong>Context Passing</strong>: Share state between agents</li>
+<li><strong>Pipeline Execution</strong>: Sequential agent coordination</li>
+</ul>
+<h3 id="why-this-matters_4">Why This Matters</h3>
+<ul>
+<li>Modular architecture - add/remove agents easily</li>
+<li>Clear data flow - each agent knows its inputs/outputs</li>
+<li>Future ADK/A2A adoption without rewrites</li>
+</ul>
+<hr/>
+<h2 id="6-marimo">6. Marimo</h2>
+<h3 id="overview_6">Overview</h3>
+<p>Marimo provides the interactive analytics dashboard. It's a reactive Python notebook that displays real-time metrics.</p>
+<h3 id="integration-points_4">Integration Points</h3>
+<p><strong>File:</strong> <code>dashboard/app.py</code></p>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">marimo</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">altair</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">alt</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">marimo</span><span class="o">.</span><span class="n">App</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="s2">"full"</span><span class="p">)</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">cell</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">fetch_data</span><span class="p">(</span><span class="n">use_mock</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Fetch data from W&amp;B Weave or use mock data"""</span>
+    <span class="k">if</span> <span class="n">use_mock</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span>
+            <span class="p">{</span><span class="s1">'run'</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">'pass_rate'</span><span class="p">:</span> <span class="mf">0.33</span><span class="p">,</span> <span class="s1">'fix_time'</span><span class="p">:</span> <span class="mi">180</span><span class="p">},</span>
+            <span class="p">{</span><span class="s1">'run'</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">'pass_rate'</span><span class="p">:</span> <span class="mf">0.67</span><span class="p">,</span> <span class="s1">'fix_time'</span><span class="p">:</span> <span class="mi">120</span><span class="p">},</span>
+            <span class="p">{</span><span class="s1">'run'</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">'pass_rate'</span><span class="p">:</span> <span class="mf">1.00</span><span class="p">,</span> <span class="s1">'fix_time'</span><span class="p">:</span> <span class="mi">60</span><span class="p">},</span>
+        <span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">weave</span>
+        <span class="n">client</span> <span class="o">=</span> <span class="n">weave</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="s1">'qagent'</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fetch_from_weave</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">cell</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">pass_rate_chart</span><span class="p">(</span><span class="n">mo</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Line chart showing pass rate over time"""</span>
+    <span class="n">chart</span> <span class="o">=</span> <span class="n">alt</span><span class="o">.</span><span class="n">Chart</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="o">.</span><span class="n">mark_line</span><span class="p">(</span>
+        <span class="n">point</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">strokeWidth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="s1">'#10b981'</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span>
+        <span class="n">x</span><span class="o">=</span><span class="s1">'run:O'</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span><span class="n">alt</span><span class="o">.</span><span class="n">Y</span><span class="p">(</span><span class="s1">'pass_rate:Q'</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">alt</span><span class="o">.</span><span class="n">Scale</span><span class="p">(</span><span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])),</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">properties</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">'Test Pass Rate'</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">mo</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">altair_chart</span><span class="p">(</span><span class="n">chart</span><span class="p">)</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">cell</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">recent_fixes</span><span class="p">(</span><span class="n">mo</span><span class="p">,</span> <span class="n">pd</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Table showing recent fixes"""</span>
+    <span class="n">fixes</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span>
+        <span class="p">{</span><span class="s1">'bug'</span><span class="p">:</span> <span class="s1">'Missing onClick'</span><span class="p">,</span> <span class="s1">'file'</span><span class="p">:</span> <span class="s1">'cart/page.tsx'</span><span class="p">,</span> <span class="s1">'status'</span><span class="p">:</span> <span class="s1">'✓'</span><span class="p">},</span>
+        <span class="p">{</span><span class="s1">'bug'</span><span class="p">:</span> <span class="s1">'Wrong API route'</span><span class="p">,</span> <span class="s1">'file'</span><span class="p">:</span> <span class="s1">'checkout/route.ts'</span><span class="p">,</span> <span class="s1">'status'</span><span class="p">:</span> <span class="s1">'✓'</span><span class="p">},</span>
+    <span class="p">])</span>
+    <span class="k">return</span> <span class="n">mo</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">table</span><span class="p">(</span><span class="n">fixes</span><span class="p">)</span>
+</code></pre></div></div>
+<h3 id="key-features-used_4">Key Features Used</h3>
+<ul>
+<li><strong>Reactive Cells</strong>: Charts update automatically when data changes</li>
+<li><strong>Altair Charts</strong>: Beautiful, interactive visualizations</li>
+<li><strong>Data Tables</strong>: Display recent fixes and detailed metrics</li>
+</ul>
+<h3 id="why-this-matters_5">Why This Matters</h3>
+<ul>
+<li>Real-time visibility - see improvements as they happen</li>
+<li>Interactive exploration - drill into specific runs</li>
+<li>Demo-ready - polished visuals for presentations</li>
+</ul>
+<hr/>
+<h2 id="integration-architecture">Integration Architecture</h2>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code>┌─────────────────────────────────────────────────────────────────┐
+│                        QAgent System                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│   ┌──────────────────────────────────────────────────────────┐  │
+│   │          Custom Orchestrator (ADK-compatible)            │  │
+│   │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐ │  │
+│   │  │  Tester  │→ │  Triage  │→ │  Fixer   │→ │ Verifier │ │  │
+│   │  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘ │  │
+│   └───────┼─────────────┼─────────────┼─────────────┼────────┘  │
+│           │             │             │             │           │
+│   ┌───────▼─────┐ ┌─────▼─────┐ ┌─────▼─────┐ ┌─────▼─────┐    │
+│   │ Browserbase │ │   Redis   │ │  OpenAI   │ │  Vercel   │    │
+│   │ + Stagehand │ │  (Vector) │ │   (LLM)   │ │ (Deploy)  │    │
+│   └─────────────┘ └───────────┘ └───────────┘ └───────────┘    │
+│                                                                 │
+│   ┌─────────────────────────────────────────────────────────┐   │
+│   │                   W&amp;B Weave (Tracing)                   │   │
+│   └─────────────────────────────────────────────────────────┘   │
+│                              │                                  │
+│                              ▼                                  │
+│   ┌─────────────────────────────────────────────────────────┐   │
+│   │                 Marimo (Dashboard)                       │   │
+│   └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre></div></div>
+<hr/>
+<h2 id="configuration-reference">Configuration Reference</h2>
+<h3 id="environment-variables">Environment Variables</h3>
+<div class="table-frame"><table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Sponsor</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>BROWSERBASE_API_KEY</code></td>
+<td>Browserbase</td>
+<td>Authentication</td>
+</tr>
+<tr>
+<td><code>BROWSERBASE_PROJECT_ID</code></td>
+<td>Browserbase</td>
+<td>Project identifier</td>
+</tr>
+<tr>
+<td><code>OPENAI_API_KEY</code></td>
+<td>-</td>
+<td>LLM for Stagehand &amp; Fixer</td>
+</tr>
+<tr>
+<td><code>REDIS_URL</code></td>
+<td>Redis</td>
+<td>Vector database connection</td>
+</tr>
+<tr>
+<td><code>VERCEL_TOKEN</code></td>
+<td>Vercel</td>
+<td>Deployment API access</td>
+</tr>
+<tr>
+<td><code>VERCEL_PROJECT_ID</code></td>
+<td>Vercel</td>
+<td>Project identifier</td>
+</tr>
+<tr>
+<td><code>WANDB_API_KEY</code></td>
+<td>W&amp;B Weave</td>
+<td>Observability API access</td>
+</tr>
+<tr>
+<td><code>GOOGLE_CLOUD_PROJECT</code></td>
+<td>Google ADK (planned)</td>
+<td>Cloud project identifier</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="required-dependencies">Required Dependencies</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"dependencies"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"@browserbasehq/sdk"</span><span class="p">:</span><span class="w"> </span><span class="s2">"^2.6.0"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"@browserbasehq/stagehand"</span><span class="p">:</span><span class="w"> </span><span class="s2">"^3.0.8"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"redis"</span><span class="p">:</span><span class="w"> </span><span class="s2">"^5.10.0"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"weave"</span><span class="p">:</span><span class="w"> </span><span class="s2">"^0.11.0"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"openai"</span><span class="p">:</span><span class="w"> </span><span class="s2">"^6.17.0"</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="c1"># requirements.txt for dashboard</span>
+<span class="n">marimo</span><span class="o">&gt;=</span><span class="mf">0.10.0</span>
+<span class="n">pandas</span><span class="o">&gt;=</span><span class="mf">2.0.0</span>
+<span class="n">altair</span><span class="o">&gt;=</span><span class="mf">5.0.0</span>
+<span class="n">weave</span><span class="o">&gt;=</span><span class="mf">0.11.0</span>
+</code></pre></div></div>
+<hr/>
+<h2 id="environment-variables-weavehacks-additions">Environment Variables (WeaveHacks Additions)</h2>
+<p>Add these to <code>.env.local</code> for full WeaveHacks demo:</p>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="c1"># Weave project (explicit)</span>
+<span class="nv">WEAVE_PROJECT</span><span class="o">=</span>qagent
+
+<span class="c1"># Daily/Pipecat Voice Integration</span>
+<span class="nv">DAILY_API_KEY</span><span class="o">=</span>
+<span class="nv">DEEPGRAM_API_KEY</span><span class="o">=</span>
+<span class="nv">ELEVENLABS_API_KEY</span><span class="o">=</span>
+</code></pre></div></div>
+<hr/>
+<h2 id="sponsor-credits">Sponsor Credits</h2>
+<p>Built with:
+- <strong><a href="https://browserbase.com">Browserbase</a></strong> - Cloud browser infrastructure
+- <strong><a href="https://stagehand.dev">Stagehand</a></strong> - AI-powered browser automation
+- <strong><a href="https://redis.io">Redis</a></strong> - Vector database with semantic search
+- <strong><a href="https://vercel.com">Vercel</a></strong> - Instant deployments
+- <strong><a href="https://wandb.ai/site/weave">W&amp;B Weave</a></strong> - LLM observability
+- <strong><a href="https://cloud.google.com/agent-development-kit">Google ADK</a></strong> - Planned orchestration framework
+- <strong><a href="https://marimo.io">Marimo</a></strong> - Reactive Python notebooks</p>
+          </article>
+          <div class="html-note">
+            Generated 2026-05-09 12:44 from <code>docs/SPONSOR_INTEGRATIONS.md</code>. 3 protected agent/tool instruction file(s) left as Markdown: AGENTS.md, CLAUDE.md, GEMINI.md
+          </div>
+        </section>
+
+        <section class="panel" id="map">
+          <div class="map-grid">
+            <div class="flow-card">
+              <h2>Document Flow</h2>
+              <p>Headings are rendered as a spatial map so the structure is easier to scan than raw Markdown.</p>
+              <svg class="flow-svg" viewBox="0 0 760 1164" role="img" aria-label="Document heading flow">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#8b877d"/></marker></defs>
+<rect x="0" y="0" width="760" height="1164" fill="#f7f4ec"/>
+<a href="#sponsor-integrations">
+<rect x="34" y="24" width="560" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="34" y="24" width="8" height="42" rx="4" fill="#d97757"/>
+<text x="56" y="50" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Sponsor Integrations</text>
+</a>
+<line x1="86" y1="45" x2="86" y2="78" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#overview">
+<rect x="70" y="86" width="526" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="70" y="86" width="8" height="42" rx="4" fill="#788c5d"/>
+<text x="92" y="112" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Overview</text>
+</a>
+<line x1="86" y1="107" x2="86" y2="140" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#1-browserbase-stagehand">
+<rect x="70" y="148" width="526" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="70" y="148" width="8" height="42" rx="4" fill="#788c5d"/>
+<text x="92" y="174" fill="#151515" font-family="ui-monospace, monospace" font-size="14">1. Browserbase + Stagehand</text>
+</a>
+<line x1="122" y1="169" x2="122" y2="202" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#overview_1">
+<rect x="106" y="210" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="210" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="236" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Overview</text>
+</a>
+<line x1="122" y1="231" x2="122" y2="264" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#integration-points">
+<rect x="106" y="272" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="272" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="298" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Integration Points</text>
+</a>
+<line x1="122" y1="293" x2="122" y2="326" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#key-features-used">
+<rect x="106" y="334" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="334" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="360" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Key Features Used</text>
+</a>
+<line x1="122" y1="355" x2="122" y2="388" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#why-this-matters">
+<rect x="106" y="396" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="396" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="422" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Why This Matters</text>
+</a>
+<line x1="86" y1="417" x2="86" y2="450" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#2-redis">
+<rect x="70" y="458" width="526" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="70" y="458" width="8" height="42" rx="4" fill="#788c5d"/>
+<text x="92" y="484" fill="#151515" font-family="ui-monospace, monospace" font-size="14">2. Redis</text>
+</a>
+<line x1="122" y1="479" x2="122" y2="512" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#overview_2">
+<rect x="106" y="520" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="520" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="546" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Overview</text>
+</a>
+<line x1="122" y1="541" x2="122" y2="574" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#integration-points_1">
+<rect x="106" y="582" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="582" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="608" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Integration Points</text>
+</a>
+<line x1="122" y1="603" x2="122" y2="636" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#key-features-used_1">
+<rect x="106" y="644" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="644" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="670" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Key Features Used</text>
+</a>
+<line x1="122" y1="665" x2="122" y2="698" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#why-this-matters_1">
+<rect x="106" y="706" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="706" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="732" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Why This Matters</text>
+</a>
+<line x1="86" y1="727" x2="86" y2="760" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#3-vercel">
+<rect x="70" y="768" width="526" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="70" y="768" width="8" height="42" rx="4" fill="#788c5d"/>
+<text x="92" y="794" fill="#151515" font-family="ui-monospace, monospace" font-size="14">3. Vercel</text>
+</a>
+<line x1="122" y1="789" x2="122" y2="822" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#overview_3">
+<rect x="106" y="830" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="830" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="856" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Overview</text>
+</a>
+<line x1="122" y1="851" x2="122" y2="884" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#integration-points_2">
+<rect x="106" y="892" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="892" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="918" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Integration Points</text>
+</a>
+<line x1="122" y1="913" x2="122" y2="946" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#key-features-used_2">
+<rect x="106" y="954" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="954" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="980" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Key Features Used</text>
+</a>
+<line x1="122" y1="975" x2="122" y2="1008" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#why-this-matters_2">
+<rect x="106" y="1016" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="1016" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="1042" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Why This Matters</text>
+</a>
+<line x1="86" y1="1037" x2="86" y2="1070" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#4-w-b-weave">
+<rect x="70" y="1078" width="526" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="70" y="1078" width="8" height="42" rx="4" fill="#788c5d"/>
+<text x="92" y="1104" fill="#151515" font-family="ui-monospace, monospace" font-size="14">4. W&amp;B Weave</text>
+</a>
+<text x="34" y="1156" fill="#77746d" font-family="ui-monospace, monospace" font-size="13">... 20 more sections in the table of contents</text>
+</svg>
+            </div>
+            <div class="flow-card">
+              <h2>Source Map</h2>
+              <div class="source-grid">
+                <div><strong>Repository</strong><br><code>/Users/m3-max/Documents/GitHub/QAgent</code></div>
+                <div><strong>Source</strong><br><code>docs/SPONSOR_INTEGRATIONS.md</code></div>
+                <div><strong>Generated HTML</strong><br><code>docs-html/pages/docs/SPONSOR_INTEGRATIONS.html</code></div>
+                <div><strong>Checksum</strong><br><code>899fe69c8a45</code></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="handoff">
+          <div class="prompt-card">
+            <h2>Two-way Handoff</h2>
+            <p>This prompt is designed to paste back into an agent after you review or tune the document in the browser.</p>
+            <div class="actions">
+              <button class="primary-action" type="button" data-copy="#handoffPrompt">Copy prompt</button>
+            </div>
+            <pre class="prompt-box" id="handoffPrompt">Use this HTML documentation artifact as context.
+
+Repository: QAgent
+Source Markdown: docs/SPONSOR_INTEGRATIONS.md
+Document: Sponsor Integrations
+Kind: Reference
+
+Task:
+- Read the visual summary, document map, and source content.
+- Preserve compatibility with the original Markdown source unless explicitly asked to replace it.
+- If you edit the source, regenerate this HTML mirror afterward.
+</pre>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <script>
+(() => {
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+  const progress = $('.read-progress');
+  const updateProgress = () => {
+    if (!progress) return;
+    const doc = document.documentElement;
+    const max = doc.scrollHeight - doc.clientHeight;
+    const pct = max <= 0 ? 0 : (doc.scrollTop / max) * 100;
+    progress.style.width = `${pct}%`;
+  };
+  document.addEventListener('scroll', updateProgress, { passive: true });
+  updateProgress();
+
+  $$('.mode-strip button[data-panel]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const target = button.dataset.panel;
+      $$('.mode-strip button[data-panel]').forEach((b) => b.setAttribute('aria-pressed', String(b === button)));
+      $$('.panel').forEach((panel) => panel.classList.toggle('active', panel.id === target));
+    });
+  });
+
+  $('#focusMode')?.addEventListener('click', () => {
+    document.body.classList.toggle('focus');
+  });
+
+  $$('.copy-code').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const code = button.parentElement?.querySelector('pre')?.innerText || '';
+      await navigator.clipboard.writeText(code);
+      const old = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => button.textContent = old, 1200);
+    });
+  });
+
+  $$('[data-copy]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const target = $(button.dataset.copy);
+      if (!target) return;
+      await navigator.clipboard.writeText(target.innerText);
+      const old = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => button.textContent = old, 1400);
+    });
+  });
+
+  const tocLinks = $$('.toc a');
+  if (tocLinks.length) {
+    const byId = new Map(tocLinks.map((link) => [decodeURIComponent(link.hash.slice(1)), link]));
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        tocLinks.forEach((link) => link.classList.remove('active'));
+        byId.get(entry.target.id)?.classList.add('active');
+      });
+    }, { rootMargin: '-20% 0px -70% 0px', threshold: 0.01 });
+    $$('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]').forEach((heading) => observer.observe(heading));
+  }
+
+  const search = $('#docSearch');
+  if (search) {
+    const article = $('.article');
+    const original = article?.innerHTML;
+    search.addEventListener('input', () => {
+      if (!article || original == null) return;
+      const q = search.value.trim();
+      article.innerHTML = original;
+      if (q.length < 2) return;
+      const safe = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(safe, 'gi');
+      const walker = document.createTreeWalker(article, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+          if (!node.nodeValue || !re.test(node.nodeValue)) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      });
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+      nodes.forEach((node) => {
+        const span = document.createElement('span');
+        span.innerHTML = node.nodeValue.replace(re, (m) => `<mark class="search-hit">${m}</mark>`);
+        node.parentNode.replaceChild(span, node);
+      });
+    });
+  }
+
+  const indexSearch = $('#indexSearch');
+  const chips = $$('.chip[data-kind]');
+  const filterCards = () => {
+    const q = (indexSearch?.value || '').toLowerCase().trim();
+    const active = $('.chip.active[data-kind]')?.dataset.kind || 'All';
+    $$('.doc-card').forEach((card) => {
+      const text = card.innerText.toLowerCase();
+      const kind = card.dataset.kind;
+      const okText = !q || text.includes(q);
+      const okKind = active === 'All' || kind === active;
+      card.style.display = okText && okKind ? '' : 'none';
+    });
+  };
+  indexSearch?.addEventListener('input', filterCards);
+  chips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      chips.forEach((c) => c.classList.remove('active'));
+      chip.classList.add('active');
+      filterCards();
+    });
+  });
+})();
+</script>
+</body>
+</html>

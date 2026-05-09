@@ -1,0 +1,1088 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pre-Demo Checklist - QAgent docs</title>
+  <link rel="icon" href="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%23151515%22/%3E%0A%20%20%3Cpath%20d%3D%22M16%2018h32M16%2030h22M16%2042h30%22%20stroke%3D%22%23e3dacc%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22/%3E%0A%20%20%3Ccircle%20cx%3D%2248%22%20cy%3D%2218%22%20r%3D%225%22%20fill%3D%22%23d97757%22/%3E%0A%3C/svg%3E">
+  <style>
+pre { line-height: 125%; }
+td.linenos .normal { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+.codehilite .hll { background-color: #6e7681 }
+.codehilite { background: #0d1117; color: #E6EDF3 }
+.codehilite .c { color: #8B949E; font-style: italic } /* Comment */
+.codehilite .err { color: #F85149 } /* Error */
+.codehilite .esc { color: #E6EDF3 } /* Escape */
+.codehilite .g { color: #E6EDF3 } /* Generic */
+.codehilite .k { color: #FF7B72 } /* Keyword */
+.codehilite .l { color: #A5D6FF } /* Literal */
+.codehilite .n { color: #E6EDF3 } /* Name */
+.codehilite .o { color: #FF7B72; font-weight: bold } /* Operator */
+.codehilite .x { color: #E6EDF3 } /* Other */
+.codehilite .p { color: #E6EDF3 } /* Punctuation */
+.codehilite .ch { color: #8B949E; font-style: italic } /* Comment.Hashbang */
+.codehilite .cm { color: #8B949E; font-style: italic } /* Comment.Multiline */
+.codehilite .cp { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Preproc */
+.codehilite .cpf { color: #8B949E; font-style: italic } /* Comment.PreprocFile */
+.codehilite .c1 { color: #8B949E; font-style: italic } /* Comment.Single */
+.codehilite .cs { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Special */
+.codehilite .gd { color: #FFA198; background-color: #490202 } /* Generic.Deleted */
+.codehilite .ge { color: #E6EDF3; font-style: italic } /* Generic.Emph */
+.codehilite .ges { color: #E6EDF3; font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.codehilite .gr { color: #FFA198 } /* Generic.Error */
+.codehilite .gh { color: #79C0FF; font-weight: bold } /* Generic.Heading */
+.codehilite .gi { color: #56D364; background-color: #0F5323 } /* Generic.Inserted */
+.codehilite .go { color: #8B949E } /* Generic.Output */
+.codehilite .gp { color: #8B949E } /* Generic.Prompt */
+.codehilite .gs { color: #E6EDF3; font-weight: bold } /* Generic.Strong */
+.codehilite .gu { color: #79C0FF } /* Generic.Subheading */
+.codehilite .gt { color: #FF7B72 } /* Generic.Traceback */
+.codehilite .g-Underline { color: #E6EDF3; text-decoration: underline } /* Generic.Underline */
+.codehilite .kc { color: #79C0FF } /* Keyword.Constant */
+.codehilite .kd { color: #FF7B72 } /* Keyword.Declaration */
+.codehilite .kn { color: #FF7B72 } /* Keyword.Namespace */
+.codehilite .kp { color: #79C0FF } /* Keyword.Pseudo */
+.codehilite .kr { color: #FF7B72 } /* Keyword.Reserved */
+.codehilite .kt { color: #FF7B72 } /* Keyword.Type */
+.codehilite .ld { color: #79C0FF } /* Literal.Date */
+.codehilite .m { color: #A5D6FF } /* Literal.Number */
+.codehilite .s { color: #A5D6FF } /* Literal.String */
+.codehilite .na { color: #E6EDF3 } /* Name.Attribute */
+.codehilite .nb { color: #E6EDF3 } /* Name.Builtin */
+.codehilite .nc { color: #F0883E; font-weight: bold } /* Name.Class */
+.codehilite .no { color: #79C0FF; font-weight: bold } /* Name.Constant */
+.codehilite .nd { color: #D2A8FF; font-weight: bold } /* Name.Decorator */
+.codehilite .ni { color: #FFA657 } /* Name.Entity */
+.codehilite .ne { color: #F0883E; font-weight: bold } /* Name.Exception */
+.codehilite .nf { color: #D2A8FF; font-weight: bold } /* Name.Function */
+.codehilite .nl { color: #79C0FF; font-weight: bold } /* Name.Label */
+.codehilite .nn { color: #FF7B72 } /* Name.Namespace */
+.codehilite .nx { color: #E6EDF3 } /* Name.Other */
+.codehilite .py { color: #79C0FF } /* Name.Property */
+.codehilite .nt { color: #7EE787 } /* Name.Tag */
+.codehilite .nv { color: #79C0FF } /* Name.Variable */
+.codehilite .ow { color: #FF7B72; font-weight: bold } /* Operator.Word */
+.codehilite .pm { color: #E6EDF3 } /* Punctuation.Marker */
+.codehilite .w { color: #6E7681 } /* Text.Whitespace */
+.codehilite .mb { color: #A5D6FF } /* Literal.Number.Bin */
+.codehilite .mf { color: #A5D6FF } /* Literal.Number.Float */
+.codehilite .mh { color: #A5D6FF } /* Literal.Number.Hex */
+.codehilite .mi { color: #A5D6FF } /* Literal.Number.Integer */
+.codehilite .mo { color: #A5D6FF } /* Literal.Number.Oct */
+.codehilite .sa { color: #79C0FF } /* Literal.String.Affix */
+.codehilite .sb { color: #A5D6FF } /* Literal.String.Backtick */
+.codehilite .sc { color: #A5D6FF } /* Literal.String.Char */
+.codehilite .dl { color: #79C0FF } /* Literal.String.Delimiter */
+.codehilite .sd { color: #A5D6FF } /* Literal.String.Doc */
+.codehilite .s2 { color: #A5D6FF } /* Literal.String.Double */
+.codehilite .se { color: #79C0FF } /* Literal.String.Escape */
+.codehilite .sh { color: #79C0FF } /* Literal.String.Heredoc */
+.codehilite .si { color: #A5D6FF } /* Literal.String.Interpol */
+.codehilite .sx { color: #A5D6FF } /* Literal.String.Other */
+.codehilite .sr { color: #79C0FF } /* Literal.String.Regex */
+.codehilite .s1 { color: #A5D6FF } /* Literal.String.Single */
+.codehilite .ss { color: #A5D6FF } /* Literal.String.Symbol */
+.codehilite .bp { color: #E6EDF3 } /* Name.Builtin.Pseudo */
+.codehilite .fm { color: #D2A8FF; font-weight: bold } /* Name.Function.Magic */
+.codehilite .vc { color: #79C0FF } /* Name.Variable.Class */
+.codehilite .vg { color: #79C0FF } /* Name.Variable.Global */
+.codehilite .vi { color: #79C0FF } /* Name.Variable.Instance */
+.codehilite .vm { color: #79C0FF } /* Name.Variable.Magic */
+.codehilite .il { color: #A5D6FF } /* Literal.Number.Integer.Long */
+:root {
+  --paper: #f7f5f0;
+  --paper-2: #ebe7de;
+  --surface: #fffefa;
+  --ink: #151515;
+  --muted: #77746d;
+  --line: #d5d0c6;
+  --line-strong: #1a1a18;
+  --clay: #d97757;
+  --olive: #788c5d;
+  --sky: #6a8caf;
+  --oat: #e3dacc;
+  --danger: #b94f48;
+  --shadow: 0 18px 50px rgba(20, 20, 19, 0.10);
+  --radius: 8px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --serif: Charter, "Bitstream Charter", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.58;
+}
+a { color: inherit; text-decoration-color: color-mix(in srgb, var(--clay) 65%, transparent); text-underline-offset: 0.18em; }
+button, input, select { font: inherit; }
+.window {
+  max-width: 1180px;
+  margin: 42px auto;
+  background: var(--surface);
+  border: 2px solid var(--line-strong);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.chrome {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 18px;
+  align-items: center;
+  padding: 12px 18px;
+  background: var(--paper-2);
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+.dots { display: flex; gap: 8px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; background: #d1cbc1; display: block; }
+.path-pill {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+.mode-strip { display: flex; flex-wrap: wrap; gap: 8px; }
+.mode-strip button, .copy-code {
+  border: 1px solid var(--line);
+  background: #fffefa;
+  color: var(--ink);
+  border-radius: 7px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.mode-strip button[aria-pressed="true"] {
+  background: var(--ink);
+  color: #fffefa;
+  border-color: var(--ink);
+}
+.hero {
+  padding: 34px 42px 28px;
+  border-bottom: 1px solid var(--line);
+}
+.kicker {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+h1, h2, h3 {
+  font-family: var(--serif);
+  letter-spacing: 0;
+  line-height: 1.05;
+}
+h1 {
+  margin: 0;
+  font-size: clamp(34px, 5vw, 66px);
+  max-width: 880px;
+}
+.lede {
+  margin: 16px 0 0;
+  max-width: 780px;
+  color: #4c4943;
+  font-size: 18px;
+}
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 24px;
+}
+.metric {
+  min-height: 98px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfaf6;
+}
+.metric span {
+  display: block;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+.metric strong {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--serif);
+  font-size: 30px;
+  line-height: 1;
+}
+.layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  min-height: 620px;
+}
+.sidebar {
+  border-right: 1px solid var(--line);
+  padding: 24px 18px;
+  background: #fbfaf6;
+}
+.search {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 10px 13px;
+  background: #fff;
+}
+.toc {
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.toc li { margin: 4px 0; }
+.toc a {
+  display: block;
+  padding: 7px 8px;
+  border-radius: 7px;
+  color: #3f3c37;
+  text-decoration: none;
+}
+.toc a:hover, .toc a.active { background: var(--oat); }
+.toc .lvl-3, .toc .lvl-4, .toc .lvl-5, .toc .lvl-6 { padding-left: 18px; font-size: 14px; }
+.content-shell { min-width: 0; }
+.panel { display: none; padding: 30px 42px 50px; }
+.panel.active { display: block; }
+.article {
+  max-width: 820px;
+}
+.article h1 { font-size: 42px; margin: 0 0 16px; }
+.article h2 {
+  margin: 34px 0 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 30px;
+}
+.article h3 { margin: 26px 0 10px; font-size: 23px; }
+.article p, .article li { color: #34322d; }
+.article blockquote {
+  margin: 22px 0;
+  padding: 12px 18px;
+  border-left: 5px solid var(--clay);
+  background: #f1ece4;
+}
+.article img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.table-frame { overflow-x: auto; margin: 20px 0; border: 1px solid var(--line); border-radius: var(--radius); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { background: #f0ece4; font-family: var(--mono); font-size: 12px; text-transform: uppercase; }
+.code-frame {
+  position: relative;
+  margin: 20px 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #11110f;
+  border: 1px solid #262622;
+}
+.code-frame pre {
+  margin: 0;
+  padding: 20px;
+  overflow-x: auto;
+  color: #f4f1e8;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.copy-code {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  background: #24231f;
+  color: #f8f4ea;
+  border-color: #45423a;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.map-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+  gap: 22px;
+  align-items: start;
+}
+.flow-card, .prompt-card, .index-card, .doc-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfaf6;
+  padding: 18px;
+}
+.flow-svg {
+  width: 100%;
+  min-height: 320px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #f7f4ec;
+}
+.prompt-box {
+  white-space: pre-wrap;
+  font-family: var(--mono);
+  font-size: 13px;
+  background: #11110f;
+  color: #f4f1e8;
+  border-radius: var(--radius);
+  padding: 18px;
+  overflow-x: auto;
+}
+.primary-action {
+  border: 0;
+  background: var(--clay);
+  color: white;
+  border-radius: 7px;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.secondary-action {
+  border: 1px solid var(--line-strong);
+  background: #fffefa;
+  color: var(--ink);
+  border-radius: 7px;
+  padding: 11px 15px;
+  cursor: pointer;
+}
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+.source-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.source-grid div {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  background: #fffefa;
+}
+.source-grid code { word-break: break-word; }
+.html-note {
+  margin-top: 24px;
+  padding: 14px 16px;
+  border-left: 5px solid var(--olive);
+  background: #eff1e8;
+  color: #3c442f;
+}
+.html-note.unresolved {
+  border-left-color: var(--clay);
+  background: #f7e7df;
+  color: #553225;
+}
+.missing-reference {
+  color: var(--danger);
+  text-decoration-style: dotted;
+}
+.missing-image {
+  background: #f1ece4;
+}
+.read-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 4px;
+  width: 0;
+  background: linear-gradient(90deg, var(--clay), var(--olive), var(--sky));
+  z-index: 10;
+}
+.index-hero {
+  padding: 40px 42px 30px;
+}
+.capability-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 24px 0;
+}
+.capability {
+  min-height: 150px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fffefa;
+  padding: 14px;
+}
+.capability svg { width: 54px; height: 54px; }
+.capability strong { display: block; font-family: var(--serif); font-size: 20px; }
+.capability span { display: block; color: var(--muted); font-size: 14px; }
+.doc-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 22px 0;
+}
+.chip {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #fffefa;
+  cursor: pointer;
+}
+.chip.active { background: var(--ink); color: #fffefa; border-color: var(--ink); }
+.doc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.doc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 210px;
+  text-decoration: none;
+}
+.doc-card:hover { border-color: var(--clay); transform: translateY(-1px); }
+.doc-card h2 { margin: 0; font-size: 24px; }
+.doc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.kind {
+  color: var(--clay);
+  font-family: var(--mono);
+  text-transform: uppercase;
+  font-size: 12px;
+}
+.footer-note {
+  margin-top: 30px;
+  color: var(--muted);
+  font-size: 14px;
+}
+body.focus .sidebar, body.focus .metric-grid, body.focus .chrome .path-pill { display: none; }
+body.focus .layout { grid-template-columns: 1fr; }
+body.focus .article { margin: 0 auto; }
+mark.search-hit { background: #f5d9a6; color: inherit; padding: 0 2px; }
+@media (max-width: 860px) {
+  .window { margin: 0; border-left: 0; border-right: 0; border-radius: 0; }
+  .chrome { grid-template-columns: 1fr; }
+  .dots { display: none; }
+  .hero, .index-hero, .panel { padding-left: 20px; padding-right: 20px; }
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { border-right: 0; border-bottom: 1px solid var(--line); }
+  .metric-grid, .capability-grid, .doc-grid, .map-grid, .source-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+  <div class="read-progress" aria-hidden="true"></div>
+  <main class="window" id="top">
+    <div class="chrome">
+      <div class="dots" aria-hidden="true"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+      <div class="path-pill">docs/PRE_DEMO_CHECKLIST.md -> docs-html/pages/docs/PRE_DEMO_CHECKLIST.html</div>
+      <div class="mode-strip" aria-label="View mode">
+        <button type="button" data-panel="read" aria-pressed="true">Read</button>
+        <button type="button" data-panel="map" aria-pressed="false">Map</button>
+        <button type="button" data-panel="handoff" aria-pressed="false">Handoff</button>
+      </div>
+    </div>
+
+    <section class="hero">
+      <p class="kicker">QAgent / Plan / HTML documentation mirror</p>
+      <h1>Pre-Demo Checklist</h1>
+      <p class="lede">Use this checklist before running the QAgent demo to ensure everything is ready.</p>
+      <div class="metric-grid" aria-label="Document statistics">
+        <div class="metric"><span>Words</span><strong>820</strong></div>
+        <div class="metric"><span>Sections</span><strong>37</strong></div>
+        <div class="metric"><span>Code blocks</span><strong>15</strong></div>
+        <div class="metric"><span>Tables</span><strong>0</strong></div>
+      </div>
+      <div class="actions">
+        <button class="primary-action" type="button" data-copy="#handoffPrompt">Copy as prompt</button>
+        <button class="secondary-action" id="focusMode" type="button">Focus mode</button>
+        <a class="secondary-action" href="../../index.html">Back to repo index</a>
+      </div>
+    </section>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <input class="search" id="docSearch" type="search" placeholder="Search this document">
+        <ul class="toc"><li><a class="lvl-1" href="#pre-demo-checklist">Pre-Demo Checklist</a></li>
+<li><a class="lvl-2" href="#1-environment-setup">1. Environment Setup</a></li>
+<li><a class="lvl-3" href="#api-keys">API Keys</a></li>
+<li><a class="lvl-3" href="#local-environment">Local Environment</a></li>
+<li><a class="lvl-2" href="#2-services-status">2. Services Status</a></li>
+<li><a class="lvl-3" href="#browserbase">Browserbase</a></li>
+<li><a class="lvl-3" href="#redis">Redis</a></li>
+<li><a class="lvl-3" href="#vercel">Vercel</a></li>
+<li><a class="lvl-3" href="#w-b-weave">W&amp;B Weave</a></li>
+<li><a class="lvl-2" href="#3-demo-app-state">3. Demo App State</a></li>
+<li><a class="lvl-3" href="#reset-demo-app-to-buggy-state">Reset Demo App to Buggy State</a></li>
+<li><a class="lvl-3" href="#git-status">Git Status</a></li>
+<li><a class="lvl-2" href="#4-local-testing">4. Local Testing</a></li>
+<li><a class="lvl-3" href="#start-demo-app">Start Demo App</a></li>
+<li><a class="lvl-3" href="#verify-bugs-exist">Verify Bugs Exist</a></li>
+<li><a class="lvl-3" href="#run-dry-demo">Run Dry Demo</a></li>
+<li><a class="lvl-2" href="#5-dashboard-setup">5. Dashboard Setup</a></li>
+<li><a class="lvl-3" href="#start-marimo-dashboard">Start Marimo Dashboard</a></li>
+<li><a class="lvl-3" href="#pre-seed-data-optional">Pre-seed Data (Optional)</a></li>
+<li><a class="lvl-2" href="#6-backup-plan">6. Backup Plan</a></li>
+<li><a class="lvl-3" href="#recorded-demo">Recorded Demo</a></li>
+<li><a class="lvl-3" href="#screenshots">Screenshots</a></li>
+<li><a class="lvl-3" href="#manual-fallback">Manual Fallback</a></li>
+<li><a class="lvl-2" href="#7-network-performance">7. Network &amp; Performance</a></li>
+<li><a class="lvl-3" href="#internet-connection">Internet Connection</a></li>
+<li><a class="lvl-3" href="#performance">Performance</a></li>
+<li><a class="lvl-2" href="#8-final-verification">8. Final Verification</a></li>
+<li><a class="lvl-3" href="#complete-system-check">Complete System Check</a></li>
+<li><a class="lvl-3" href="#timing-practice">Timing Practice</a></li>
+<li><a class="lvl-2" href="#quick-reference-commands">Quick Reference Commands</a></li>
+<li><a class="lvl-2" href="#troubleshooting">Troubleshooting</a></li>
+<li><a class="lvl-3" href="#openai-api-key-not-set">&quot;OPENAI_API_KEY not set&quot;</a></li>
+<li><a class="lvl-3" href="#browserbase-session-timeout">&quot;Browserbase session timeout&quot;</a></li>
+<li><a class="lvl-3" href="#redis-connection-refused">&quot;Redis connection refused&quot;</a></li>
+<li><a class="lvl-3" href="#vercel-deployment-failed">&quot;Vercel deployment failed&quot;</a></li>
+<li><a class="lvl-3" href="#weave-not-logging">&quot;Weave not logging&quot;</a></li>
+<li><a class="lvl-2" href="#sign-off">Sign-off</a></li></ul>
+      </aside>
+      <div class="content-shell">
+        <section class="panel active" id="read">
+          <article class="article">
+            <h1 id="pre-demo-checklist">Pre-Demo Checklist</h1>
+<p>Use this checklist before running the QAgent demo to ensure everything is ready.</p>
+<hr/>
+<h2 id="1-environment-setup">1. Environment Setup</h2>
+<h3 id="api-keys">API Keys</h3>
+<p>Run this command to verify all required environment variables are set:</p>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="c1"># Check for required API keys</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"Checking environment variables..."</span>
+<span class="o">[</span><span class="w"> </span>-n<span class="w"> </span><span class="s2">"</span><span class="nv">$BROWSERBASE_API_KEY</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"✓ BROWSERBASE_API_KEY"</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"✗ BROWSERBASE_API_KEY missing"</span>
+<span class="o">[</span><span class="w"> </span>-n<span class="w"> </span><span class="s2">"</span><span class="nv">$BROWSERBASE_PROJECT_ID</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"✓ BROWSERBASE_PROJECT_ID"</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"✗ BROWSERBASE_PROJECT_ID missing"</span>
+<span class="o">[</span><span class="w"> </span>-n<span class="w"> </span><span class="s2">"</span><span class="nv">$OPENAI_API_KEY</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"✓ OPENAI_API_KEY"</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"✗ OPENAI_API_KEY missing"</span>
+<span class="o">[</span><span class="w"> </span>-n<span class="w"> </span><span class="s2">"</span><span class="nv">$REDIS_URL</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"✓ REDIS_URL"</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"✗ REDIS_URL missing"</span>
+<span class="o">[</span><span class="w"> </span>-n<span class="w"> </span><span class="s2">"</span><span class="nv">$VERCEL_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"✓ VERCEL_TOKEN"</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"✗ VERCEL_TOKEN missing"</span>
+<span class="o">[</span><span class="w"> </span>-n<span class="w"> </span><span class="s2">"</span><span class="nv">$VERCEL_PROJECT_ID</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"✓ VERCEL_PROJECT_ID"</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"✗ VERCEL_PROJECT_ID missing"</span>
+<span class="o">[</span><span class="w"> </span>-n<span class="w"> </span><span class="s2">"</span><span class="nv">$WANDB_API_KEY</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"✓ WANDB_API_KEY"</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"✗ WANDB_API_KEY missing"</span>
+</code></pre></div></div>
+<ul>
+<li>[ ] <code>BROWSERBASE_API_KEY</code> - Set and valid</li>
+<li>[ ] <code>BROWSERBASE_PROJECT_ID</code> - Set and valid</li>
+<li>[ ] <code>OPENAI_API_KEY</code> - Set and valid (check balance)</li>
+<li>[ ] <code>REDIS_URL</code> - Set and valid</li>
+<li>[ ] <code>VERCEL_TOKEN</code> - Set and valid</li>
+<li>[ ] <code>VERCEL_PROJECT_ID</code> - Set and valid</li>
+<li>[ ] <code>WANDB_API_KEY</code> - Set and valid</li>
+</ul>
+<h3 id="local-environment">Local Environment</h3>
+<ul>
+<li>[ ] Node.js 18+ installed (<code>node --version</code>)</li>
+<li>[ ] pnpm installed (<code>pnpm --version</code>)</li>
+<li>[ ] Dependencies installed (<code>pnpm install</code>)</li>
+<li>[ ] TypeScript compiles (<code>pnpm lint</code>)</li>
+<li>[ ] Tests pass (<code>pnpm test</code>)</li>
+</ul>
+<hr/>
+<h2 id="2-services-status">2. Services Status</h2>
+<h3 id="browserbase">Browserbase</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="c1"># Verify Browserbase connection (requires API key)</span>
+curl<span class="w"> </span>-s<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$BROWSERBASE_API_KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>https://api.browserbase.com/v1/sessions<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-1
+</code></pre></div></div>
+<ul>
+<li>[ ] API accessible</li>
+<li>[ ] Session quota available</li>
+<li>[ ] Account in good standing</li>
+</ul>
+<h3 id="redis">Redis</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="c1"># Test Redis connection</span>
+redis-cli<span class="w"> </span>-u<span class="w"> </span><span class="nv">$REDIS_URL</span><span class="w"> </span>ping
+<span class="c1"># Expected: PONG</span>
+</code></pre></div></div>
+<ul>
+<li>[ ] Redis server accessible</li>
+<li>[ ] Vector index exists (<code>FT._LIST</code>)</li>
+<li>[ ] No memory issues</li>
+</ul>
+<h3 id="vercel">Vercel</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="c1"># Check Vercel project status</span>
+curl<span class="w"> </span>-s<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$VERCEL_TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="s2">"https://api.vercel.com/v9/projects/</span><span class="nv">$VERCEL_PROJECT_ID</span><span class="s2">"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>.name
+</code></pre></div></div>
+<ul>
+<li>[ ] API accessible</li>
+<li>[ ] Project exists</li>
+<li>[ ] Deployment quota available</li>
+</ul>
+<h3 id="w-b-weave">W&amp;B Weave</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="c1"># Verify Weave connection (will init if valid)</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"import weave; weave.init('test')"</span><span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"✓ Weave OK"</span>
+</code></pre></div></div>
+<ul>
+<li>[ ] API key valid</li>
+<li>[ ] Project exists or can be created</li>
+</ul>
+<hr/>
+<h2 id="3-demo-app-state">3. Demo App State</h2>
+<h3 id="reset-demo-app-to-buggy-state">Reset Demo App to Buggy State</h3>
+<p>The demo app should have all 3 bugs present:</p>
+<p><strong>Bug 1: Check cart/page.tsx line 109</strong></p>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code>grep<span class="w"> </span>-n<span class="w"> </span><span class="s2">"onClick"</span><span class="w"> </span>app/cart/page.tsx<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>checkout-button
+<span class="c1"># Should NOT find onClick={handleCheckout} on the checkout button</span>
+</code></pre></div></div>
+<ul>
+<li>[ ] Checkout button missing onClick handler</li>
+</ul>
+<p><strong>Bug 2: Check api/checkout/route.ts line 23</strong></p>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code>grep<span class="w"> </span><span class="s2">"api/payments"</span><span class="w"> </span>app/api/checkout/route.ts
+<span class="c1"># Should find the call to non-existent /api/payments</span>
+</code></pre></div></div>
+<ul>
+<li>[ ] API calls non-existent /api/payments endpoint</li>
+</ul>
+<p><strong>Bug 3: Check signup/page.tsx line 64</strong></p>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code>grep<span class="w"> </span><span class="s2">"preferences.newsletter"</span><span class="w"> </span>app/signup/page.tsx
+<span class="c1"># Should find the null reference access</span>
+</code></pre></div></div>
+<ul>
+<li>[ ] Null reference on preferences.newsletter</li>
+</ul>
+<h3 id="git-status">Git Status</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code>git<span class="w"> </span>status
+<span class="c1"># Should be clean or on a demo branch</span>
+</code></pre></div></div>
+<ul>
+<li>[ ] Working directory clean</li>
+<li>[ ] On correct branch (main or demo)</li>
+<li>[ ] No uncommitted changes</li>
+</ul>
+<hr/>
+<h2 id="4-local-testing">4. Local Testing</h2>
+<h3 id="start-demo-app">Start Demo App</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code>pnpm<span class="w"> </span>dev
+<span class="c1"># Open http://localhost:3000</span>
+</code></pre></div></div>
+<ul>
+<li>[ ] App starts without errors</li>
+<li>[ ] Home page loads</li>
+<li>[ ] Cart page shows items</li>
+<li>[ ] Checkout button visible (but broken)</li>
+<li>[ ] Signup page loads</li>
+</ul>
+<h3 id="verify-bugs-exist">Verify Bugs Exist</h3>
+<ul>
+<li>[ ] Click checkout button → nothing happens (Bug 1)</li>
+<li>[ ] Check browser console for no errors yet (Bug 2 needs API call)</li>
+<li>[ ] Signup form visible (Bug 3 triggers on submit)</li>
+</ul>
+<h3 id="run-dry-demo">Run Dry Demo</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code>pnpm<span class="w"> </span>run<span class="w"> </span>demo:dry
+</code></pre></div></div>
+<ul>
+<li>[ ] Banner displays correctly</li>
+<li>[ ] Bug list shows 3 bugs</li>
+<li>[ ] Tech stack displays</li>
+<li>[ ] Loop diagram renders</li>
+</ul>
+<hr/>
+<h2 id="5-dashboard-setup">5. Dashboard Setup</h2>
+<h3 id="start-marimo-dashboard">Start Marimo Dashboard</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code>pnpm<span class="w"> </span>run<span class="w"> </span>dashboard
+<span class="c1"># Or: marimo run dashboard/app.py</span>
+</code></pre></div></div>
+<ul>
+<li>[ ] Dashboard opens in browser</li>
+<li>[ ] Charts render with mock data</li>
+<li>[ ] "Use mock data" checkbox works</li>
+<li>[ ] All sections visible</li>
+</ul>
+<h3 id="pre-seed-data-optional">Pre-seed Data (Optional)</h3>
+<p>If using live Weave data:
+- [ ] Run a test cycle first to populate data
+- [ ] Verify data appears in dashboard</p>
+<hr/>
+<h2 id="6-backup-plan">6. Backup Plan</h2>
+<h3 id="recorded-demo">Recorded Demo</h3>
+<ul>
+<li>[ ] Backup video recorded and tested</li>
+<li>[ ] Video plays correctly</li>
+<li>[ ] Audio (if any) is clear</li>
+</ul>
+<h3 id="screenshots">Screenshots</h3>
+<ul>
+<li>[ ] Screenshot of buggy app (checkout button not working)</li>
+<li>[ ] Screenshot of QAgent running</li>
+<li>[ ] Screenshot of fix being applied</li>
+<li>[ ] Screenshot of working app</li>
+<li>[ ] Screenshot of dashboard with metrics</li>
+</ul>
+<h3 id="manual-fallback">Manual Fallback</h3>
+<p>If automation fails, be prepared to:
+- [ ] Show code with bugs highlighted
+- [ ] Manually apply the fix
+- [ ] Show before/after diff
+- [ ] Display pre-captured Weave traces</p>
+<hr/>
+<h2 id="7-network-performance">7. Network &amp; Performance</h2>
+<h3 id="internet-connection">Internet Connection</h3>
+<ul>
+<li>[ ] Stable connection</li>
+<li>[ ] VPN disabled (if causing issues)</li>
+<li>[ ] Firewall allows API access</li>
+</ul>
+<h3 id="performance">Performance</h3>
+<ul>
+<li>[ ] Close unnecessary applications</li>
+<li>[ ] Terminal window visible and large enough</li>
+<li>[ ] Browser zoom at 100%</li>
+<li>[ ] Screen resolution appropriate for projection</li>
+</ul>
+<hr/>
+<h2 id="8-final-verification">8. Final Verification</h2>
+<h3 id="complete-system-check">Complete System Check</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="c1"># Run all checks in sequence</span>
+pnpm<span class="w"> </span>lint<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>pnpm<span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>pnpm<span class="w"> </span>run<span class="w"> </span>demo:dry
+</code></pre></div></div>
+<ul>
+<li>[ ] Lint passes</li>
+<li>[ ] Tests pass (165 tests)</li>
+<li>[ ] Dry run completes</li>
+</ul>
+<h3 id="timing-practice">Timing Practice</h3>
+<ul>
+<li>[ ] Run through demo script once</li>
+<li>[ ] Verify timing fits in 3 minutes</li>
+<li>[ ] Practice transitions</li>
+</ul>
+<hr/>
+<h2 id="quick-reference-commands">Quick Reference Commands</h2>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="c1"># Start everything</span>
+pnpm<span class="w"> </span>dev<span class="w">                  </span><span class="c1"># Demo app</span>
+pnpm<span class="w"> </span>run<span class="w"> </span>dashboard<span class="w">        </span><span class="c1"># Marimo dashboard</span>
+
+<span class="c1"># Run demo</span>
+pnpm<span class="w"> </span>run<span class="w"> </span>demo<span class="w">             </span><span class="c1"># Full demo</span>
+pnpm<span class="w"> </span>run<span class="w"> </span>demo:dry<span class="w">         </span><span class="c1"># Dry run</span>
+pnpm<span class="w"> </span>run<span class="w"> </span>demo<span class="w"> </span>--quick<span class="w">     </span><span class="c1"># Fewer iterations</span>
+
+<span class="c1"># Troubleshooting</span>
+pnpm<span class="w"> </span>lint<span class="w">                 </span><span class="c1"># Check for errors</span>
+pnpm<span class="w"> </span><span class="nb">test</span><span class="w">                 </span><span class="c1"># Run tests</span>
+git<span class="w"> </span>status<span class="w">                </span><span class="c1"># Check git state</span>
+</code></pre></div></div>
+<hr/>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="openai-api-key-not-set">"OPENAI_API_KEY not set"</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">OPENAI_API_KEY</span><span class="o">=</span>sk-...
+</code></pre></div></div>
+<h3 id="browserbase-session-timeout">"Browserbase session timeout"</h3>
+<ul>
+<li>Check API key is valid</li>
+<li>Verify account has session quota</li>
+<li>Try creating session manually via API</li>
+</ul>
+<h3 id="redis-connection-refused">"Redis connection refused"</h3>
+<ul>
+<li>Verify REDIS_URL is correct</li>
+<li>Check Redis server is running</li>
+<li>Test with <code>redis-cli ping</code></li>
+</ul>
+<h3 id="vercel-deployment-failed">"Vercel deployment failed"</h3>
+<ul>
+<li>Check VERCEL_TOKEN is valid</li>
+<li>Verify project ID exists</li>
+<li>Check deployment quota</li>
+</ul>
+<h3 id="weave-not-logging">"Weave not logging"</h3>
+<ul>
+<li>Verify WANDB_API_KEY is set</li>
+<li>Check W&amp;B account status</li>
+<li>Try <code>weave.init()</code> manually</li>
+</ul>
+<hr/>
+<h2 id="sign-off">Sign-off</h2>
+<p><strong>Pre-demo checklist completed by:</strong> <strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Date:</strong> <strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Ready for demo:</strong> [ ] Yes [ ] No - Issues: <strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+          </article>
+          <div class="html-note">
+            Generated 2026-05-09 12:44 from <code>docs/PRE_DEMO_CHECKLIST.md</code>. 3 protected agent/tool instruction file(s) left as Markdown: AGENTS.md, CLAUDE.md, GEMINI.md
+          </div>
+        </section>
+
+        <section class="panel" id="map">
+          <div class="map-grid">
+            <div class="flow-card">
+              <h2>Document Flow</h2>
+              <p>Headings are rendered as a spatial map so the structure is easier to scan than raw Markdown.</p>
+              <svg class="flow-svg" viewBox="0 0 760 1164" role="img" aria-label="Document heading flow">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#8b877d"/></marker></defs>
+<rect x="0" y="0" width="760" height="1164" fill="#f7f4ec"/>
+<a href="#pre-demo-checklist">
+<rect x="34" y="24" width="560" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="34" y="24" width="8" height="42" rx="4" fill="#d97757"/>
+<text x="56" y="50" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Pre-Demo Checklist</text>
+</a>
+<line x1="86" y1="45" x2="86" y2="78" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#1-environment-setup">
+<rect x="70" y="86" width="526" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="70" y="86" width="8" height="42" rx="4" fill="#788c5d"/>
+<text x="92" y="112" fill="#151515" font-family="ui-monospace, monospace" font-size="14">1. Environment Setup</text>
+</a>
+<line x1="122" y1="107" x2="122" y2="140" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#api-keys">
+<rect x="106" y="148" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="148" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="174" fill="#151515" font-family="ui-monospace, monospace" font-size="14">API Keys</text>
+</a>
+<line x1="122" y1="169" x2="122" y2="202" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#local-environment">
+<rect x="106" y="210" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="210" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="236" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Local Environment</text>
+</a>
+<line x1="86" y1="231" x2="86" y2="264" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#2-services-status">
+<rect x="70" y="272" width="526" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="70" y="272" width="8" height="42" rx="4" fill="#788c5d"/>
+<text x="92" y="298" fill="#151515" font-family="ui-monospace, monospace" font-size="14">2. Services Status</text>
+</a>
+<line x1="122" y1="293" x2="122" y2="326" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#browserbase">
+<rect x="106" y="334" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="334" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="360" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Browserbase</text>
+</a>
+<line x1="122" y1="355" x2="122" y2="388" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#redis">
+<rect x="106" y="396" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="396" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="422" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Redis</text>
+</a>
+<line x1="122" y1="417" x2="122" y2="450" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#vercel">
+<rect x="106" y="458" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="458" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="484" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Vercel</text>
+</a>
+<line x1="122" y1="479" x2="122" y2="512" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#w-b-weave">
+<rect x="106" y="520" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="520" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="546" fill="#151515" font-family="ui-monospace, monospace" font-size="14">W&amp;B Weave</text>
+</a>
+<line x1="86" y1="541" x2="86" y2="574" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#3-demo-app-state">
+<rect x="70" y="582" width="526" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="70" y="582" width="8" height="42" rx="4" fill="#788c5d"/>
+<text x="92" y="608" fill="#151515" font-family="ui-monospace, monospace" font-size="14">3. Demo App State</text>
+</a>
+<line x1="122" y1="603" x2="122" y2="636" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#reset-demo-app-to-buggy-state">
+<rect x="106" y="644" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="644" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="670" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Reset Demo App to Buggy State</text>
+</a>
+<line x1="122" y1="665" x2="122" y2="698" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#git-status">
+<rect x="106" y="706" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="706" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="732" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Git Status</text>
+</a>
+<line x1="86" y1="727" x2="86" y2="760" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#4-local-testing">
+<rect x="70" y="768" width="526" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="70" y="768" width="8" height="42" rx="4" fill="#788c5d"/>
+<text x="92" y="794" fill="#151515" font-family="ui-monospace, monospace" font-size="14">4. Local Testing</text>
+</a>
+<line x1="122" y1="789" x2="122" y2="822" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#start-demo-app">
+<rect x="106" y="830" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="830" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="856" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Start Demo App</text>
+</a>
+<line x1="122" y1="851" x2="122" y2="884" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#verify-bugs-exist">
+<rect x="106" y="892" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="892" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="918" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Verify Bugs Exist</text>
+</a>
+<line x1="122" y1="913" x2="122" y2="946" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#run-dry-demo">
+<rect x="106" y="954" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="954" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="980" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Run Dry Demo</text>
+</a>
+<line x1="86" y1="975" x2="86" y2="1008" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#5-dashboard-setup">
+<rect x="70" y="1016" width="526" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="70" y="1016" width="8" height="42" rx="4" fill="#788c5d"/>
+<text x="92" y="1042" fill="#151515" font-family="ui-monospace, monospace" font-size="14">5. Dashboard Setup</text>
+</a>
+<line x1="122" y1="1037" x2="122" y2="1070" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#start-marimo-dashboard">
+<rect x="106" y="1078" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="1078" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="1104" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Start Marimo Dashboard</text>
+</a>
+<text x="34" y="1156" fill="#77746d" font-family="ui-monospace, monospace" font-size="13">... 19 more sections in the table of contents</text>
+</svg>
+            </div>
+            <div class="flow-card">
+              <h2>Source Map</h2>
+              <div class="source-grid">
+                <div><strong>Repository</strong><br><code>/Users/m3-max/Documents/GitHub/QAgent</code></div>
+                <div><strong>Source</strong><br><code>docs/PRE_DEMO_CHECKLIST.md</code></div>
+                <div><strong>Generated HTML</strong><br><code>docs-html/pages/docs/PRE_DEMO_CHECKLIST.html</code></div>
+                <div><strong>Checksum</strong><br><code>804fdce24c3c</code></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="handoff">
+          <div class="prompt-card">
+            <h2>Two-way Handoff</h2>
+            <p>This prompt is designed to paste back into an agent after you review or tune the document in the browser.</p>
+            <div class="actions">
+              <button class="primary-action" type="button" data-copy="#handoffPrompt">Copy prompt</button>
+            </div>
+            <pre class="prompt-box" id="handoffPrompt">Use this HTML documentation artifact as context.
+
+Repository: QAgent
+Source Markdown: docs/PRE_DEMO_CHECKLIST.md
+Document: Pre-Demo Checklist
+Kind: Plan
+
+Task:
+- Read the visual summary, document map, and source content.
+- Preserve compatibility with the original Markdown source unless explicitly asked to replace it.
+- If you edit the source, regenerate this HTML mirror afterward.
+</pre>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <script>
+(() => {
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+  const progress = $('.read-progress');
+  const updateProgress = () => {
+    if (!progress) return;
+    const doc = document.documentElement;
+    const max = doc.scrollHeight - doc.clientHeight;
+    const pct = max <= 0 ? 0 : (doc.scrollTop / max) * 100;
+    progress.style.width = `${pct}%`;
+  };
+  document.addEventListener('scroll', updateProgress, { passive: true });
+  updateProgress();
+
+  $$('.mode-strip button[data-panel]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const target = button.dataset.panel;
+      $$('.mode-strip button[data-panel]').forEach((b) => b.setAttribute('aria-pressed', String(b === button)));
+      $$('.panel').forEach((panel) => panel.classList.toggle('active', panel.id === target));
+    });
+  });
+
+  $('#focusMode')?.addEventListener('click', () => {
+    document.body.classList.toggle('focus');
+  });
+
+  $$('.copy-code').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const code = button.parentElement?.querySelector('pre')?.innerText || '';
+      await navigator.clipboard.writeText(code);
+      const old = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => button.textContent = old, 1200);
+    });
+  });
+
+  $$('[data-copy]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const target = $(button.dataset.copy);
+      if (!target) return;
+      await navigator.clipboard.writeText(target.innerText);
+      const old = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => button.textContent = old, 1400);
+    });
+  });
+
+  const tocLinks = $$('.toc a');
+  if (tocLinks.length) {
+    const byId = new Map(tocLinks.map((link) => [decodeURIComponent(link.hash.slice(1)), link]));
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        tocLinks.forEach((link) => link.classList.remove('active'));
+        byId.get(entry.target.id)?.classList.add('active');
+      });
+    }, { rootMargin: '-20% 0px -70% 0px', threshold: 0.01 });
+    $$('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]').forEach((heading) => observer.observe(heading));
+  }
+
+  const search = $('#docSearch');
+  if (search) {
+    const article = $('.article');
+    const original = article?.innerHTML;
+    search.addEventListener('input', () => {
+      if (!article || original == null) return;
+      const q = search.value.trim();
+      article.innerHTML = original;
+      if (q.length < 2) return;
+      const safe = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(safe, 'gi');
+      const walker = document.createTreeWalker(article, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+          if (!node.nodeValue || !re.test(node.nodeValue)) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      });
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+      nodes.forEach((node) => {
+        const span = document.createElement('span');
+        span.innerHTML = node.nodeValue.replace(re, (m) => `<mark class="search-hit">${m}</mark>`);
+        node.parentNode.replaceChild(span, node);
+      });
+    });
+  }
+
+  const indexSearch = $('#indexSearch');
+  const chips = $$('.chip[data-kind]');
+  const filterCards = () => {
+    const q = (indexSearch?.value || '').toLowerCase().trim();
+    const active = $('.chip.active[data-kind]')?.dataset.kind || 'All';
+    $$('.doc-card').forEach((card) => {
+      const text = card.innerText.toLowerCase();
+      const kind = card.dataset.kind;
+      const okText = !q || text.includes(q);
+      const okKind = active === 'All' || kind === active;
+      card.style.display = okText && okKind ? '' : 'none';
+    });
+  };
+  indexSearch?.addEventListener('input', filterCards);
+  chips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      chips.forEach((c) => c.classList.remove('active'));
+      chip.classList.add('active');
+      filterCards();
+    });
+  });
+})();
+</script>
+</body>
+</html>

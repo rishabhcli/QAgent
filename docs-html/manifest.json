@@ -1,0 +1,49 @@
+{
+  "repo": "QAgent",
+  "generatedAt": "2026-05-09T19:44:59.502731+00:00",
+  "eligibleMarkdown": [
+    "README.md",
+    "agents/adk/README.md",
+    "docs/ARCHITECTURE.md",
+    "docs/DEMO_SCRIPT.md",
+    "docs/DESIGN.md",
+    "docs/PRD.md",
+    "docs/PRE_DEMO_CHECKLIST.md",
+    "docs/SPONSOR_INTEGRATIONS.md",
+    "mobile/README.md",
+    "prompts/phase-0-planning.md",
+    "prompts/phase-1-test-environment.md",
+    "prompts/phase-2-core-loop.md",
+    "prompts/phase-3-knowledge-base.md",
+    "prompts/phase-4-observability.md",
+    "prompts/phase-5-tracetriage.md",
+    "prompts/phase-6-redteam.md",
+    "prompts/phase-7-demo.md",
+    "prompts/ralph-loop.md"
+  ],
+  "protectedMarkdown": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "GEMINI.md"
+  ],
+  "htmlPages": [
+    "docs-html/pages/README.html",
+    "docs-html/pages/agents/adk/README.html",
+    "docs-html/pages/docs/ARCHITECTURE.html",
+    "docs-html/pages/docs/DEMO_SCRIPT.html",
+    "docs-html/pages/docs/DESIGN.html",
+    "docs-html/pages/docs/PRD.html",
+    "docs-html/pages/docs/PRE_DEMO_CHECKLIST.html",
+    "docs-html/pages/docs/SPONSOR_INTEGRATIONS.html",
+    "docs-html/pages/mobile/README.html",
+    "docs-html/pages/prompts/phase-0-planning.html",
+    "docs-html/pages/prompts/phase-1-test-environment.html",
+    "docs-html/pages/prompts/phase-2-core-loop.html",
+    "docs-html/pages/prompts/phase-3-knowledge-base.html",
+    "docs-html/pages/prompts/phase-4-observability.html",
+    "docs-html/pages/prompts/phase-5-tracetriage.html",
+    "docs-html/pages/prompts/phase-6-redteam.html",
+    "docs-html/pages/prompts/phase-7-demo.html",
+    "docs-html/pages/prompts/ralph-loop.html"
+  ]
+}

@@ -1,0 +1,1233 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Phase 7: Demo Preparation - QAgent docs</title>
+  <link rel="icon" href="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%23151515%22/%3E%0A%20%20%3Cpath%20d%3D%22M16%2018h32M16%2030h22M16%2042h30%22%20stroke%3D%22%23e3dacc%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22/%3E%0A%20%20%3Ccircle%20cx%3D%2248%22%20cy%3D%2218%22%20r%3D%225%22%20fill%3D%22%23d97757%22/%3E%0A%3C/svg%3E">
+  <style>
+pre { line-height: 125%; }
+td.linenos .normal { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+.codehilite .hll { background-color: #6e7681 }
+.codehilite { background: #0d1117; color: #E6EDF3 }
+.codehilite .c { color: #8B949E; font-style: italic } /* Comment */
+.codehilite .err { color: #F85149 } /* Error */
+.codehilite .esc { color: #E6EDF3 } /* Escape */
+.codehilite .g { color: #E6EDF3 } /* Generic */
+.codehilite .k { color: #FF7B72 } /* Keyword */
+.codehilite .l { color: #A5D6FF } /* Literal */
+.codehilite .n { color: #E6EDF3 } /* Name */
+.codehilite .o { color: #FF7B72; font-weight: bold } /* Operator */
+.codehilite .x { color: #E6EDF3 } /* Other */
+.codehilite .p { color: #E6EDF3 } /* Punctuation */
+.codehilite .ch { color: #8B949E; font-style: italic } /* Comment.Hashbang */
+.codehilite .cm { color: #8B949E; font-style: italic } /* Comment.Multiline */
+.codehilite .cp { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Preproc */
+.codehilite .cpf { color: #8B949E; font-style: italic } /* Comment.PreprocFile */
+.codehilite .c1 { color: #8B949E; font-style: italic } /* Comment.Single */
+.codehilite .cs { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Special */
+.codehilite .gd { color: #FFA198; background-color: #490202 } /* Generic.Deleted */
+.codehilite .ge { color: #E6EDF3; font-style: italic } /* Generic.Emph */
+.codehilite .ges { color: #E6EDF3; font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.codehilite .gr { color: #FFA198 } /* Generic.Error */
+.codehilite .gh { color: #79C0FF; font-weight: bold } /* Generic.Heading */
+.codehilite .gi { color: #56D364; background-color: #0F5323 } /* Generic.Inserted */
+.codehilite .go { color: #8B949E } /* Generic.Output */
+.codehilite .gp { color: #8B949E } /* Generic.Prompt */
+.codehilite .gs { color: #E6EDF3; font-weight: bold } /* Generic.Strong */
+.codehilite .gu { color: #79C0FF } /* Generic.Subheading */
+.codehilite .gt { color: #FF7B72 } /* Generic.Traceback */
+.codehilite .g-Underline { color: #E6EDF3; text-decoration: underline } /* Generic.Underline */
+.codehilite .kc { color: #79C0FF } /* Keyword.Constant */
+.codehilite .kd { color: #FF7B72 } /* Keyword.Declaration */
+.codehilite .kn { color: #FF7B72 } /* Keyword.Namespace */
+.codehilite .kp { color: #79C0FF } /* Keyword.Pseudo */
+.codehilite .kr { color: #FF7B72 } /* Keyword.Reserved */
+.codehilite .kt { color: #FF7B72 } /* Keyword.Type */
+.codehilite .ld { color: #79C0FF } /* Literal.Date */
+.codehilite .m { color: #A5D6FF } /* Literal.Number */
+.codehilite .s { color: #A5D6FF } /* Literal.String */
+.codehilite .na { color: #E6EDF3 } /* Name.Attribute */
+.codehilite .nb { color: #E6EDF3 } /* Name.Builtin */
+.codehilite .nc { color: #F0883E; font-weight: bold } /* Name.Class */
+.codehilite .no { color: #79C0FF; font-weight: bold } /* Name.Constant */
+.codehilite .nd { color: #D2A8FF; font-weight: bold } /* Name.Decorator */
+.codehilite .ni { color: #FFA657 } /* Name.Entity */
+.codehilite .ne { color: #F0883E; font-weight: bold } /* Name.Exception */
+.codehilite .nf { color: #D2A8FF; font-weight: bold } /* Name.Function */
+.codehilite .nl { color: #79C0FF; font-weight: bold } /* Name.Label */
+.codehilite .nn { color: #FF7B72 } /* Name.Namespace */
+.codehilite .nx { color: #E6EDF3 } /* Name.Other */
+.codehilite .py { color: #79C0FF } /* Name.Property */
+.codehilite .nt { color: #7EE787 } /* Name.Tag */
+.codehilite .nv { color: #79C0FF } /* Name.Variable */
+.codehilite .ow { color: #FF7B72; font-weight: bold } /* Operator.Word */
+.codehilite .pm { color: #E6EDF3 } /* Punctuation.Marker */
+.codehilite .w { color: #6E7681 } /* Text.Whitespace */
+.codehilite .mb { color: #A5D6FF } /* Literal.Number.Bin */
+.codehilite .mf { color: #A5D6FF } /* Literal.Number.Float */
+.codehilite .mh { color: #A5D6FF } /* Literal.Number.Hex */
+.codehilite .mi { color: #A5D6FF } /* Literal.Number.Integer */
+.codehilite .mo { color: #A5D6FF } /* Literal.Number.Oct */
+.codehilite .sa { color: #79C0FF } /* Literal.String.Affix */
+.codehilite .sb { color: #A5D6FF } /* Literal.String.Backtick */
+.codehilite .sc { color: #A5D6FF } /* Literal.String.Char */
+.codehilite .dl { color: #79C0FF } /* Literal.String.Delimiter */
+.codehilite .sd { color: #A5D6FF } /* Literal.String.Doc */
+.codehilite .s2 { color: #A5D6FF } /* Literal.String.Double */
+.codehilite .se { color: #79C0FF } /* Literal.String.Escape */
+.codehilite .sh { color: #79C0FF } /* Literal.String.Heredoc */
+.codehilite .si { color: #A5D6FF } /* Literal.String.Interpol */
+.codehilite .sx { color: #A5D6FF } /* Literal.String.Other */
+.codehilite .sr { color: #79C0FF } /* Literal.String.Regex */
+.codehilite .s1 { color: #A5D6FF } /* Literal.String.Single */
+.codehilite .ss { color: #A5D6FF } /* Literal.String.Symbol */
+.codehilite .bp { color: #E6EDF3 } /* Name.Builtin.Pseudo */
+.codehilite .fm { color: #D2A8FF; font-weight: bold } /* Name.Function.Magic */
+.codehilite .vc { color: #79C0FF } /* Name.Variable.Class */
+.codehilite .vg { color: #79C0FF } /* Name.Variable.Global */
+.codehilite .vi { color: #79C0FF } /* Name.Variable.Instance */
+.codehilite .vm { color: #79C0FF } /* Name.Variable.Magic */
+.codehilite .il { color: #A5D6FF } /* Literal.Number.Integer.Long */
+:root {
+  --paper: #f7f5f0;
+  --paper-2: #ebe7de;
+  --surface: #fffefa;
+  --ink: #151515;
+  --muted: #77746d;
+  --line: #d5d0c6;
+  --line-strong: #1a1a18;
+  --clay: #d97757;
+  --olive: #788c5d;
+  --sky: #6a8caf;
+  --oat: #e3dacc;
+  --danger: #b94f48;
+  --shadow: 0 18px 50px rgba(20, 20, 19, 0.10);
+  --radius: 8px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --serif: Charter, "Bitstream Charter", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.58;
+}
+a { color: inherit; text-decoration-color: color-mix(in srgb, var(--clay) 65%, transparent); text-underline-offset: 0.18em; }
+button, input, select { font: inherit; }
+.window {
+  max-width: 1180px;
+  margin: 42px auto;
+  background: var(--surface);
+  border: 2px solid var(--line-strong);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.chrome {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 18px;
+  align-items: center;
+  padding: 12px 18px;
+  background: var(--paper-2);
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+.dots { display: flex; gap: 8px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; background: #d1cbc1; display: block; }
+.path-pill {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+.mode-strip { display: flex; flex-wrap: wrap; gap: 8px; }
+.mode-strip button, .copy-code {
+  border: 1px solid var(--line);
+  background: #fffefa;
+  color: var(--ink);
+  border-radius: 7px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.mode-strip button[aria-pressed="true"] {
+  background: var(--ink);
+  color: #fffefa;
+  border-color: var(--ink);
+}
+.hero {
+  padding: 34px 42px 28px;
+  border-bottom: 1px solid var(--line);
+}
+.kicker {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+h1, h2, h3 {
+  font-family: var(--serif);
+  letter-spacing: 0;
+  line-height: 1.05;
+}
+h1 {
+  margin: 0;
+  font-size: clamp(34px, 5vw, 66px);
+  max-width: 880px;
+}
+.lede {
+  margin: 16px 0 0;
+  max-width: 780px;
+  color: #4c4943;
+  font-size: 18px;
+}
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 24px;
+}
+.metric {
+  min-height: 98px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfaf6;
+}
+.metric span {
+  display: block;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+.metric strong {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--serif);
+  font-size: 30px;
+  line-height: 1;
+}
+.layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  min-height: 620px;
+}
+.sidebar {
+  border-right: 1px solid var(--line);
+  padding: 24px 18px;
+  background: #fbfaf6;
+}
+.search {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 10px 13px;
+  background: #fff;
+}
+.toc {
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.toc li { margin: 4px 0; }
+.toc a {
+  display: block;
+  padding: 7px 8px;
+  border-radius: 7px;
+  color: #3f3c37;
+  text-decoration: none;
+}
+.toc a:hover, .toc a.active { background: var(--oat); }
+.toc .lvl-3, .toc .lvl-4, .toc .lvl-5, .toc .lvl-6 { padding-left: 18px; font-size: 14px; }
+.content-shell { min-width: 0; }
+.panel { display: none; padding: 30px 42px 50px; }
+.panel.active { display: block; }
+.article {
+  max-width: 820px;
+}
+.article h1 { font-size: 42px; margin: 0 0 16px; }
+.article h2 {
+  margin: 34px 0 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 30px;
+}
+.article h3 { margin: 26px 0 10px; font-size: 23px; }
+.article p, .article li { color: #34322d; }
+.article blockquote {
+  margin: 22px 0;
+  padding: 12px 18px;
+  border-left: 5px solid var(--clay);
+  background: #f1ece4;
+}
+.article img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.table-frame { overflow-x: auto; margin: 20px 0; border: 1px solid var(--line); border-radius: var(--radius); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { background: #f0ece4; font-family: var(--mono); font-size: 12px; text-transform: uppercase; }
+.code-frame {
+  position: relative;
+  margin: 20px 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #11110f;
+  border: 1px solid #262622;
+}
+.code-frame pre {
+  margin: 0;
+  padding: 20px;
+  overflow-x: auto;
+  color: #f4f1e8;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.copy-code {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  background: #24231f;
+  color: #f8f4ea;
+  border-color: #45423a;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.map-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+  gap: 22px;
+  align-items: start;
+}
+.flow-card, .prompt-card, .index-card, .doc-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfaf6;
+  padding: 18px;
+}
+.flow-svg {
+  width: 100%;
+  min-height: 320px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #f7f4ec;
+}
+.prompt-box {
+  white-space: pre-wrap;
+  font-family: var(--mono);
+  font-size: 13px;
+  background: #11110f;
+  color: #f4f1e8;
+  border-radius: var(--radius);
+  padding: 18px;
+  overflow-x: auto;
+}
+.primary-action {
+  border: 0;
+  background: var(--clay);
+  color: white;
+  border-radius: 7px;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.secondary-action {
+  border: 1px solid var(--line-strong);
+  background: #fffefa;
+  color: var(--ink);
+  border-radius: 7px;
+  padding: 11px 15px;
+  cursor: pointer;
+}
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+.source-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.source-grid div {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  background: #fffefa;
+}
+.source-grid code { word-break: break-word; }
+.html-note {
+  margin-top: 24px;
+  padding: 14px 16px;
+  border-left: 5px solid var(--olive);
+  background: #eff1e8;
+  color: #3c442f;
+}
+.html-note.unresolved {
+  border-left-color: var(--clay);
+  background: #f7e7df;
+  color: #553225;
+}
+.missing-reference {
+  color: var(--danger);
+  text-decoration-style: dotted;
+}
+.missing-image {
+  background: #f1ece4;
+}
+.read-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 4px;
+  width: 0;
+  background: linear-gradient(90deg, var(--clay), var(--olive), var(--sky));
+  z-index: 10;
+}
+.index-hero {
+  padding: 40px 42px 30px;
+}
+.capability-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 24px 0;
+}
+.capability {
+  min-height: 150px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fffefa;
+  padding: 14px;
+}
+.capability svg { width: 54px; height: 54px; }
+.capability strong { display: block; font-family: var(--serif); font-size: 20px; }
+.capability span { display: block; color: var(--muted); font-size: 14px; }
+.doc-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 22px 0;
+}
+.chip {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #fffefa;
+  cursor: pointer;
+}
+.chip.active { background: var(--ink); color: #fffefa; border-color: var(--ink); }
+.doc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.doc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 210px;
+  text-decoration: none;
+}
+.doc-card:hover { border-color: var(--clay); transform: translateY(-1px); }
+.doc-card h2 { margin: 0; font-size: 24px; }
+.doc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.kind {
+  color: var(--clay);
+  font-family: var(--mono);
+  text-transform: uppercase;
+  font-size: 12px;
+}
+.footer-note {
+  margin-top: 30px;
+  color: var(--muted);
+  font-size: 14px;
+}
+body.focus .sidebar, body.focus .metric-grid, body.focus .chrome .path-pill { display: none; }
+body.focus .layout { grid-template-columns: 1fr; }
+body.focus .article { margin: 0 auto; }
+mark.search-hit { background: #f5d9a6; color: inherit; padding: 0 2px; }
+@media (max-width: 860px) {
+  .window { margin: 0; border-left: 0; border-right: 0; border-radius: 0; }
+  .chrome { grid-template-columns: 1fr; }
+  .dots { display: none; }
+  .hero, .index-hero, .panel { padding-left: 20px; padding-right: 20px; }
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { border-right: 0; border-bottom: 1px solid var(--line); }
+  .metric-grid, .capability-grid, .doc-grid, .map-grid, .source-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+  <div class="read-progress" aria-hidden="true"></div>
+  <main class="window" id="top">
+    <div class="chrome">
+      <div class="dots" aria-hidden="true"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+      <div class="path-pill">prompts/phase-7-demo.md -> docs-html/pages/prompts/phase-7-demo.html</div>
+      <div class="mode-strip" aria-label="View mode">
+        <button type="button" data-panel="read" aria-pressed="true">Read</button>
+        <button type="button" data-panel="map" aria-pressed="false">Map</button>
+        <button type="button" data-panel="handoff" aria-pressed="false">Handoff</button>
+      </div>
+    </div>
+
+    <section class="hero">
+      <p class="kicker">QAgent / Prompt / HTML documentation mirror</p>
+      <h1>Phase 7: Demo Preparation</h1>
+      <p class="lede">Focus: End-to-end validation and presentation</p>
+      <div class="metric-grid" aria-label="Document statistics">
+        <div class="metric"><span>Words</span><strong>1,064</strong></div>
+        <div class="metric"><span>Sections</span><strong>39</strong></div>
+        <div class="metric"><span>Code blocks</span><strong>6</strong></div>
+        <div class="metric"><span>Tables</span><strong>2</strong></div>
+      </div>
+      <div class="actions">
+        <button class="primary-action" type="button" data-copy="#handoffPrompt">Copy as prompt</button>
+        <button class="secondary-action" id="focusMode" type="button">Focus mode</button>
+        <a class="secondary-action" href="../../index.html">Back to repo index</a>
+      </div>
+    </section>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <input class="search" id="docSearch" type="search" placeholder="Search this document">
+        <ul class="toc"><li><a class="lvl-1" href="#phase-7-demo-preparation">Phase 7: Demo Preparation</a></li>
+<li><a class="lvl-2" href="#overview">Overview</a></li>
+<li><a class="lvl-2" href="#skills-to-load">Skills to Load</a></li>
+<li><a class="lvl-2" href="#ralph-loop-template">Ralph Loop Template</a></li>
+<li><a class="lvl-2" href="#tasks">Tasks</a></li>
+<li><a class="lvl-3" href="#p7-1-end-to-end-validation">P7.1: End-to-End Validation</a></li>
+<li><a class="lvl-3" href="#p7-2-demo-script-finalization">P7.2: Demo Script Finalization</a></li>
+<li><a class="lvl-3" href="#p7-3-demo-recording">P7.3: Demo Recording</a></li>
+<li><a class="lvl-3" href="#p7-4-live-demo-preparation">P7.4: Live Demo Preparation</a></li>
+<li><a class="lvl-3" href="#p7-5-presentation-materials">P7.5: Presentation Materials</a></li>
+<li><a class="lvl-3" href="#p7-6-backup-plans">P7.6: Backup Plans</a></li>
+<li><a class="lvl-3" href="#p7-7-final-review">P7.7: Final Review</a></li>
+<li><a class="lvl-2" href="#3-minute-demo-script">3-Minute Demo Script</a></li>
+<li><a class="lvl-3" href="#opening-0-00-0-20">Opening (0:00-0:20)</a></li>
+<li><a class="lvl-3" href="#bug-detection-0-20-1-10">Bug Detection (0:20-1:10)</a></li>
+<li><a class="lvl-3" href="#diagnosis-and-fix-1-10-2-10">Diagnosis and Fix (1:10-2:10)</a></li>
+<li><a class="lvl-3" href="#verification-2-10-2-40">Verification (2:10-2:40)</a></li>
+<li><a class="lvl-3" href="#conclusion-2-40-3-00">Conclusion (2:40-3:00)</a></li>
+<li><a class="lvl-2" href="#demo-timing-breakdown">Demo Timing Breakdown</a></li>
+<li><a class="lvl-2" href="#pre-demo-checklist">Pre-Demo Checklist</a></li>
+<li><a class="lvl-3" href="#environment">Environment</a></li>
+<li><a class="lvl-3" href="#services">Services</a></li>
+<li><a class="lvl-3" href="#demo-app">Demo App</a></li>
+<li><a class="lvl-3" href="#qagent">QAgent</a></li>
+<li><a class="lvl-3" href="#backup">Backup</a></li>
+<li><a class="lvl-2" href="#sponsor-integration-summary">Sponsor Integration Summary</a></li>
+<li><a class="lvl-2" href="#validation-checklist">Validation Checklist</a></li>
+<li><a class="lvl-3" href="#end-to-end">End-to-End</a></li>
+<li><a class="lvl-3" href="#demo-flow">Demo Flow</a></li>
+<li><a class="lvl-3" href="#visuals">Visuals</a></li>
+<li><a class="lvl-3" href="#backup_1">Backup</a></li>
+<li><a class="lvl-2" href="#common-issues">Common Issues</a></li>
+<li><a class="lvl-3" href="#browser-session-fails">Browser Session Fails</a></li>
+<li><a class="lvl-3" href="#deployment-slow">Deployment Slow</a></li>
+<li><a class="lvl-3" href="#dashboard-empty">Dashboard Empty</a></li>
+<li><a class="lvl-3" href="#timing-off">Timing Off</a></li>
+<li><a class="lvl-2" href="#exit-criteria">Exit Criteria</a></li>
+<li><a class="lvl-2" href="#final-deliverables">Final Deliverables</a></li>
+<li><a class="lvl-2" href="#references">References</a></li></ul>
+      </aside>
+      <div class="content-shell">
+        <section class="panel active" id="read">
+          <article class="article">
+            <h1 id="phase-7-demo-preparation">Phase 7: Demo Preparation</h1>
+<p><strong>Focus:</strong> End-to-end validation and presentation</p>
+<p><strong>Status:</strong> Pending (requires Phase 6 completion)</p>
+<hr/>
+<h2 id="overview">Overview</h2>
+<p>Phase 7 is the final phase before the hackathon presentation. The focus is on ensuring everything works flawlessly end-to-end, creating compelling demo materials, and preparing backup plans. By the end of this phase, QAgent should be ready for a polished 3-minute demo.</p>
+<hr/>
+<h2 id="skills-to-load">Skills to Load</h2>
+<p>All skills for reference:</p>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code>.claude/skills/
+├── browserbase-stagehand/   # Testing infrastructure
+├── redis-vectorstore/       # Knowledge base
+├── vercel-deployment/       # Deployment
+├── wandb-weave/            # Observability
+├── google-adk/             # Orchestration
+├── marimo-dashboards/      # Visualization
+└── qagent-agents/      # Core agents
+</code></pre></div></div>
+<hr/>
+<h2 id="ralph-loop-template">Ralph Loop Template</h2>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code>## Ralph Loop - Phase 7 - Iteration [N]
+
+### 1. READ
+- [ ] Load CLAUDE.md for final context
+- [ ] Review all phase completions in TASKS.md
+- [ ] Check all integrations are working
+- [ ] Review demo requirements
+
+### 2. ANALYZE
+- E2E status: [Working/Issues]
+- Demo materials: [Complete/Incomplete]
+- Backup plan: [Ready/Not ready]
+
+### 3. PLAN
+Increments for this iteration:
+1. [Validation task]
+2. [Demo material task]
+3. [Backup preparation]
+
+### 4. EXECUTE
+[Complete one increment at a time]
+
+### 5. VALIDATE
+- [ ] Full E2E flow works
+- [ ] Demo timing is correct
+- [ ] Backup demo is ready
+- [ ] All materials prepared
+
+### 6. LOOP
+- [ ] Update TASKS.md with progress
+- [ ] Commit all changes
+- [ ] Final review
+</code></pre></div></div>
+<hr/>
+<h2 id="tasks">Tasks</h2>
+<h3 id="p7-1-end-to-end-validation">P7.1: End-to-End Validation</h3>
+<ul>
+<li>[ ] Run full QAgent loop on all 3 bugs</li>
+<li>[ ] Verify each agent performs correctly</li>
+<li>[ ] Confirm Redis learning works</li>
+<li>[ ] Check Weave traces are complete</li>
+<li>[ ] Validate dashboard shows data</li>
+</ul>
+<h3 id="p7-2-demo-script-finalization">P7.2: Demo Script Finalization</h3>
+<ul>
+<li>[ ] Write exact script for 3-minute demo</li>
+<li>[ ] Time each section</li>
+<li>[ ] Practice transitions</li>
+<li>[ ] Prepare talking points</li>
+</ul>
+<h3 id="p7-3-demo-recording">P7.3: Demo Recording</h3>
+<ul>
+<li>[ ] Record backup video of working demo</li>
+<li>[ ] Edit for timing and clarity</li>
+<li>[ ] Add captions if needed</li>
+<li>[ ] Test playback quality</li>
+</ul>
+<h3 id="p7-4-live-demo-preparation">P7.4: Live Demo Preparation</h3>
+<ul>
+<li>[ ] Pre-configure all environment variables</li>
+<li>[ ] Pre-start services (Redis, etc.)</li>
+<li>[ ] Pre-warm Browserbase session</li>
+<li>[ ] Pre-deploy demo app with bugs</li>
+</ul>
+<h3 id="p7-5-presentation-materials">P7.5: Presentation Materials</h3>
+<ul>
+<li>[ ] Create slide deck (optional)</li>
+<li>[ ] Prepare architecture diagram</li>
+<li>[ ] Document sponsor integrations</li>
+<li>[ ] List key metrics/achievements</li>
+</ul>
+<h3 id="p7-6-backup-plans">P7.6: Backup Plans</h3>
+<ul>
+<li>[ ] Prepare recorded demo as backup</li>
+<li>[ ] Create static screenshots of key moments</li>
+<li>[ ] Document manual steps if automation fails</li>
+<li>[ ] Test backup plan works</li>
+</ul>
+<h3 id="p7-7-final-review">P7.7: Final Review</h3>
+<ul>
+<li>[ ] Code review all changes</li>
+<li>[ ] Run all tests one final time</li>
+<li>[ ] Check no secrets in repo</li>
+<li>[ ] Verify README is updated</li>
+</ul>
+<hr/>
+<h2 id="3-minute-demo-script">3-Minute Demo Script</h2>
+<h3 id="opening-0-00-0-20">Opening (0:00-0:20)</h3>
+<p><strong>Action:</strong> Show buggy app
+<strong>Say:</strong></p>
+<blockquote>
+<p>"This is QAgent, a self-healing QA agent. Watch as it automatically finds a bug, fixes it, and verifies the fix."</p>
+</blockquote>
+<p><strong>Show:</strong>
+- Demo app with checkout button
+- Click checkout - nothing happens
+- "This button is broken - no click handler"</p>
+<hr/>
+<h3 id="bug-detection-0-20-1-10">Bug Detection (0:20-1:10)</h3>
+<p><strong>Action:</strong> Start QAgent
+<strong>Say:</strong></p>
+<blockquote>
+<p>"QAgent is now running E2E tests using Browserbase and Stagehand - AI-powered browser automation in the cloud."</p>
+</blockquote>
+<p><strong>Show:</strong>
+- Terminal running Tester Agent
+- Browser automation happening
+- Failure report with screenshot</p>
+<p><strong>Say:</strong></p>
+<blockquote>
+<p>"It found the bug - the checkout button has no onClick handler. Here's the screenshot and error captured automatically."</p>
+</blockquote>
+<hr/>
+<h3 id="diagnosis-and-fix-1-10-2-10">Diagnosis and Fix (1:10-2:10)</h3>
+<p><strong>Action:</strong> Show Triage and Fixer
+<strong>Say:</strong></p>
+<blockquote>
+<p>"The Triage Agent diagnosed the issue as a UI bug and queried our Redis knowledge base for similar past fixes."</p>
+</blockquote>
+<p><strong>Show:</strong>
+- Triage Agent output
+- Redis query (if visible)</p>
+<p><strong>Say:</strong></p>
+<blockquote>
+<p>"Now the Fixer Agent is generating a patch using GPT-4..."</p>
+</blockquote>
+<p><strong>Show:</strong>
+- Patch diff
+- Vercel deployment starting</p>
+<p><strong>Say:</strong></p>
+<blockquote>
+<p>"Deploying to Vercel automatically..."</p>
+</blockquote>
+<p><strong>Show:</strong>
+- Deployment progress
+- Deployment complete</p>
+<hr/>
+<h3 id="verification-2-10-2-40">Verification (2:10-2:40)</h3>
+<p><strong>Action:</strong> Show Verifier and result
+<strong>Say:</strong></p>
+<blockquote>
+<p>"The fix is deployed. Let's verify..."</p>
+</blockquote>
+<p><strong>Show:</strong>
+- Verifier Agent re-running test
+- Test passing
+- Live app with working button</p>
+<p><strong>Click checkout button - it works!</strong></p>
+<p><strong>Say:</strong></p>
+<blockquote>
+<p>"All tests passing. The Marimo dashboard shows our improvement."</p>
+</blockquote>
+<p><strong>Show:</strong>
+- Dashboard with pass rate going from 67% to 100%
+- Time-to-fix metrics
+- Recent fixes table</p>
+<hr/>
+<h3 id="conclusion-2-40-3-00">Conclusion (2:40-3:00)</h3>
+<p><strong>Action:</strong> Show integrations
+<strong>Say:</strong></p>
+<blockquote>
+<p>"QAgent used:
+- <strong>Browserbase + Stagehand</strong> for cloud browser testing
+- <strong>Redis</strong> for learning from past bugs
+- <strong>Vercel</strong> for instant deployment
+- <strong>W&amp;B Weave</strong> for tracing
+- <strong>Custom Orchestrator (ADK/A2A-compatible)</strong> for agent orchestration (ADK planned)
+- <strong>Marimo</strong> for visualization</p>
+<p>A self-improving agent that gets smarter with every bug it fixes."</p>
+</blockquote>
+<hr/>
+<h2 id="demo-timing-breakdown">Demo Timing Breakdown</h2>
+<div class="table-frame"><table>
+<thead>
+<tr>
+<th>Section</th>
+<th>Duration</th>
+<th>Cumulative</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Opening / Show bug</td>
+<td>20 sec</td>
+<td>0:20</td>
+</tr>
+<tr>
+<td>Bug Detection</td>
+<td>50 sec</td>
+<td>1:10</td>
+</tr>
+<tr>
+<td>Triage + Fixer</td>
+<td>35 sec</td>
+<td>1:45</td>
+</tr>
+<tr>
+<td>Deployment</td>
+<td>25 sec</td>
+<td>2:10</td>
+</tr>
+<tr>
+<td>Verification</td>
+<td>30 sec</td>
+<td>2:40</td>
+</tr>
+<tr>
+<td>Conclusion</td>
+<td>20 sec</td>
+<td>3:00</td>
+</tr>
+</tbody>
+</table></div>
+<hr/>
+<h2 id="pre-demo-checklist">Pre-Demo Checklist</h2>
+<h3 id="environment">Environment</h3>
+<ul>
+<li>[ ] All API keys are set and valid</li>
+<li>[ ] BROWSERBASE_API_KEY</li>
+<li>[ ] OPENAI_API_KEY</li>
+<li>[ ] REDIS_URL</li>
+<li>[ ] VERCEL_TOKEN</li>
+<li>[ ] WANDB_API_KEY</li>
+</ul>
+<h3 id="services">Services</h3>
+<ul>
+<li>[ ] Redis is running and accessible</li>
+<li>[ ] Browserbase account is active</li>
+<li>[ ] Vercel project is configured</li>
+<li>[ ] W&amp;B project exists</li>
+</ul>
+<h3 id="demo-app">Demo App</h3>
+<ul>
+<li>[ ] Demo app is deployed with bugs</li>
+<li>[ ] URL is accessible</li>
+<li>[ ] All 3 bugs are present</li>
+<li>[ ] No other issues interfere</li>
+</ul>
+<h3 id="qagent">QAgent</h3>
+<ul>
+<li>[ ] All agents are working</li>
+<li>[ ] Orchestrator completes successfully</li>
+<li>[ ] Dashboard shows data</li>
+<li>[ ] Timing is within 3 minutes</li>
+</ul>
+<h3 id="backup">Backup</h3>
+<ul>
+<li>[ ] Recorded video is ready</li>
+<li>[ ] Video plays correctly</li>
+<li>[ ] Screenshots are prepared</li>
+<li>[ ] Manual fallback documented</li>
+</ul>
+<hr/>
+<h2 id="sponsor-integration-summary">Sponsor Integration Summary</h2>
+<div class="table-frame"><table>
+<thead>
+<tr>
+<th>Sponsor</th>
+<th>Integration</th>
+<th>How It's Used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Browserbase</strong></td>
+<td>Cloud browser sessions</td>
+<td>Runs headless Chrome in the cloud for E2E tests</td>
+</tr>
+<tr>
+<td><strong>Stagehand</strong></td>
+<td>AI browser automation</td>
+<td>Executes natural language test actions</td>
+</tr>
+<tr>
+<td><strong>Redis</strong></td>
+<td>Vector knowledge base</td>
+<td>Stores failure patterns, enables semantic search</td>
+</tr>
+<tr>
+<td><strong>Vercel</strong></td>
+<td>Deployment platform</td>
+<td>Auto-deploys fixes, provides preview URLs</td>
+</tr>
+<tr>
+<td><strong>W&amp;B Weave</strong></td>
+<td>Observability</td>
+<td>Traces all agent operations, logs metrics</td>
+</tr>
+<tr>
+<td><strong>Custom Orchestrator (ADK/A2A-compatible)</strong></td>
+<td>Agent orchestration</td>
+<td>Coordinates multi-agent workflow (ADK planned)</td>
+</tr>
+<tr>
+<td><strong>Marimo</strong></td>
+<td>Dashboard</td>
+<td>Visualizes pass rates, fix times, improvements</td>
+</tr>
+</tbody>
+</table></div>
+<hr/>
+<h2 id="validation-checklist">Validation Checklist</h2>
+<h3 id="end-to-end">End-to-End</h3>
+<ul>
+<li>[ ] Bug 1 (onClick) is fixed automatically</li>
+<li>[ ] Bug 2 (API route) is fixed automatically</li>
+<li>[ ] Bug 3 (null ref) is fixed automatically</li>
+<li>[ ] All 3 bugs fixed in &lt;5 total iterations</li>
+</ul>
+<h3 id="demo-flow">Demo Flow</h3>
+<ul>
+<li>[ ] Demo completes within 3 minutes</li>
+<li>[ ] All transitions are smooth</li>
+<li>[ ] No awkward pauses</li>
+<li>[ ] Key points are clear</li>
+</ul>
+<h3 id="visuals">Visuals</h3>
+<ul>
+<li>[ ] Terminal output is readable</li>
+<li>[ ] Dashboard is visible</li>
+<li>[ ] Diagrams are clear</li>
+<li>[ ] No sensitive data visible</li>
+</ul>
+<h3 id="backup_1">Backup</h3>
+<ul>
+<li>[ ] Video backup works</li>
+<li>[ ] Screenshots tell the story</li>
+<li>[ ] Manual demo is documented</li>
+</ul>
+<hr/>
+<h2 id="common-issues">Common Issues</h2>
+<h3 id="browser-session-fails">Browser Session Fails</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code>Error: Session creation timeout
+</code></pre></div></div>
+<p><strong>Fix:</strong> Pre-create session, use warm pool</p>
+<h3 id="deployment-slow">Deployment Slow</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code>Warning: Deployment taking &gt;2 minutes
+</code></pre></div></div>
+<p><strong>Fix:</strong> Pre-warm Vercel, smaller changes</p>
+<h3 id="dashboard-empty">Dashboard Empty</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code>Warning: No data in charts
+</code></pre></div></div>
+<p><strong>Fix:</strong> Run test cycles beforehand, seed data</p>
+<h3 id="timing-off">Timing Off</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code>Warning: Demo running long
+</code></pre></div></div>
+<p><strong>Fix:</strong> Practice more, cut verbose sections</p>
+<hr/>
+<h2 id="exit-criteria">Exit Criteria</h2>
+<p>Phase 7 is complete when:</p>
+<ol>
+<li>Full E2E validation passes</li>
+<li>Demo script is finalized and timed</li>
+<li>Demo recording is ready as backup</li>
+<li>All materials are prepared</li>
+<li>Live demo runs successfully</li>
+<li>Backup plan is tested</li>
+<li>Ready for presentation</li>
+</ol>
+<hr/>
+<h2 id="final-deliverables">Final Deliverables</h2>
+<ul>
+<li>[ ] Working QAgent system</li>
+<li>[ ] 3-minute demo (live or recorded)</li>
+<li>[ ] Dashboard showing improvement metrics</li>
+<li>[ ] Documentation of all sponsor integrations</li>
+<li>[ ] README with setup instructions</li>
+<li>[ ] Clean, committed codebase</li>
+</ul>
+<hr/>
+<h2 id="references">References</h2>
+<ul>
+<li><a href="../../../CLAUDE.md">CLAUDE.md</a> - Project overview</li>
+<li><a class="missing-reference" data-missing-link="../TASKS.md" href="#unresolved-references">TASKS.md</a> - All completed tasks</li>
+<li><a href="../docs/PRD.html">docs/PRD.md</a> - Requirements</li>
+<li><a href="../docs/DESIGN.html">docs/DESIGN.md</a> - System design</li>
+<li><a href="../docs/ARCHITECTURE.html">docs/ARCHITECTURE.md</a> - Architecture decisions</li>
+</ul><section class="html-note unresolved" id="unresolved-references"><h2>Unresolved Source References</h2><p>The original Markdown pointed at local files that were not present in this checkout. The HTML keeps them visible as review callouts instead of dead links.</p><ul><li>missing markdown: ../TASKS.md</li></ul></section>
+          </article>
+          <div class="html-note">
+            Generated 2026-05-09 12:44 from <code>prompts/phase-7-demo.md</code>. 3 protected agent/tool instruction file(s) left as Markdown: AGENTS.md, CLAUDE.md, GEMINI.md
+          </div>
+        </section>
+
+        <section class="panel" id="map">
+          <div class="map-grid">
+            <div class="flow-card">
+              <h2>Document Flow</h2>
+              <p>Headings are rendered as a spatial map so the structure is easier to scan than raw Markdown.</p>
+              <svg class="flow-svg" viewBox="0 0 760 1164" role="img" aria-label="Document heading flow">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#8b877d"/></marker></defs>
+<rect x="0" y="0" width="760" height="1164" fill="#f7f4ec"/>
+<a href="#phase-7-demo-preparation">
+<rect x="34" y="24" width="560" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="34" y="24" width="8" height="42" rx="4" fill="#d97757"/>
+<text x="56" y="50" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Phase 7: Demo Preparation</text>
+</a>
+<line x1="86" y1="45" x2="86" y2="78" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#overview">
+<rect x="70" y="86" width="526" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="70" y="86" width="8" height="42" rx="4" fill="#788c5d"/>
+<text x="92" y="112" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Overview</text>
+</a>
+<line x1="86" y1="107" x2="86" y2="140" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#skills-to-load">
+<rect x="70" y="148" width="526" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="70" y="148" width="8" height="42" rx="4" fill="#788c5d"/>
+<text x="92" y="174" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Skills to Load</text>
+</a>
+<line x1="86" y1="169" x2="86" y2="202" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#ralph-loop-template">
+<rect x="70" y="210" width="526" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="70" y="210" width="8" height="42" rx="4" fill="#788c5d"/>
+<text x="92" y="236" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Ralph Loop Template</text>
+</a>
+<line x1="86" y1="231" x2="86" y2="264" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#tasks">
+<rect x="70" y="272" width="526" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="70" y="272" width="8" height="42" rx="4" fill="#788c5d"/>
+<text x="92" y="298" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Tasks</text>
+</a>
+<line x1="122" y1="293" x2="122" y2="326" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#p7-1-end-to-end-validation">
+<rect x="106" y="334" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="334" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="360" fill="#151515" font-family="ui-monospace, monospace" font-size="14">P7.1: End-to-End Validation</text>
+</a>
+<line x1="122" y1="355" x2="122" y2="388" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#p7-2-demo-script-finalization">
+<rect x="106" y="396" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="396" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="422" fill="#151515" font-family="ui-monospace, monospace" font-size="14">P7.2: Demo Script Finalization</text>
+</a>
+<line x1="122" y1="417" x2="122" y2="450" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#p7-3-demo-recording">
+<rect x="106" y="458" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="458" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="484" fill="#151515" font-family="ui-monospace, monospace" font-size="14">P7.3: Demo Recording</text>
+</a>
+<line x1="122" y1="479" x2="122" y2="512" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#p7-4-live-demo-preparation">
+<rect x="106" y="520" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="520" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="546" fill="#151515" font-family="ui-monospace, monospace" font-size="14">P7.4: Live Demo Preparation</text>
+</a>
+<line x1="122" y1="541" x2="122" y2="574" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#p7-5-presentation-materials">
+<rect x="106" y="582" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="582" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="608" fill="#151515" font-family="ui-monospace, monospace" font-size="14">P7.5: Presentation Materials</text>
+</a>
+<line x1="122" y1="603" x2="122" y2="636" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#p7-6-backup-plans">
+<rect x="106" y="644" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="644" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="670" fill="#151515" font-family="ui-monospace, monospace" font-size="14">P7.6: Backup Plans</text>
+</a>
+<line x1="122" y1="665" x2="122" y2="698" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#p7-7-final-review">
+<rect x="106" y="706" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="706" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="732" fill="#151515" font-family="ui-monospace, monospace" font-size="14">P7.7: Final Review</text>
+</a>
+<line x1="86" y1="727" x2="86" y2="760" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#3-minute-demo-script">
+<rect x="70" y="768" width="526" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="70" y="768" width="8" height="42" rx="4" fill="#788c5d"/>
+<text x="92" y="794" fill="#151515" font-family="ui-monospace, monospace" font-size="14">3-Minute Demo Script</text>
+</a>
+<line x1="122" y1="789" x2="122" y2="822" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#opening-0-00-0-20">
+<rect x="106" y="830" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="830" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="856" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Opening (0:00-0:20)</text>
+</a>
+<line x1="122" y1="851" x2="122" y2="884" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#bug-detection-0-20-1-10">
+<rect x="106" y="892" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="892" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="918" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Bug Detection (0:20-1:10)</text>
+</a>
+<line x1="122" y1="913" x2="122" y2="946" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#diagnosis-and-fix-1-10-2-10">
+<rect x="106" y="954" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="954" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="980" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Diagnosis and Fix (1:10-2:10)</text>
+</a>
+<line x1="122" y1="975" x2="122" y2="1008" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#verification-2-10-2-40">
+<rect x="106" y="1016" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="1016" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="1042" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Verification (2:10-2:40)</text>
+</a>
+<line x1="122" y1="1037" x2="122" y2="1070" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#conclusion-2-40-3-00">
+<rect x="106" y="1078" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="1078" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="1104" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Conclusion (2:40-3:00)</text>
+</a>
+<text x="34" y="1156" fill="#77746d" font-family="ui-monospace, monospace" font-size="13">... 21 more sections in the table of contents</text>
+</svg>
+            </div>
+            <div class="flow-card">
+              <h2>Source Map</h2>
+              <div class="source-grid">
+                <div><strong>Repository</strong><br><code>/Users/m3-max/Documents/GitHub/QAgent</code></div>
+                <div><strong>Source</strong><br><code>prompts/phase-7-demo.md</code></div>
+                <div><strong>Generated HTML</strong><br><code>docs-html/pages/prompts/phase-7-demo.html</code></div>
+                <div><strong>Checksum</strong><br><code>e2a80b437dbd</code></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="handoff">
+          <div class="prompt-card">
+            <h2>Two-way Handoff</h2>
+            <p>This prompt is designed to paste back into an agent after you review or tune the document in the browser.</p>
+            <div class="actions">
+              <button class="primary-action" type="button" data-copy="#handoffPrompt">Copy prompt</button>
+            </div>
+            <pre class="prompt-box" id="handoffPrompt">Use this HTML documentation artifact as context.
+
+Repository: QAgent
+Source Markdown: prompts/phase-7-demo.md
+Document: Phase 7: Demo Preparation
+Kind: Prompt
+
+Task:
+- Read the visual summary, document map, and source content.
+- Preserve compatibility with the original Markdown source unless explicitly asked to replace it.
+- If you edit the source, regenerate this HTML mirror afterward.
+</pre>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <script>
+(() => {
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+  const progress = $('.read-progress');
+  const updateProgress = () => {
+    if (!progress) return;
+    const doc = document.documentElement;
+    const max = doc.scrollHeight - doc.clientHeight;
+    const pct = max <= 0 ? 0 : (doc.scrollTop / max) * 100;
+    progress.style.width = `${pct}%`;
+  };
+  document.addEventListener('scroll', updateProgress, { passive: true });
+  updateProgress();
+
+  $$('.mode-strip button[data-panel]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const target = button.dataset.panel;
+      $$('.mode-strip button[data-panel]').forEach((b) => b.setAttribute('aria-pressed', String(b === button)));
+      $$('.panel').forEach((panel) => panel.classList.toggle('active', panel.id === target));
+    });
+  });
+
+  $('#focusMode')?.addEventListener('click', () => {
+    document.body.classList.toggle('focus');
+  });
+
+  $$('.copy-code').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const code = button.parentElement?.querySelector('pre')?.innerText || '';
+      await navigator.clipboard.writeText(code);
+      const old = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => button.textContent = old, 1200);
+    });
+  });
+
+  $$('[data-copy]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const target = $(button.dataset.copy);
+      if (!target) return;
+      await navigator.clipboard.writeText(target.innerText);
+      const old = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => button.textContent = old, 1400);
+    });
+  });
+
+  const tocLinks = $$('.toc a');
+  if (tocLinks.length) {
+    const byId = new Map(tocLinks.map((link) => [decodeURIComponent(link.hash.slice(1)), link]));
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        tocLinks.forEach((link) => link.classList.remove('active'));
+        byId.get(entry.target.id)?.classList.add('active');
+      });
+    }, { rootMargin: '-20% 0px -70% 0px', threshold: 0.01 });
+    $$('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]').forEach((heading) => observer.observe(heading));
+  }
+
+  const search = $('#docSearch');
+  if (search) {
+    const article = $('.article');
+    const original = article?.innerHTML;
+    search.addEventListener('input', () => {
+      if (!article || original == null) return;
+      const q = search.value.trim();
+      article.innerHTML = original;
+      if (q.length < 2) return;
+      const safe = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(safe, 'gi');
+      const walker = document.createTreeWalker(article, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+          if (!node.nodeValue || !re.test(node.nodeValue)) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      });
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+      nodes.forEach((node) => {
+        const span = document.createElement('span');
+        span.innerHTML = node.nodeValue.replace(re, (m) => `<mark class="search-hit">${m}</mark>`);
+        node.parentNode.replaceChild(span, node);
+      });
+    });
+  }
+
+  const indexSearch = $('#indexSearch');
+  const chips = $$('.chip[data-kind]');
+  const filterCards = () => {
+    const q = (indexSearch?.value || '').toLowerCase().trim();
+    const active = $('.chip.active[data-kind]')?.dataset.kind || 'All';
+    $$('.doc-card').forEach((card) => {
+      const text = card.innerText.toLowerCase();
+      const kind = card.dataset.kind;
+      const okText = !q || text.includes(q);
+      const okKind = active === 'All' || kind === active;
+      card.style.display = okText && okKind ? '' : 'none';
+    });
+  };
+  indexSearch?.addEventListener('input', filterCards);
+  chips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      chips.forEach((c) => c.classList.remove('active'));
+      chip.classList.add('active');
+      filterCards();
+    });
+  });
+})();
+</script>
+</body>
+</html>

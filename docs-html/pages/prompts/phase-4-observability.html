@@ -1,0 +1,1157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Phase 4: Logging &amp; Dashboard - QAgent docs</title>
+  <link rel="icon" href="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%20%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%23151515%22/%3E%0A%20%20%3Cpath%20d%3D%22M16%2018h32M16%2030h22M16%2042h30%22%20stroke%3D%22%23e3dacc%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22/%3E%0A%20%20%3Ccircle%20cx%3D%2248%22%20cy%3D%2218%22%20r%3D%225%22%20fill%3D%22%23d97757%22/%3E%0A%3C/svg%3E">
+  <style>
+pre { line-height: 125%; }
+td.linenos .normal { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+.codehilite .hll { background-color: #6e7681 }
+.codehilite { background: #0d1117; color: #E6EDF3 }
+.codehilite .c { color: #8B949E; font-style: italic } /* Comment */
+.codehilite .err { color: #F85149 } /* Error */
+.codehilite .esc { color: #E6EDF3 } /* Escape */
+.codehilite .g { color: #E6EDF3 } /* Generic */
+.codehilite .k { color: #FF7B72 } /* Keyword */
+.codehilite .l { color: #A5D6FF } /* Literal */
+.codehilite .n { color: #E6EDF3 } /* Name */
+.codehilite .o { color: #FF7B72; font-weight: bold } /* Operator */
+.codehilite .x { color: #E6EDF3 } /* Other */
+.codehilite .p { color: #E6EDF3 } /* Punctuation */
+.codehilite .ch { color: #8B949E; font-style: italic } /* Comment.Hashbang */
+.codehilite .cm { color: #8B949E; font-style: italic } /* Comment.Multiline */
+.codehilite .cp { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Preproc */
+.codehilite .cpf { color: #8B949E; font-style: italic } /* Comment.PreprocFile */
+.codehilite .c1 { color: #8B949E; font-style: italic } /* Comment.Single */
+.codehilite .cs { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Special */
+.codehilite .gd { color: #FFA198; background-color: #490202 } /* Generic.Deleted */
+.codehilite .ge { color: #E6EDF3; font-style: italic } /* Generic.Emph */
+.codehilite .ges { color: #E6EDF3; font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.codehilite .gr { color: #FFA198 } /* Generic.Error */
+.codehilite .gh { color: #79C0FF; font-weight: bold } /* Generic.Heading */
+.codehilite .gi { color: #56D364; background-color: #0F5323 } /* Generic.Inserted */
+.codehilite .go { color: #8B949E } /* Generic.Output */
+.codehilite .gp { color: #8B949E } /* Generic.Prompt */
+.codehilite .gs { color: #E6EDF3; font-weight: bold } /* Generic.Strong */
+.codehilite .gu { color: #79C0FF } /* Generic.Subheading */
+.codehilite .gt { color: #FF7B72 } /* Generic.Traceback */
+.codehilite .g-Underline { color: #E6EDF3; text-decoration: underline } /* Generic.Underline */
+.codehilite .kc { color: #79C0FF } /* Keyword.Constant */
+.codehilite .kd { color: #FF7B72 } /* Keyword.Declaration */
+.codehilite .kn { color: #FF7B72 } /* Keyword.Namespace */
+.codehilite .kp { color: #79C0FF } /* Keyword.Pseudo */
+.codehilite .kr { color: #FF7B72 } /* Keyword.Reserved */
+.codehilite .kt { color: #FF7B72 } /* Keyword.Type */
+.codehilite .ld { color: #79C0FF } /* Literal.Date */
+.codehilite .m { color: #A5D6FF } /* Literal.Number */
+.codehilite .s { color: #A5D6FF } /* Literal.String */
+.codehilite .na { color: #E6EDF3 } /* Name.Attribute */
+.codehilite .nb { color: #E6EDF3 } /* Name.Builtin */
+.codehilite .nc { color: #F0883E; font-weight: bold } /* Name.Class */
+.codehilite .no { color: #79C0FF; font-weight: bold } /* Name.Constant */
+.codehilite .nd { color: #D2A8FF; font-weight: bold } /* Name.Decorator */
+.codehilite .ni { color: #FFA657 } /* Name.Entity */
+.codehilite .ne { color: #F0883E; font-weight: bold } /* Name.Exception */
+.codehilite .nf { color: #D2A8FF; font-weight: bold } /* Name.Function */
+.codehilite .nl { color: #79C0FF; font-weight: bold } /* Name.Label */
+.codehilite .nn { color: #FF7B72 } /* Name.Namespace */
+.codehilite .nx { color: #E6EDF3 } /* Name.Other */
+.codehilite .py { color: #79C0FF } /* Name.Property */
+.codehilite .nt { color: #7EE787 } /* Name.Tag */
+.codehilite .nv { color: #79C0FF } /* Name.Variable */
+.codehilite .ow { color: #FF7B72; font-weight: bold } /* Operator.Word */
+.codehilite .pm { color: #E6EDF3 } /* Punctuation.Marker */
+.codehilite .w { color: #6E7681 } /* Text.Whitespace */
+.codehilite .mb { color: #A5D6FF } /* Literal.Number.Bin */
+.codehilite .mf { color: #A5D6FF } /* Literal.Number.Float */
+.codehilite .mh { color: #A5D6FF } /* Literal.Number.Hex */
+.codehilite .mi { color: #A5D6FF } /* Literal.Number.Integer */
+.codehilite .mo { color: #A5D6FF } /* Literal.Number.Oct */
+.codehilite .sa { color: #79C0FF } /* Literal.String.Affix */
+.codehilite .sb { color: #A5D6FF } /* Literal.String.Backtick */
+.codehilite .sc { color: #A5D6FF } /* Literal.String.Char */
+.codehilite .dl { color: #79C0FF } /* Literal.String.Delimiter */
+.codehilite .sd { color: #A5D6FF } /* Literal.String.Doc */
+.codehilite .s2 { color: #A5D6FF } /* Literal.String.Double */
+.codehilite .se { color: #79C0FF } /* Literal.String.Escape */
+.codehilite .sh { color: #79C0FF } /* Literal.String.Heredoc */
+.codehilite .si { color: #A5D6FF } /* Literal.String.Interpol */
+.codehilite .sx { color: #A5D6FF } /* Literal.String.Other */
+.codehilite .sr { color: #79C0FF } /* Literal.String.Regex */
+.codehilite .s1 { color: #A5D6FF } /* Literal.String.Single */
+.codehilite .ss { color: #A5D6FF } /* Literal.String.Symbol */
+.codehilite .bp { color: #E6EDF3 } /* Name.Builtin.Pseudo */
+.codehilite .fm { color: #D2A8FF; font-weight: bold } /* Name.Function.Magic */
+.codehilite .vc { color: #79C0FF } /* Name.Variable.Class */
+.codehilite .vg { color: #79C0FF } /* Name.Variable.Global */
+.codehilite .vi { color: #79C0FF } /* Name.Variable.Instance */
+.codehilite .vm { color: #79C0FF } /* Name.Variable.Magic */
+.codehilite .il { color: #A5D6FF } /* Literal.Number.Integer.Long */
+:root {
+  --paper: #f7f5f0;
+  --paper-2: #ebe7de;
+  --surface: #fffefa;
+  --ink: #151515;
+  --muted: #77746d;
+  --line: #d5d0c6;
+  --line-strong: #1a1a18;
+  --clay: #d97757;
+  --olive: #788c5d;
+  --sky: #6a8caf;
+  --oat: #e3dacc;
+  --danger: #b94f48;
+  --shadow: 0 18px 50px rgba(20, 20, 19, 0.10);
+  --radius: 8px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --serif: Charter, "Bitstream Charter", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.58;
+}
+a { color: inherit; text-decoration-color: color-mix(in srgb, var(--clay) 65%, transparent); text-underline-offset: 0.18em; }
+button, input, select { font: inherit; }
+.window {
+  max-width: 1180px;
+  margin: 42px auto;
+  background: var(--surface);
+  border: 2px solid var(--line-strong);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.chrome {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 18px;
+  align-items: center;
+  padding: 12px 18px;
+  background: var(--paper-2);
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+.dots { display: flex; gap: 8px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; background: #d1cbc1; display: block; }
+.path-pill {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+.mode-strip { display: flex; flex-wrap: wrap; gap: 8px; }
+.mode-strip button, .copy-code {
+  border: 1px solid var(--line);
+  background: #fffefa;
+  color: var(--ink);
+  border-radius: 7px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.mode-strip button[aria-pressed="true"] {
+  background: var(--ink);
+  color: #fffefa;
+  border-color: var(--ink);
+}
+.hero {
+  padding: 34px 42px 28px;
+  border-bottom: 1px solid var(--line);
+}
+.kicker {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+h1, h2, h3 {
+  font-family: var(--serif);
+  letter-spacing: 0;
+  line-height: 1.05;
+}
+h1 {
+  margin: 0;
+  font-size: clamp(34px, 5vw, 66px);
+  max-width: 880px;
+}
+.lede {
+  margin: 16px 0 0;
+  max-width: 780px;
+  color: #4c4943;
+  font-size: 18px;
+}
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 24px;
+}
+.metric {
+  min-height: 98px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfaf6;
+}
+.metric span {
+  display: block;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+.metric strong {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--serif);
+  font-size: 30px;
+  line-height: 1;
+}
+.layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  min-height: 620px;
+}
+.sidebar {
+  border-right: 1px solid var(--line);
+  padding: 24px 18px;
+  background: #fbfaf6;
+}
+.search {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 10px 13px;
+  background: #fff;
+}
+.toc {
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.toc li { margin: 4px 0; }
+.toc a {
+  display: block;
+  padding: 7px 8px;
+  border-radius: 7px;
+  color: #3f3c37;
+  text-decoration: none;
+}
+.toc a:hover, .toc a.active { background: var(--oat); }
+.toc .lvl-3, .toc .lvl-4, .toc .lvl-5, .toc .lvl-6 { padding-left: 18px; font-size: 14px; }
+.content-shell { min-width: 0; }
+.panel { display: none; padding: 30px 42px 50px; }
+.panel.active { display: block; }
+.article {
+  max-width: 820px;
+}
+.article h1 { font-size: 42px; margin: 0 0 16px; }
+.article h2 {
+  margin: 34px 0 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 30px;
+}
+.article h3 { margin: 26px 0 10px; font-size: 23px; }
+.article p, .article li { color: #34322d; }
+.article blockquote {
+  margin: 22px 0;
+  padding: 12px 18px;
+  border-left: 5px solid var(--clay);
+  background: #f1ece4;
+}
+.article img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.table-frame { overflow-x: auto; margin: 20px 0; border: 1px solid var(--line); border-radius: var(--radius); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { background: #f0ece4; font-family: var(--mono); font-size: 12px; text-transform: uppercase; }
+.code-frame {
+  position: relative;
+  margin: 20px 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #11110f;
+  border: 1px solid #262622;
+}
+.code-frame pre {
+  margin: 0;
+  padding: 20px;
+  overflow-x: auto;
+  color: #f4f1e8;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.copy-code {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  background: #24231f;
+  color: #f8f4ea;
+  border-color: #45423a;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.map-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+  gap: 22px;
+  align-items: start;
+}
+.flow-card, .prompt-card, .index-card, .doc-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfaf6;
+  padding: 18px;
+}
+.flow-svg {
+  width: 100%;
+  min-height: 320px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #f7f4ec;
+}
+.prompt-box {
+  white-space: pre-wrap;
+  font-family: var(--mono);
+  font-size: 13px;
+  background: #11110f;
+  color: #f4f1e8;
+  border-radius: var(--radius);
+  padding: 18px;
+  overflow-x: auto;
+}
+.primary-action {
+  border: 0;
+  background: var(--clay);
+  color: white;
+  border-radius: 7px;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.secondary-action {
+  border: 1px solid var(--line-strong);
+  background: #fffefa;
+  color: var(--ink);
+  border-radius: 7px;
+  padding: 11px 15px;
+  cursor: pointer;
+}
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+.source-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.source-grid div {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  background: #fffefa;
+}
+.source-grid code { word-break: break-word; }
+.html-note {
+  margin-top: 24px;
+  padding: 14px 16px;
+  border-left: 5px solid var(--olive);
+  background: #eff1e8;
+  color: #3c442f;
+}
+.html-note.unresolved {
+  border-left-color: var(--clay);
+  background: #f7e7df;
+  color: #553225;
+}
+.missing-reference {
+  color: var(--danger);
+  text-decoration-style: dotted;
+}
+.missing-image {
+  background: #f1ece4;
+}
+.read-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 4px;
+  width: 0;
+  background: linear-gradient(90deg, var(--clay), var(--olive), var(--sky));
+  z-index: 10;
+}
+.index-hero {
+  padding: 40px 42px 30px;
+}
+.capability-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 24px 0;
+}
+.capability {
+  min-height: 150px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fffefa;
+  padding: 14px;
+}
+.capability svg { width: 54px; height: 54px; }
+.capability strong { display: block; font-family: var(--serif); font-size: 20px; }
+.capability span { display: block; color: var(--muted); font-size: 14px; }
+.doc-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 22px 0;
+}
+.chip {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #fffefa;
+  cursor: pointer;
+}
+.chip.active { background: var(--ink); color: #fffefa; border-color: var(--ink); }
+.doc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.doc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 210px;
+  text-decoration: none;
+}
+.doc-card:hover { border-color: var(--clay); transform: translateY(-1px); }
+.doc-card h2 { margin: 0; font-size: 24px; }
+.doc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.kind {
+  color: var(--clay);
+  font-family: var(--mono);
+  text-transform: uppercase;
+  font-size: 12px;
+}
+.footer-note {
+  margin-top: 30px;
+  color: var(--muted);
+  font-size: 14px;
+}
+body.focus .sidebar, body.focus .metric-grid, body.focus .chrome .path-pill { display: none; }
+body.focus .layout { grid-template-columns: 1fr; }
+body.focus .article { margin: 0 auto; }
+mark.search-hit { background: #f5d9a6; color: inherit; padding: 0 2px; }
+@media (max-width: 860px) {
+  .window { margin: 0; border-left: 0; border-right: 0; border-radius: 0; }
+  .chrome { grid-template-columns: 1fr; }
+  .dots { display: none; }
+  .hero, .index-hero, .panel { padding-left: 20px; padding-right: 20px; }
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { border-right: 0; border-bottom: 1px solid var(--line); }
+  .metric-grid, .capability-grid, .doc-grid, .map-grid, .source-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+  <div class="read-progress" aria-hidden="true"></div>
+  <main class="window" id="top">
+    <div class="chrome">
+      <div class="dots" aria-hidden="true"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+      <div class="path-pill">prompts/phase-4-observability.md -> docs-html/pages/prompts/phase-4-observability.html</div>
+      <div class="mode-strip" aria-label="View mode">
+        <button type="button" data-panel="read" aria-pressed="true">Read</button>
+        <button type="button" data-panel="map" aria-pressed="false">Map</button>
+        <button type="button" data-panel="handoff" aria-pressed="false">Handoff</button>
+      </div>
+    </div>
+
+    <section class="hero">
+      <p class="kicker">QAgent / Prompt / HTML documentation mirror</p>
+      <h1>Phase 4: Logging &amp; Dashboard</h1>
+      <p class="lede">Focus: W&amp;B Weave tracing and Marimo visualization</p>
+      <div class="metric-grid" aria-label="Document statistics">
+        <div class="metric"><span>Words</span><strong>937</strong></div>
+        <div class="metric"><span>Sections</span><strong>34</strong></div>
+        <div class="metric"><span>Code blocks</span><strong>12</strong></div>
+        <div class="metric"><span>Tables</span><strong>0</strong></div>
+      </div>
+      <div class="actions">
+        <button class="primary-action" type="button" data-copy="#handoffPrompt">Copy as prompt</button>
+        <button class="secondary-action" id="focusMode" type="button">Focus mode</button>
+        <a class="secondary-action" href="../../index.html">Back to repo index</a>
+      </div>
+    </section>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <input class="search" id="docSearch" type="search" placeholder="Search this document">
+        <ul class="toc"><li><a class="lvl-1" href="#phase-4-logging-dashboard">Phase 4: Logging &amp; Dashboard</a></li>
+<li><a class="lvl-2" href="#overview">Overview</a></li>
+<li><a class="lvl-2" href="#skills-to-load">Skills to Load</a></li>
+<li><a class="lvl-2" href="#ralph-loop-template">Ralph Loop Template</a></li>
+<li><a class="lvl-2" href="#tasks">Tasks</a></li>
+<li><a class="lvl-3" href="#p4-1-weave-sdk-integration">P4.1: Weave SDK Integration</a></li>
+<li><a class="lvl-3" href="#p4-2-agent-tracing">P4.2: Agent Tracing</a></li>
+<li><a class="lvl-3" href="#p4-3-metrics-logging">P4.3: Metrics Logging</a></li>
+<li><a class="lvl-3" href="#p4-4-marimo-dashboard-setup">P4.4: Marimo Dashboard Setup</a></li>
+<li><a class="lvl-3" href="#p4-5-dashboard-components">P4.5: Dashboard Components</a></li>
+<li><a class="lvl-3" href="#p4-6-dashboard-styling">P4.6: Dashboard Styling</a></li>
+<li><a class="lvl-3" href="#p4-7-live-updates">P4.7: Live Updates</a></li>
+<li><a class="lvl-2" href="#weave-integration">Weave Integration</a></li>
+<li><a class="lvl-3" href="#project-initialization">Project Initialization</a></li>
+<li><a class="lvl-3" href="#agent-method-decoration">Agent Method Decoration</a></li>
+<li><a class="lvl-3" href="#metrics-logging">Metrics Logging</a></li>
+<li><a class="lvl-2" href="#marimo-dashboard">Marimo Dashboard</a></li>
+<li><a class="lvl-3" href="#dashboard-layout">Dashboard Layout</a></li>
+<li><a class="lvl-3" href="#key-metrics-cards">Key Metrics Cards</a></li>
+<li><a class="lvl-3" href="#pass-rate-chart">Pass Rate Chart</a></li>
+<li><a class="lvl-2" href="#validation-checklist">Validation Checklist</a></li>
+<li><a class="lvl-3" href="#weave-integration_1">Weave Integration</a></li>
+<li><a class="lvl-3" href="#agent-tracing">Agent Tracing</a></li>
+<li><a class="lvl-3" href="#metrics">Metrics</a></li>
+<li><a class="lvl-3" href="#marimo-dashboard_1">Marimo Dashboard</a></li>
+<li><a class="lvl-3" href="#data-flow">Data Flow</a></li>
+<li><a class="lvl-2" href="#common-issues">Common Issues</a></li>
+<li><a class="lvl-3" href="#weave-initialization-failed">Weave Initialization Failed</a></li>
+<li><a class="lvl-3" href="#traces-not-appearing">Traces Not Appearing</a></li>
+<li><a class="lvl-3" href="#marimo-import-error">Marimo Import Error</a></li>
+<li><a class="lvl-3" href="#chart-not-rendering">Chart Not Rendering</a></li>
+<li><a class="lvl-2" href="#exit-criteria">Exit Criteria</a></li>
+<li><a class="lvl-2" href="#next-phase">Next Phase</a></li>
+<li><a class="lvl-2" href="#references">References</a></li></ul>
+      </aside>
+      <div class="content-shell">
+        <section class="panel active" id="read">
+          <article class="article">
+            <h1 id="phase-4-logging-dashboard">Phase 4: Logging &amp; Dashboard</h1>
+<p><strong>Focus:</strong> W&amp;B Weave tracing and Marimo visualization</p>
+<p><strong>Status:</strong> Pending (requires Phase 3 completion)</p>
+<hr/>
+<h2 id="overview">Overview</h2>
+<p>Phase 4 adds observability to QAgent through W&amp;B Weave for tracing agent operations and Marimo for building an interactive analytics dashboard. This enables monitoring, debugging, and demonstrating the system's improvement over time.</p>
+<hr/>
+<h2 id="skills-to-load">Skills to Load</h2>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code>.claude/skills/wandb-weave/
+├── SKILL.md      # Tracing concepts, metrics
+└── reference.md  # Weave decorator patterns, logging
+
+.claude/skills/marimo-dashboards/
+├── SKILL.md      # Reactive cells, charts
+└── reference.md  # Complete dashboard code
+</code></pre></div></div>
+<hr/>
+<h2 id="ralph-loop-template">Ralph Loop Template</h2>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code>## Ralph Loop - Phase 4 - Iteration [N]
+
+### 1. READ
+- [ ] Load CLAUDE.md for project context
+- [ ] Check TASKS.md for Phase 4 tasks
+- [ ] Load wandb-weave skill
+- [ ] Load marimo-dashboards skill
+
+### 2. ANALYZE
+- Current task: [Task ID and description]
+- Weave status: [Initialized/Not initialized]
+- Dashboard status: [Components built/Remaining]
+
+### 3. PLAN
+Increments for this iteration:
+1. [Specific task]
+2. [Testing task]
+3. [Validation task]
+
+### 4. EXECUTE
+[Implement one increment at a time]
+
+### 5. VALIDATE
+- [ ] Traces appear in Weave UI
+- [ ] Metrics logged correctly
+- [ ] Dashboard renders
+- [ ] Charts show data
+
+### 6. LOOP
+- [ ] Update TASKS.md with progress
+- [ ] Commit working code
+- [ ] Continue to next task or end iteration
+</code></pre></div></div>
+<hr/>
+<h2 id="tasks">Tasks</h2>
+<h3 id="p4-1-weave-sdk-integration">P4.1: Weave SDK Integration</h3>
+<ul>
+<li>[ ] Install weave SDK</li>
+<li>[ ] Initialize with project name</li>
+<li>[ ] Configure WANDB_API_KEY</li>
+<li>[ ] Test basic trace logging</li>
+</ul>
+<h3 id="p4-2-agent-tracing">P4.2: Agent Tracing</h3>
+<ul>
+<li>[ ] Add @weave.op() to TesterAgent.runTest</li>
+<li>[ ] Add @weave.op() to TriageAgent.diagnose</li>
+<li>[ ] Add @weave.op() to FixerAgent.generatePatch</li>
+<li>[ ] Add @weave.op() to VerifierAgent.verify</li>
+<li>[ ] Add @weave.op() to Orchestrator.run</li>
+</ul>
+<h3 id="p4-3-metrics-logging">P4.3: Metrics Logging</h3>
+<ul>
+<li>[ ] Log pass_rate after each run</li>
+<li>[ ] Log fix_time_seconds</li>
+<li>[ ] Log iterations_total</li>
+<li>[ ] Log bugs_found / bugs_fixed</li>
+<li>[ ] Log redis_hit_rate</li>
+<li>[ ] Log deployment_time</li>
+</ul>
+<h3 id="p4-4-marimo-dashboard-setup">P4.4: Marimo Dashboard Setup</h3>
+<ul>
+<li>[ ] Install marimo</li>
+<li>[ ] Create dashboard/app.py</li>
+<li>[ ] Add header and navigation</li>
+<li>[ ] Configure Weave data fetching</li>
+</ul>
+<h3 id="p4-5-dashboard-components">P4.5: Dashboard Components</h3>
+<ul>
+<li>[ ] Add metrics cards (pass rate, fix time, bugs fixed)</li>
+<li>[ ] Add pass rate over time chart</li>
+<li>[ ] Add time-to-fix bar chart</li>
+<li>[ ] Add bug types pie chart</li>
+<li>[ ] Add recent fixes table</li>
+</ul>
+<h3 id="p4-6-dashboard-styling">P4.6: Dashboard Styling</h3>
+<ul>
+<li>[ ] Add QAgent branding</li>
+<li>[ ] Configure color scheme (green/blue)</li>
+<li>[ ] Add responsive layout</li>
+<li>[ ] Add loading states</li>
+</ul>
+<h3 id="p4-7-live-updates">P4.7: Live Updates</h3>
+<ul>
+<li>[ ] Add refresh button</li>
+<li>[ ] Implement auto-refresh option</li>
+<li>[ ] Configure cache for Weave queries</li>
+<li>[ ] Test real-time updates</li>
+</ul>
+<hr/>
+<h2 id="weave-integration">Weave Integration</h2>
+<h3 id="project-initialization">Project Initialization</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">weave</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">'weave'</span><span class="p">;</span>
+
+<span class="c1">// Initialize at app startup</span>
+<span class="nx">weave</span><span class="p">.</span><span class="nx">init</span><span class="p">(</span><span class="s1">'qagent'</span><span class="p">);</span>
+</code></pre></div></div>
+<h3 id="agent-method-decoration">Agent Method Decoration</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="kd">class</span><span class="w"> </span><span class="nx">TesterAgent</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">@weave</span><span class="p">.</span><span class="nx">op</span><span class="p">()</span>
+<span class="w">  </span><span class="k">async</span><span class="w"> </span><span class="nx">runTest</span><span class="p">(</span><span class="nx">spec</span><span class="o">:</span><span class="w"> </span><span class="kt">TestSpec</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">TestResult</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Method body - automatically traced</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">class</span><span class="w"> </span><span class="nx">TriageAgent</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">@weave</span><span class="p">.</span><span class="nx">op</span><span class="p">()</span>
+<span class="w">  </span><span class="k">async</span><span class="w"> </span><span class="nx">diagnose</span><span class="p">(</span><span class="nx">failure</span><span class="o">:</span><span class="w"> </span><span class="kt">FailureReport</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">DiagnosisReport</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Method body - automatically traced</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">class</span><span class="w"> </span><span class="nx">FixerAgent</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">@weave</span><span class="p">.</span><span class="nx">op</span><span class="p">()</span>
+<span class="w">  </span><span class="k">async</span><span class="w"> </span><span class="nx">generatePatch</span><span class="p">(</span><span class="nx">diagnosis</span><span class="o">:</span><span class="w"> </span><span class="kt">DiagnosisReport</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">Patch</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Method body - automatically traced</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">class</span><span class="w"> </span><span class="nx">VerifierAgent</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kd">@weave</span><span class="p">.</span><span class="nx">op</span><span class="p">()</span>
+<span class="w">  </span><span class="k">async</span><span class="w"> </span><span class="nx">verify</span><span class="p">(</span><span class="nx">patch</span><span class="o">:</span><span class="w"> </span><span class="kt">Patch</span><span class="p">,</span><span class="w"> </span><span class="nx">testSpec</span><span class="o">:</span><span class="w"> </span><span class="kt">TestSpec</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="nx">VerificationResult</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Method body - automatically traced</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<h3 id="metrics-logging">Metrics Logging</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">logRunMetrics</span><span class="p">(</span><span class="nx">result</span><span class="o">:</span><span class="w"> </span><span class="kt">OrchestratorResult</span><span class="p">)</span><span class="o">:</span><span class="w"> </span><span class="nb">Promise</span><span class="o">&lt;</span><span class="ow">void</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">weave</span><span class="p">.</span><span class="nx">log</span><span class="p">({</span>
+<span class="w">    </span><span class="nx">pass_rate</span><span class="o">:</span><span class="w"> </span><span class="kt">result.finalTestResult.passed</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="nx">1.0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="kt">0.0</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">fix_time_seconds</span><span class="o">:</span><span class="w"> </span><span class="kt">result.totalDuration</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1000</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">iterations_total</span><span class="o">:</span><span class="w"> </span><span class="kt">result.iterations</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">bugs_fixed</span><span class="o">:</span><span class="w"> </span><span class="kt">result.success</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="nx">1</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="kt">0</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">patches_generated</span><span class="o">:</span><span class="w"> </span><span class="kt">result.patches.length</span>
+<span class="w">  </span><span class="p">});</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<hr/>
+<h2 id="marimo-dashboard">Marimo Dashboard</h2>
+<h3 id="dashboard-layout">Dashboard Layout</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code>┌─────────────────────────────────────────────────────────────────┐
+│                     QAgent Dashboard                         │
+│                  Self-Healing QA Agent Analytics                 │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐        │
+│  │ Pass     │  │ Avg Fix  │  │ Bugs     │  │ Speed    │        │
+│  │ Rate     │  │ Time     │  │ Fixed    │  │ Improve  │        │
+│  │ 100%     │  │ 60s      │  │ 5        │  │ 67%      │        │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘        │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────────┐  ┌─────────────────────────┐      │
+│  │  Pass Rate Over Time    │  │  Time to Fix            │      │
+│  │  📈 Line Chart          │  │  📊 Bar Chart           │      │
+│  │                         │  │                         │      │
+│  └─────────────────────────┘  └─────────────────────────┘      │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────────┐  ┌─────────────────────────┐      │
+│  │  Bug Types             │  │  Recent Fixes           │      │
+│  │  🥧 Pie Chart          │  │  📋 Table               │      │
+│  │                         │  │  ✓ Missing onClick     │      │
+│  │                         │  │  ✓ Wrong API route     │      │
+│  └─────────────────────────┘  └─────────────────────────┘      │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre></div></div>
+<h3 id="key-metrics-cards">Key Metrics Cards</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="nd">@app</span><span class="o">.</span><span class="n">cell</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">metrics</span><span class="p">(</span><span class="n">fetch_data</span><span class="p">):</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">fetch_data</span>
+    <span class="n">latest</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">pass_rate</span> <span class="o">=</span> <span class="n">mo</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span>
+        <span class="n">value</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">latest</span><span class="p">[</span><span class="s1">'pass_rate'</span><span class="p">]</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">%"</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="s2">"Pass Rate"</span><span class="p">,</span>
+        <span class="n">bordered</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+    <span class="n">fix_time</span> <span class="o">=</span> <span class="n">mo</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span>
+        <span class="n">value</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">latest</span><span class="p">[</span><span class="s1">'fix_time'</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">s"</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="s2">"Avg Fix Time"</span><span class="p">,</span>
+        <span class="n">bordered</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+    <span class="n">total_bugs</span> <span class="o">=</span> <span class="n">mo</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span>
+        <span class="n">value</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">df</span><span class="p">[</span><span class="s1">'bugs_fixed'</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="s2">"Bugs Fixed"</span><span class="p">,</span>
+        <span class="n">bordered</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">mo</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">pass_rate</span><span class="p">,</span> <span class="n">fix_time</span><span class="p">,</span> <span class="n">total_bugs</span><span class="p">],</span> <span class="n">gap</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></div>
+<h3 id="pass-rate-chart">Pass Rate Chart</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code><span class="nd">@app</span><span class="o">.</span><span class="n">cell</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">pass_rate_chart</span><span class="p">(</span><span class="n">fetch_data</span><span class="p">):</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">fetch_data</span>
+
+    <span class="n">chart</span> <span class="o">=</span> <span class="n">alt</span><span class="o">.</span><span class="n">Chart</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="o">.</span><span class="n">mark_line</span><span class="p">(</span>
+        <span class="n">point</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">strokeWidth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="s1">'#10b981'</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">alt</span><span class="o">.</span><span class="n">X</span><span class="p">(</span><span class="s1">'run:O'</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">'Run #'</span><span class="p">),</span>
+        <span class="n">y</span><span class="o">=</span><span class="n">alt</span><span class="o">.</span><span class="n">Y</span><span class="p">(</span><span class="s1">'pass_rate:Q'</span><span class="p">,</span>
+                <span class="n">title</span><span class="o">=</span><span class="s1">'Pass Rate'</span><span class="p">,</span>
+                <span class="n">scale</span><span class="o">=</span><span class="n">alt</span><span class="o">.</span><span class="n">Scale</span><span class="p">(</span><span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span>
+                <span class="n">axis</span><span class="o">=</span><span class="n">alt</span><span class="o">.</span><span class="n">Axis</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="s1">'%'</span><span class="p">)),</span>
+        <span class="n">tooltip</span><span class="o">=</span><span class="p">[</span><span class="s1">'run:O'</span><span class="p">,</span> <span class="n">alt</span><span class="o">.</span><span class="n">Tooltip</span><span class="p">(</span><span class="s1">'pass_rate:Q'</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">'.0%'</span><span class="p">)]</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">properties</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="s1">'Test Pass Rate Over Time'</span><span class="p">,</span>
+        <span class="n">width</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span>
+        <span class="n">height</span><span class="o">=</span><span class="mi">300</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">mo</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">altair_chart</span><span class="p">(</span><span class="n">chart</span><span class="p">)</span>
+</code></pre></div></div>
+<hr/>
+<h2 id="validation-checklist">Validation Checklist</h2>
+<h3 id="weave-integration_1">Weave Integration</h3>
+<ul>
+<li>[ ] weave.init() succeeds</li>
+<li>[ ] API key is valid</li>
+<li>[ ] Project appears in Weave UI</li>
+</ul>
+<h3 id="agent-tracing">Agent Tracing</h3>
+<ul>
+<li>[ ] TesterAgent traces appear</li>
+<li>[ ] TriageAgent traces appear</li>
+<li>[ ] FixerAgent traces appear</li>
+<li>[ ] VerifierAgent traces appear</li>
+<li>[ ] Orchestrator traces appear</li>
+<li>[ ] Nested calls are visible</li>
+</ul>
+<h3 id="metrics">Metrics</h3>
+<ul>
+<li>[ ] pass_rate logged correctly</li>
+<li>[ ] fix_time_seconds is accurate</li>
+<li>[ ] iterations_total matches actual</li>
+<li>[ ] Metrics appear in Weave UI</li>
+</ul>
+<h3 id="marimo-dashboard_1">Marimo Dashboard</h3>
+<ul>
+<li>[ ] <code>marimo run dashboard/app.py</code> works</li>
+<li>[ ] Header displays correctly</li>
+<li>[ ] Metrics cards show data</li>
+<li>[ ] Charts render</li>
+<li>[ ] Table populates</li>
+</ul>
+<h3 id="data-flow">Data Flow</h3>
+<ul>
+<li>[ ] Dashboard fetches Weave data</li>
+<li>[ ] Charts update with new runs</li>
+<li>[ ] Refresh button works</li>
+<li>[ ] No stale data issues</li>
+</ul>
+<hr/>
+<h2 id="common-issues">Common Issues</h2>
+<h3 id="weave-initialization-failed">Weave Initialization Failed</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code>Error: WANDB_API_KEY not set
+</code></pre></div></div>
+<ul>
+<li>Set WANDB_API_KEY in .env</li>
+<li>Get key from wandb.ai/settings</li>
+</ul>
+<h3 id="traces-not-appearing">Traces Not Appearing</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code>No traces in Weave UI
+</code></pre></div></div>
+<ul>
+<li>Verify project name matches</li>
+<li>Check if flush() needed</li>
+<li>Ensure decorator is applied</li>
+</ul>
+<h3 id="marimo-import-error">Marimo Import Error</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code>ModuleNotFoundError: No module named 'marimo'
+</code></pre></div></div>
+<ul>
+<li>Install marimo: <code>pip install marimo</code></li>
+<li>Check Python environment</li>
+</ul>
+<h3 id="chart-not-rendering">Chart Not Rendering</h3>
+<div class="codehilite"><div class="code-frame"><button class="copy-code" type="button">Copy</button><pre tabindex="0"><span></span><code>Blank space where chart should be
+</code></pre></div></div>
+<ul>
+<li>Ensure chart is returned (not printed)</li>
+<li>Wrap with <code>mo.ui.altair_chart()</code></li>
+<li>Check data is not empty</li>
+</ul>
+<hr/>
+<h2 id="exit-criteria">Exit Criteria</h2>
+<p>Phase 4 is complete when:</p>
+<ol>
+<li>All agent methods are traced with @weave.op()</li>
+<li>Key metrics are logged after each run</li>
+<li>Traces are visible in Weave UI</li>
+<li>Marimo dashboard runs locally</li>
+<li>All dashboard charts display data</li>
+<li>Dashboard shows improvement over runs</li>
+<li>All code is committed</li>
+</ol>
+<hr/>
+<h2 id="next-phase">Next Phase</h2>
+<p>Upon completion, proceed to <strong>Phase 5: TraceTriage</strong> where we implement self-improvement through trace analysis.</p>
+<hr/>
+<h2 id="references">References</h2>
+<ul>
+<li><a href="../../../.claude/skills/wandb-weave/SKILL.md">.claude/skills/wandb-weave/SKILL.md</a></li>
+<li><a href="../../../.claude/skills/wandb-weave/reference.md">.claude/skills/wandb-weave/reference.md</a></li>
+<li><a href="../../../.claude/skills/marimo-dashboards/SKILL.md">.claude/skills/marimo-dashboards/SKILL.md</a></li>
+<li><a href="../../../.claude/skills/marimo-dashboards/reference.md">.claude/skills/marimo-dashboards/reference.md</a></li>
+<li><a href="https://wandb.ai/site/weave">W&amp;B Weave Docs</a></li>
+<li><a href="https://docs.marimo.io/">Marimo Docs</a></li>
+</ul>
+          </article>
+          <div class="html-note">
+            Generated 2026-05-09 12:44 from <code>prompts/phase-4-observability.md</code>. 3 protected agent/tool instruction file(s) left as Markdown: AGENTS.md, CLAUDE.md, GEMINI.md
+          </div>
+        </section>
+
+        <section class="panel" id="map">
+          <div class="map-grid">
+            <div class="flow-card">
+              <h2>Document Flow</h2>
+              <p>Headings are rendered as a spatial map so the structure is easier to scan than raw Markdown.</p>
+              <svg class="flow-svg" viewBox="0 0 760 1164" role="img" aria-label="Document heading flow">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#8b877d"/></marker></defs>
+<rect x="0" y="0" width="760" height="1164" fill="#f7f4ec"/>
+<a href="#phase-4-logging-dashboard">
+<rect x="34" y="24" width="560" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="34" y="24" width="8" height="42" rx="4" fill="#d97757"/>
+<text x="56" y="50" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Phase 4: Logging &amp; Dashboard</text>
+</a>
+<line x1="86" y1="45" x2="86" y2="78" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#overview">
+<rect x="70" y="86" width="526" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="70" y="86" width="8" height="42" rx="4" fill="#788c5d"/>
+<text x="92" y="112" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Overview</text>
+</a>
+<line x1="86" y1="107" x2="86" y2="140" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#skills-to-load">
+<rect x="70" y="148" width="526" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="70" y="148" width="8" height="42" rx="4" fill="#788c5d"/>
+<text x="92" y="174" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Skills to Load</text>
+</a>
+<line x1="86" y1="169" x2="86" y2="202" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#ralph-loop-template">
+<rect x="70" y="210" width="526" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="70" y="210" width="8" height="42" rx="4" fill="#788c5d"/>
+<text x="92" y="236" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Ralph Loop Template</text>
+</a>
+<line x1="86" y1="231" x2="86" y2="264" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#tasks">
+<rect x="70" y="272" width="526" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="70" y="272" width="8" height="42" rx="4" fill="#788c5d"/>
+<text x="92" y="298" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Tasks</text>
+</a>
+<line x1="122" y1="293" x2="122" y2="326" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#p4-1-weave-sdk-integration">
+<rect x="106" y="334" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="334" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="360" fill="#151515" font-family="ui-monospace, monospace" font-size="14">P4.1: Weave SDK Integration</text>
+</a>
+<line x1="122" y1="355" x2="122" y2="388" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#p4-2-agent-tracing">
+<rect x="106" y="396" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="396" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="422" fill="#151515" font-family="ui-monospace, monospace" font-size="14">P4.2: Agent Tracing</text>
+</a>
+<line x1="122" y1="417" x2="122" y2="450" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#p4-3-metrics-logging">
+<rect x="106" y="458" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="458" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="484" fill="#151515" font-family="ui-monospace, monospace" font-size="14">P4.3: Metrics Logging</text>
+</a>
+<line x1="122" y1="479" x2="122" y2="512" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#p4-4-marimo-dashboard-setup">
+<rect x="106" y="520" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="520" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="546" fill="#151515" font-family="ui-monospace, monospace" font-size="14">P4.4: Marimo Dashboard Setup</text>
+</a>
+<line x1="122" y1="541" x2="122" y2="574" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#p4-5-dashboard-components">
+<rect x="106" y="582" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="582" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="608" fill="#151515" font-family="ui-monospace, monospace" font-size="14">P4.5: Dashboard Components</text>
+</a>
+<line x1="122" y1="603" x2="122" y2="636" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#p4-6-dashboard-styling">
+<rect x="106" y="644" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="644" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="670" fill="#151515" font-family="ui-monospace, monospace" font-size="14">P4.6: Dashboard Styling</text>
+</a>
+<line x1="122" y1="665" x2="122" y2="698" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#p4-7-live-updates">
+<rect x="106" y="706" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="706" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="732" fill="#151515" font-family="ui-monospace, monospace" font-size="14">P4.7: Live Updates</text>
+</a>
+<line x1="86" y1="727" x2="86" y2="760" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#weave-integration">
+<rect x="70" y="768" width="526" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="70" y="768" width="8" height="42" rx="4" fill="#788c5d"/>
+<text x="92" y="794" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Weave Integration</text>
+</a>
+<line x1="122" y1="789" x2="122" y2="822" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#project-initialization">
+<rect x="106" y="830" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="830" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="856" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Project Initialization</text>
+</a>
+<line x1="122" y1="851" x2="122" y2="884" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#agent-method-decoration">
+<rect x="106" y="892" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="892" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="918" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Agent Method Decoration</text>
+</a>
+<line x1="122" y1="913" x2="122" y2="946" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#metrics-logging">
+<rect x="106" y="954" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="954" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="980" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Metrics Logging</text>
+</a>
+<line x1="86" y1="975" x2="86" y2="1008" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#marimo-dashboard">
+<rect x="70" y="1016" width="526" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="70" y="1016" width="8" height="42" rx="4" fill="#788c5d"/>
+<text x="92" y="1042" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Marimo Dashboard</text>
+</a>
+<line x1="122" y1="1037" x2="122" y2="1070" stroke="#b6b0a6" stroke-width="2" marker-end="url(#arrow)"/>
+<a href="#dashboard-layout">
+<rect x="106" y="1078" width="492" height="42" rx="8" fill="#fffefa" stroke="#d5d0c6"/>
+<rect x="106" y="1078" width="8" height="42" rx="4" fill="#6a8caf"/>
+<text x="128" y="1104" fill="#151515" font-family="ui-monospace, monospace" font-size="14">Dashboard Layout</text>
+</a>
+<text x="34" y="1156" fill="#77746d" font-family="ui-monospace, monospace" font-size="13">... 16 more sections in the table of contents</text>
+</svg>
+            </div>
+            <div class="flow-card">
+              <h2>Source Map</h2>
+              <div class="source-grid">
+                <div><strong>Repository</strong><br><code>/Users/m3-max/Documents/GitHub/QAgent</code></div>
+                <div><strong>Source</strong><br><code>prompts/phase-4-observability.md</code></div>
+                <div><strong>Generated HTML</strong><br><code>docs-html/pages/prompts/phase-4-observability.html</code></div>
+                <div><strong>Checksum</strong><br><code>c5d27f185608</code></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="handoff">
+          <div class="prompt-card">
+            <h2>Two-way Handoff</h2>
+            <p>This prompt is designed to paste back into an agent after you review or tune the document in the browser.</p>
+            <div class="actions">
+              <button class="primary-action" type="button" data-copy="#handoffPrompt">Copy prompt</button>
+            </div>
+            <pre class="prompt-box" id="handoffPrompt">Use this HTML documentation artifact as context.
+
+Repository: QAgent
+Source Markdown: prompts/phase-4-observability.md
+Document: Phase 4: Logging &amp; Dashboard
+Kind: Prompt
+
+Task:
+- Read the visual summary, document map, and source content.
+- Preserve compatibility with the original Markdown source unless explicitly asked to replace it.
+- If you edit the source, regenerate this HTML mirror afterward.
+</pre>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <script>
+(() => {
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+  const progress = $('.read-progress');
+  const updateProgress = () => {
+    if (!progress) return;
+    const doc = document.documentElement;
+    const max = doc.scrollHeight - doc.clientHeight;
+    const pct = max <= 0 ? 0 : (doc.scrollTop / max) * 100;
+    progress.style.width = `${pct}%`;
+  };
+  document.addEventListener('scroll', updateProgress, { passive: true });
+  updateProgress();
+
+  $$('.mode-strip button[data-panel]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const target = button.dataset.panel;
+      $$('.mode-strip button[data-panel]').forEach((b) => b.setAttribute('aria-pressed', String(b === button)));
+      $$('.panel').forEach((panel) => panel.classList.toggle('active', panel.id === target));
+    });
+  });
+
+  $('#focusMode')?.addEventListener('click', () => {
+    document.body.classList.toggle('focus');
+  });
+
+  $$('.copy-code').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const code = button.parentElement?.querySelector('pre')?.innerText || '';
+      await navigator.clipboard.writeText(code);
+      const old = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => button.textContent = old, 1200);
+    });
+  });
+
+  $$('[data-copy]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const target = $(button.dataset.copy);
+      if (!target) return;
+      await navigator.clipboard.writeText(target.innerText);
+      const old = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => button.textContent = old, 1400);
+    });
+  });
+
+  const tocLinks = $$('.toc a');
+  if (tocLinks.length) {
+    const byId = new Map(tocLinks.map((link) => [decodeURIComponent(link.hash.slice(1)), link]));
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        tocLinks.forEach((link) => link.classList.remove('active'));
+        byId.get(entry.target.id)?.classList.add('active');
+      });
+    }, { rootMargin: '-20% 0px -70% 0px', threshold: 0.01 });
+    $$('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]').forEach((heading) => observer.observe(heading));
+  }
+
+  const search = $('#docSearch');
+  if (search) {
+    const article = $('.article');
+    const original = article?.innerHTML;
+    search.addEventListener('input', () => {
+      if (!article || original == null) return;
+      const q = search.value.trim();
+      article.innerHTML = original;
+      if (q.length < 2) return;
+      const safe = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(safe, 'gi');
+      const walker = document.createTreeWalker(article, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+          if (!node.nodeValue || !re.test(node.nodeValue)) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      });
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+      nodes.forEach((node) => {
+        const span = document.createElement('span');
+        span.innerHTML = node.nodeValue.replace(re, (m) => `<mark class="search-hit">${m}</mark>`);
+        node.parentNode.replaceChild(span, node);
+      });
+    });
+  }
+
+  const indexSearch = $('#indexSearch');
+  const chips = $$('.chip[data-kind]');
+  const filterCards = () => {
+    const q = (indexSearch?.value || '').toLowerCase().trim();
+    const active = $('.chip.active[data-kind]')?.dataset.kind || 'All';
+    $$('.doc-card').forEach((card) => {
+      const text = card.innerText.toLowerCase();
+      const kind = card.dataset.kind;
+      const okText = !q || text.includes(q);
+      const okKind = active === 'All' || kind === active;
+      card.style.display = okText && okKind ? '' : 'none';
+    });
+  };
+  indexSearch?.addEventListener('input', filterCards);
+  chips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      chips.forEach((c) => c.classList.remove('active'));
+      chip.classList.add('active');
+      filterCards();
+    });
+  });
+})();
+</script>
+</body>
+</html>
