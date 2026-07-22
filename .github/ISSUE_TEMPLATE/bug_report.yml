@@ -1,0 +1,69 @@
+name: "🐛 Bug report"
+description: Report a problem with QAgent so we can fix it
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report! Please fill out the sections below so we can reproduce and fix the issue quickly.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear and concise description of the bug.
+      placeholder: When I run the agent loop against my repo, the Fixer agent...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps to reproduce the behavior.
+      value: |
+        1. Configure `.env.local` with ...
+        2. Run `pnpm run agent`
+        3. Observe ...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of QAgent?
+      options:
+        - Tester agent
+        - Triage agent
+        - Fixer agent
+        - Verifier agent
+        - Orchestrator
+        - Dashboard (Marimo)
+        - Demo app (Next.js)
+        - Other / not sure
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Node version, OS, and relevant package versions.
+      value: |
+        - Node: (e.g. 20.x)
+        - OS: (e.g. macOS 15)
+        - QAgent version / commit:
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / screenshots
+      description: Paste relevant logs, traces (e.g. W&B Weave links), or screenshots. Redact any secrets.
+      render: shell
+    validations:
+      required: false
