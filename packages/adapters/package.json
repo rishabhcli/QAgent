@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.113.0",
-    "@browserbasehq/stagehand": "3.7.0",
+    "@browserbasehq/stagehand": "3.7.1",
     "@google/genai": "2.13.0",
     "@octokit/rest": "22.0.1",
     "@puppeteer/browsers": "3.0.6",
