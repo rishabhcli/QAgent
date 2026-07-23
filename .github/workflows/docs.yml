@@ -29,7 +29,7 @@ jobs:
         with:
           node-version: '24'
           cache: pnpm
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
       - run: pnpm install --frozen-lockfile
       - run: pnpm schema
       - run: pnpm --filter @qagent/docs build
