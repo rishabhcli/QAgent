@@ -210,7 +210,7 @@ jobs:
       - name: Create checksums
         working-directory: release
         run: find artifacts -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
-      - uses: actions/attest-build-provenance@v3
+      - uses: actions/attest-build-provenance@v4
         with:
           subject-path: release/artifacts/**
       - name: Create GitHub prerelease
