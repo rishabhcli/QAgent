@@ -1,3 +1,9 @@
-.next
-node_modules
-*.md
+**/.next
+**/.vite
+**/dist
+**/node_modules
+**/out
+coverage
+pnpm-lock.yaml
+apps/docs/public/qagent-desktop.png
+apps/docs/next-env.d.ts

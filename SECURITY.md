@@ -2,40 +2,58 @@
 
 ## Supported Versions
 
-QAgent is under active development. Security fixes are applied to the latest
-released version and the `main` branch.
+| Version  | Status                                               |
+| -------- | ---------------------------------------------------- |
+| 0.2 beta | Security fixes on `main` and the latest beta release |
+| 0.1.x    | Historical; critical disclosure assessment only      |
+| Earlier  | Unsupported                                          |
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.1.x   | :white_check_mark: |
-| < 0.1   | :x:                |
+## Report A Vulnerability
 
-## Reporting a Vulnerability
+Do not open a public issue. Use [GitHub private vulnerability
+reporting](https://github.com/rishabhcli/QAgent/security/advisories/new) and include the affected
+version or commit, impact, reproduction steps, and any suggested remediation.
 
-**Please do not report security vulnerabilities through public GitHub issues.**
+The maintainers aim to acknowledge a report within five business days. Assessment, disclosure timing,
+fix availability, and credit are coordinated in the private advisory.
 
-Instead, use GitHub's private vulnerability reporting:
+## Security Boundaries
 
-1. Go to the [Security tab](https://github.com/rishabhcli/QAgent/security) of this repository.
-2. Click **"Report a vulnerability"** to open a private advisory.
+QAgent executes commands from explicitly trusted repositories. Workspace trust is a user security
+decision, not a code sandbox: a trusted test or start command can run arbitrary code as the current
+operating-system user.
 
-Please include:
+QAgent reduces the surrounding risk by:
 
-- A description of the vulnerability and its impact
-- Steps to reproduce (proof-of-concept if possible)
-- Affected version(s) or commit
-- Any suggested remediation
+- resolving canonical repository and command working-directory paths;
+- containing mutations in a dedicated Git worktree outside the active checkout;
+- rejecting patch traversal, absolute paths, `.git`, and secret-like files;
+- preventing automatic merge for authentication, workflow, dependency, lockfile, migration,
+  secret-policy, and `.qagent.yml` changes;
+- sandboxing the Electron renderer with context isolation, no Node integration, CSP, blocked
+  navigation/windows, and validated narrow IPC;
+- encrypting persistent credentials through Electron `safeStorage` when the OS provides a secure
+  backend;
+- disabling persistent Linux credentials when `safeStorage` reports the unencrypted `basic_text`
+  backend;
+- redacting credentials, authorization headers, environment values, and secret-like text before
+  optional trace delivery;
+- preserving checksums and provenance for local artifacts.
 
-## What to Expect
+Read [docs/THREAT_MODEL.md](./docs/THREAT_MODEL.md) for assets, trust boundaries, threats, controls,
+and accepted limitations.
 
-- **Acknowledgement** within 5 business days.
-- An assessment and, where accepted, a fix timeline communicated in the advisory.
-- Credit for responsible disclosure once a fix is released, unless you prefer to remain anonymous.
+## Secrets
 
-## Scope & Handling of Secrets
+Never commit, attach, or paste real provider credentials. Runtime credentials may come from an
+operating-system key store, the current environment, or an in-memory session. They must not appear in
+SQLite events, artifacts, logs, model prompts, error messages, exports, telemetry, fixtures, or tests.
 
-QAgent orchestrates external services (Browserbase, OpenAI, Redis, Vercel, W&B).
-Never commit real API keys or credentials. Use `.env.local` (git-ignored) and
-the placeholders documented in [`.env.example`](./.env.example). If you discover
-a leaked secret in the repository history, report it privately using the process
-above so it can be rotated.
+If a credential is exposed, revoke it at the provider and report the location privately. Removing it
+from the current branch is not sufficient when it has entered Git history or a release artifact.
+
+## Dependency Findings
+
+Release automation fails on unaccepted critical or high production advisories. A temporary exception
+requires a dated, scoped record under `docs/security/accepted-risks/` with reachability, mitigation,
+owner, and expiry. `continue-on-error` is not permitted for the production dependency audit.

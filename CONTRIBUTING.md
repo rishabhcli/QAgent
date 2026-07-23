@@ -1,88 +1,79 @@
 # Contributing to QAgent
 
-Thanks for your interest in contributing to **QAgent**, a self-healing QA agent that autonomously runs end-to-end tests, triages failures, generates fixes, redeploys, and learns from past bugs.
+QAgent welcomes fixes, tests, documentation, provider adapters, and carefully scoped product changes.
+The project is AGPL-3.0 and uses Developer Certificate of Origin sign-off.
 
-This guide explains how to set up the project, propose changes, and get them merged.
+Please follow the [Code of Conduct](./CODE_OF_CONDUCT.md). Report vulnerabilities through the
+private process in [SECURITY.md](./SECURITY.md), not a public issue.
 
-## Code of Conduct
+## Set Up
 
-This project adheres to a [Code of Conduct](./CODE_OF_CONDUCT.md). By participating, you are expected to uphold it. Please report unacceptable behavior as described there.
-
-## Ways to Contribute
-
-- **Report bugs** using the [bug report template](./.github/ISSUE_TEMPLATE/bug_report.yml).
-- **Request features** using the [feature request template](./.github/ISSUE_TEMPLATE/feature_request.yml).
-- **Improve docs** – typos, clarifications, and examples are always welcome.
-- **Submit code** – bug fixes, new agent capabilities, better retrieval/eval, and integrations.
-
-If you plan a large change, please open an issue first so we can align on the approach before you invest time.
-
-## Development Setup
-
-**Prerequisites**
-
-- [Node.js 20](./.nvmrc) (`nvm use` will pick it up)
-- [pnpm](https://pnpm.io/) (`corepack enable` then `corepack prepare pnpm@latest --activate`)
-- API keys for the services QAgent orchestrates (see [`.env.example`](./.env.example))
-
-**Steps**
+Install Node 24 and use the exact package manager declared by the repository:
 
 ```bash
-# 1. Fork and clone
-git clone https://github.com/<your-username>/QAgent.git
-cd QAgent
-
-# 2. Install dependencies
-pnpm install
-
-# 3. Configure environment
-cp .env.example .env.local
-# Fill in BROWSERBASE_API_KEY, OPENAI_API_KEY, REDIS_URL, VERCEL_TOKEN, WANDB_API_KEY, etc.
-
-# 4. Run the demo app
-pnpm dev
-
-# 5. Run the agent loop
-pnpm run agent
+corepack enable
+corepack prepare pnpm@11.15.1 --activate
+pnpm install --frozen-lockfile
+pnpm schema
 ```
 
-See the [README](./README.md) for the full architecture and [`docs/`](./docs) for the PRD, design, and architecture decision records.
+Cloud credentials are not required for the unit and deterministic integration suites. Never add real
+credentials to fixtures, snapshots, logs, issues, or pull requests.
 
-## Development Workflow
+## Make A Change
 
-1. Create a branch from `main`: `git checkout -b feat/short-description`.
-2. Make your changes in small, focused commits.
-3. Keep the tree green before pushing:
+1. Create a focused branch from `main`.
+2. Preserve the shared contract boundary. Desktop, CLI, and MCP must consume `@qagent/contracts` and
+   `@qagent/core` instead of creating new transport-specific records.
+3. Add tests proportional to the behavioral risk. Test-only model doubles must never be reachable in
+   runtime packages.
+4. Update documentation and the generated configuration schema when public behavior changes.
+5. Add a DCO sign-off to every commit: `git commit -s`.
 
-   ```bash
-   pnpm lint          # eslint + tsc --noEmit
-   pnpm format        # prettier --write
-   pnpm test:run      # unit tests (vitest)
-   pnpm run test:e2e  # end-to-end runner (optional, needs API keys)
-   ```
+Changes to contracts, migrations, trust, IPC, credential handling, patch containment, publication, or
+automatic merge policy require an architecture decision record in `docs/adr/`.
 
-4. Push your branch and open a Pull Request against `main`.
+## Required Checks
 
-## Commit & PR Guidelines
+Run the same gates used in CI:
 
-- Use clear, descriptive commit messages. [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`) are appreciated but not required.
-- Reference related issues in the PR description (e.g. `Closes #123`).
-- Fill out the [pull request template](./.github/PULL_REQUEST_TEMPLATE.md) and confirm the checklist.
-- Keep PRs focused; unrelated changes should go in separate PRs.
-- CI (lint, type-check, tests, CodeQL) must pass before review.
-
-## Project Structure
-
-```
-agents/        # Tester, Triage, Fixer, Verifier, Orchestrator
-app/           # Next.js demo application
-dashboard/     # Marimo analytics dashboard
-docs/          # PRD, DESIGN, ARCHITECTURE
-lib/           # Shared libraries
-prompts/       # Workflow prompts
-tests/         # Unit + E2E suites
+```bash
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm test:coverage
+pnpm build
 ```
 
-## License
+Desktop work should also run the relevant Electron Playwright flow on the current platform. Packaging
+or release changes must prove at least one local package and leave the platform matrix green in CI.
 
-By contributing, you agree that your contributions will be licensed under the project's [AGPL-3.0 License](./LICENSE).
+## Code Expectations
+
+- Use strict TypeScript. Do not introduce `any` without a narrow, documented boundary.
+- Validate all external data with Zod or the relevant structured protocol parser.
+- Keep commands as executable/argument arrays; do not concatenate untrusted shell strings.
+- Resolve paths and prove containment before reading, writing, executing, or applying a patch.
+- Record unavailable values as unavailable or `null`, never as a fabricated zero.
+- Record provider source, timestamp, status, and error without leaking inputs or credentials.
+- Keep first-party ESLint output warning-free and let Prettier own formatting.
+- Use deterministic data in tests. Random benchmark scores, fake stars, mock product metrics, and
+  silent runtime fallbacks are not accepted.
+
+## Adapter Contributions
+
+Read [docs/ADAPTERS.md](./docs/ADAPTERS.md). An adapter is not labeled end-to-end verified until a
+scheduled credential-backed workflow proves its complete external behavior. Unit tests and a
+successful connection test support the lower `available` and `healthy` labels but do not certify it.
+
+GitHub is the only publishing adapter certified for v0.2. A new publisher must implement repository
+permissions, branch protection, required reviews, checks, merge queues, conflict policy, and
+post-merge verification before certification.
+
+## Pull Requests
+
+Describe the user-visible problem, the chosen boundary, test evidence, security/privacy impact, and
+remaining limitations. Screenshots must come from the real product state they claim to show.
+
+Maintainers may ask to split unrelated work. Green automation is necessary but does not replace
+review for security, contracts, migrations, or autonomous publication.

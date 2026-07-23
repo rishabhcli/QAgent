@@ -16,6 +16,11 @@ build/
 out/
 .next/
 .nuxt/
+.vite/
+.forge/
+release/
+apps/desktop/assets/icon.iconset/
+apps/desktop/generated/
 
 # IDE
 .idea/
@@ -40,6 +45,9 @@ coverage/
 tmp/
 temp/
 *.tmp
+.qagent/
+test-results/
+playwright-report/
 
 # Secrets (never commit these)
 *.pem
@@ -49,6 +57,11 @@ secrets.json
 
 # Vercel
 .vercel
+
+# Local QAgent state
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
 
 # TypeScript build info
 tsconfig.tsbuildinfo

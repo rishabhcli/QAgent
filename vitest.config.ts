@@ -1,26 +1,30 @@
 import { defineConfig } from 'vitest/config';
-import path from 'path';
+import { resolve } from 'node:path';
 
 export default defineConfig({
-  esbuild: {
-    jsx: 'automatic',
-    jsxImportSource: 'react',
+  resolve: {
+    conditions: ['qagent-source'],
+    alias: {
+      '@qagent/adapters': resolve(import.meta.dirname, 'packages/adapters/src/index.ts'),
+      '@qagent/contracts': resolve(import.meta.dirname, 'packages/contracts/src/index.ts'),
+      '@qagent/core': resolve(import.meta.dirname, 'packages/core/src/index.ts'),
+      '@qagent/storage': resolve(import.meta.dirname, 'packages/storage/src/index.ts'),
+      '@qagent/mcp': resolve(import.meta.dirname, 'packages/mcp/src/index.ts'),
+      '@qagent/cli': resolve(import.meta.dirname, 'packages/cli/src/index.ts'),
+    },
   },
   test: {
-    globals: true,
-    environment: 'node',
-    include: ['tests/unit/**/*.test.ts', 'tests/ui/**/*.test.tsx'],
-    environmentMatchGlobs: [['tests/ui/**/*.test.tsx', 'jsdom']],
-    setupFiles: ['tests/setup/ui.ts'],
     coverage: {
+      exclude: ['**/*.d.ts', '**/dist/**', 'apps/**', 'fixtures/**'],
+      include: ['packages/core/src/**', 'packages/storage/src/**', 'packages/adapters/src/**'],
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      include: ['agents/**/*.ts', 'lib/**/*.ts'],
+      reporter: ['text', 'json-summary'],
+      thresholds: {
+        branches: 80,
+        lines: 85,
+      },
     },
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './'),
-    },
+    include: ['tests/**/*.test.ts', 'packages/**/*.test.ts'],
+    testTimeout: 30_000,
   },
 });

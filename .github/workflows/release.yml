@@ -1,0 +1,222 @@
+name: Release
+
+on:
+  push:
+    tags: ['v0.2.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing v0.2 tag to package
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+  id-token: write
+  attestations: write
+  security-events: write
+
+env:
+  CI: 'true'
+  NEXT_TELEMETRY_DISABLED: '1'
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm schema
+      - run: git diff --exit-code -- packages/contracts/schema apps/docs/public/schema
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test:coverage
+      - run: pnpm test:integration
+      - run: pnpm build
+      - run: pnpm run security:audit
+      - name: Scan Git history for secrets
+        run: >-
+          docker run --rm -v "${PWD}:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1
+          detect --source /repo --no-banner --redact --exit-code 1
+
+  codeql:
+    name: CodeQL ${{ matrix.language }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript, actions]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          queries: security-extended
+      - id: analyze
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:${{ matrix.language }}
+          output: codeql-results/${{ matrix.language }}
+      - name: Block CodeQL findings
+        run: node scripts/assert-clean-sarif.mjs '${{ steps.analyze.outputs.sarif-output }}'
+
+  desktop:
+    name: Desktop E2E (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: verify
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-26]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Linux display dependencies
+        if: runner.os == 'Linux'
+        run: pnpm exec playwright install-deps chromium
+      - name: Install fixture browser
+        run: pnpm exec playwright install chromium
+      - name: Run desktop and documentation E2E
+        if: runner.os != 'Linux'
+        run: pnpm test:e2e
+      - name: Run desktop and documentation E2E with Xvfb
+        if: runner.os == 'Linux'
+        run: xvfb-run --auto-servernum pnpm test:e2e
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: release-evidence-${{ matrix.os }}
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
+
+  package:
+    name: Package ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    needs: [verify, codeql, desktop]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: macos-arm64
+            os: macos-26
+            platform: darwin
+            arch: arm64
+          - target: macos-x64
+            os: macos-26-intel
+            platform: darwin
+            arch: x64
+          - target: windows-x64
+            os: windows-2025
+            platform: win32
+            arch: x64
+          - target: linux-x64
+            os: ubuntu-24.04
+            platform: linux
+            arch: x64
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: pnpm
+      - name: Install Linux package tools
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y fakeroot rpm
+      - name: Import Apple signing certificate
+        if: runner.os == 'macOS' && env.APPLE_CERTIFICATE_BASE64 != ''
+        env:
+          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.APPLE_KEYCHAIN_PASSWORD }}
+          SIGNING_IDENTITY: ${{ secrets.QAGENT_MAC_SIGN_IDENTITY }}
+        run: |
+          echo "$APPLE_CERTIFICATE_BASE64" | base64 -D > "$RUNNER_TEMP/qagent.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" qagent-build.keychain
+          security default-keychain -s qagent-build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" qagent-build.keychain
+          security import "$RUNNER_TEMP/qagent.p12" -k qagent-build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" qagent-build.keychain
+          echo "QAGENT_MAC_SIGN_IDENTITY=$SIGNING_IDENTITY" >> "$GITHUB_ENV"
+      - name: Import Windows signing certificate
+        if: runner.os == 'Windows' && env.WINDOWS_CERTIFICATE_BASE64 != ''
+        shell: pwsh
+        env:
+          WINDOWS_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: |
+          $path = Join-Path $env:RUNNER_TEMP 'qagent.pfx'
+          [IO.File]::WriteAllBytes($path, [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE_BASE64))
+          "QAGENT_WINDOWS_CERTIFICATE_FILE=$path" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "QAGENT_WINDOWS_CERTIFICATE_PASSWORD=$env:WINDOWS_CERTIFICATE_PASSWORD" | Out-File -FilePath $env:GITHUB_ENV -Append
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:packages
+      - run: pnpm --filter @qagent/desktop build:worker
+      - run: pnpm --filter @qagent/desktop exec electron-forge make --arch=${{ matrix.arch }}
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      - run: pnpm release:collect --platform=${{ matrix.platform }} --arch=${{ matrix.arch }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: qagent-${{ matrix.target }}
+          path: release/${{ matrix.platform }}-${{ matrix.arch }}/
+          if-no-files-found: error
+
+  publish:
+    runs-on: ubuntu-24.04
+    needs: package
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: pnpm
+      - uses: actions/download-artifact@v6
+        with:
+          pattern: qagent-*
+          path: release/artifacts
+          merge-multiple: true
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm release:sbom
+      - name: Create checksums
+        working-directory: release
+        run: find artifacts -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+      - uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: release/artifacts/**
+      - name: Create GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: >-
+          gh release create "$RELEASE_TAG" release/artifacts/* release/SHA256SUMS.txt
+          release/qagent.cdx.json CHANGELOG.md --verify-tag --prerelease --generate-notes

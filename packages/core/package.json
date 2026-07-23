@@ -1,0 +1,29 @@
+{
+  "name": "@qagent/core",
+  "version": "0.2.0-beta.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "qagent-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean --external better-sqlite3",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@qagent/adapters": "workspace:*",
+    "@qagent/contracts": "workspace:*",
+    "@qagent/storage": "workspace:*",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "tsup": "8.5.1",
+    "typescript": "5.9.3"
+  }
+}

@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=https://rishabhcli.github.io/QAgent/schema/v1.json
+version: 1
+project:
+  name: QAgent sample counter
+target:
+  url: http://127.0.0.1:41773
+  healthPath: /health
+  start:
+    executable: node
+    args:
+      - src/server.mjs
+    cwd: .
+    env:
+      PORT: '41773'
+    timeoutMs: 120000
+test:
+  commands:
+    - executable: node
+      args:
+        - --test
+        - test/counter.test.mjs
+      cwd: .
+      env: {}
+      timeoutMs: 30000
+  browserFlows:
+    - name: Increment the counter once
+      steps:
+        - Click the button labeled Increment exactly once.
+browser:
+  provider: local
+  headless: true
+model:
+  provider: openai
+  model: gpt-5-mini
+publish:
+  provider: local
+  baseBranch: main
+  autoMerge: false
+  mergeMethod: squash
+limits:
+  maxIterations: 2
+  maxRunMinutes: 5
+  maxPatchBytes: 250000
+telemetry:
+  weave:
+    enabled: false
+    project: qagent-fixture
+    uploadArtifacts: false

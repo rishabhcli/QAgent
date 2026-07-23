@@ -2,118 +2,185 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   pull_request:
-    branches: [main, master]
+    branches: [main]
+  workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
+env:
+  CI: 'true'
+  NEXT_TELEMETRY_DISABLED: '1'
+
 jobs:
-  lint:
-    name: Lint & Type Check
-    runs-on: ubuntu-latest
+  validate:
+    name: Format, lint, types, schema, security
+    runs-on: ubuntu-24.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+      - uses: actions/checkout@v6
         with:
-          version: 10
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Verify generated schema
+        run: |
+          pnpm schema
+          git diff --exit-code -- packages/contracts/schema apps/docs/public/schema
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - name: Block high and critical production advisories
+        run: pnpm run security:audit
+      - name: Scan Git history for secrets
+        run: >-
+          docker run --rm -v "${PWD}:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1
+          detect --source /repo --no-banner --redact --exit-code 1
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run ESLint
-        run: pnpm next lint
-
-      - name: Run TypeScript type check
-        run: pnpm tsc --noEmit
-
-      - name: Check formatting
-        run: pnpm format:check
-
-  test:
-    name: Unit Tests
-    runs-on: ubuntu-latest
+  unit:
+    name: Unit coverage
+    runs-on: ubuntu-24.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with:
-          version: 10
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:coverage
+      - uses: actions/upload-artifact@v7
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          name: coverage
+          path: coverage/
+          if-no-files-found: error
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run tests
-        run: pnpm test:run
-
-  security:
-    name: Security Audit
-    runs-on: ubuntu-latest
+  integration:
+    name: Integration (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-26]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with:
-          version: 10
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run security audit
-        run: pnpm audit --audit-level=moderate
-        continue-on-error: true
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:integration
 
   build:
-    name: Build
-    runs-on: ubuntu-latest
-    needs: [lint, test]
+    name: Workspace build
+    runs-on: ubuntu-24.04
+    needs: [validate, unit]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with:
-          version: 10
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: mkdir -p release
+      - run: pnpm release:sbom
+      - uses: actions/upload-artifact@v7
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          name: docs-and-sbom
+          path: |
+            apps/docs/out/
+            release/qagent.cdx.json
+          if-no-files-found: error
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+  desktop:
+    name: Desktop E2E (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: [validate, unit]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-26]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Linux display dependencies
+        if: runner.os == 'Linux'
+        run: pnpm exec playwright install-deps chromium
+      - name: Install fixture browser
+        run: pnpm exec playwright install chromium
+      - name: Run desktop and documentation E2E
+        if: runner.os != 'Linux'
+        run: pnpm test:e2e
+      - name: Run desktop and documentation E2E with Xvfb
+        if: runner.os == 'Linux'
+        run: xvfb-run --auto-servernum pnpm test:e2e
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: desktop-evidence-${{ matrix.os }}
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
 
-      - name: Build
-        run: pnpm build
-        env:
-          # Skip telemetry during build
-          NEXT_TELEMETRY_DISABLED: 1
+  package:
+    name: Package ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    needs: [integration, build, desktop]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: macos-arm64
+            os: macos-26
+            platform: darwin
+            arch: arm64
+          - target: macos-x64
+            os: macos-26-intel
+            platform: darwin
+            arch: x64
+          - target: windows-x64
+            os: windows-2025
+            platform: win32
+            arch: x64
+          - target: linux-x64
+            os: ubuntu-24.04
+            platform: linux
+            arch: x64
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: pnpm
+      - name: Install Linux package tools
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y fakeroot rpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:packages
+      - run: pnpm --filter @qagent/desktop build:worker
+      - run: pnpm --filter @qagent/desktop exec electron-forge make --arch=${{ matrix.arch }}
+      - run: pnpm release:collect --platform=${{ matrix.platform }} --arch=${{ matrix.arch }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: qagent-${{ matrix.target }}
+          path: release/${{ matrix.platform }}-${{ matrix.arch }}/
+          if-no-files-found: error

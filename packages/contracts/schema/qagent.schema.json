@@ -1,0 +1,205 @@
+{
+  "$id": "https://rishabhcli.github.io/QAgent/schema/v1.json",
+  "title": "QAgent project configuration",
+  "description": "Configuration contract for QAgent v0.2 projects.",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "version": { "type": "number", "const": 1 },
+    "project": {
+      "type": "object",
+      "properties": { "name": { "type": "string", "minLength": 1 } },
+      "additionalProperties": false
+    },
+    "target": {
+      "type": "object",
+      "properties": {
+        "url": { "type": "string", "format": "uri" },
+        "healthPath": { "default": "/", "type": "string", "pattern": "^\\/.*" },
+        "start": { "$ref": "#/$defs/__schema0" }
+      },
+      "required": ["healthPath"],
+      "additionalProperties": false
+    },
+    "test": {
+      "type": "object",
+      "properties": {
+        "commands": {
+          "minItems": 1,
+          "type": "array",
+          "items": { "$ref": "#/$defs/__schema0" }
+        },
+        "browserFlows": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "steps": {
+                "minItems": 1,
+                "type": "array",
+                "items": { "$ref": "#/$defs/__schema1" }
+              }
+            },
+            "required": ["name", "steps"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["commands", "browserFlows"],
+      "additionalProperties": false
+    },
+    "verify": {
+      "type": "object",
+      "properties": {
+        "commands": {
+          "default": [],
+          "type": "array",
+          "items": { "$ref": "#/$defs/__schema0" }
+        }
+      },
+      "required": ["commands"],
+      "additionalProperties": false
+    },
+    "browser": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "default": "local",
+          "type": "string",
+          "enum": ["local", "browserbase"]
+        },
+        "executablePath": { "type": "string" },
+        "headless": { "default": true, "type": "boolean" }
+      },
+      "required": ["provider", "headless"],
+      "additionalProperties": false
+    },
+    "model": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": ["openai", "anthropic", "google", "openai-compatible"]
+        },
+        "model": { "type": "string", "minLength": 1 },
+        "baseUrl": { "type": "string", "format": "uri" }
+      },
+      "required": ["provider", "model"],
+      "additionalProperties": false
+    },
+    "publish": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "default": "github",
+          "type": "string",
+          "enum": ["github", "local"]
+        },
+        "baseBranch": { "default": "main", "type": "string", "minLength": 1 },
+        "autoMerge": { "default": true, "type": "boolean" },
+        "mergeMethod": {
+          "default": "squash",
+          "type": "string",
+          "enum": ["squash", "merge", "rebase"]
+        }
+      },
+      "required": ["provider", "baseBranch", "autoMerge", "mergeMethod"],
+      "additionalProperties": false
+    },
+    "limits": {
+      "type": "object",
+      "properties": {
+        "maxIterations": {
+          "default": 5,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "maxRunMinutes": {
+          "default": 30,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 720
+        },
+        "maxPatchBytes": {
+          "default": 250000,
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 2000000
+        },
+        "maxProviderCostUsd": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000
+        }
+      },
+      "required": ["maxIterations", "maxRunMinutes", "maxPatchBytes"],
+      "additionalProperties": false
+    },
+    "telemetry": {
+      "type": "object",
+      "properties": {
+        "weave": {
+          "type": "object",
+          "properties": {
+            "enabled": { "default": true, "type": "boolean" },
+            "project": {
+              "default": "qagent",
+              "type": "string",
+              "minLength": 1
+            },
+            "uploadArtifacts": { "default": false, "type": "boolean" }
+          },
+          "required": ["enabled", "project", "uploadArtifacts"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["weave"],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "version",
+    "project",
+    "target",
+    "test",
+    "verify",
+    "browser",
+    "model",
+    "publish",
+    "limits",
+    "telemetry"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "__schema0": {
+      "type": "object",
+      "properties": {
+        "executable": { "type": "string", "minLength": 1 },
+        "args": {
+          "default": [],
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "cwd": { "default": ".", "type": "string" },
+        "env": {
+          "default": {},
+          "type": "object",
+          "propertyNames": { "type": "string" },
+          "additionalProperties": { "type": "string" }
+        },
+        "timeoutMs": {
+          "default": 120000,
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 3600000
+        }
+      },
+      "required": ["executable", "args", "cwd", "env", "timeoutMs"],
+      "additionalProperties": false
+    },
+    "__schema1": { "type": "string", "minLength": 1 }
+  }
+}
