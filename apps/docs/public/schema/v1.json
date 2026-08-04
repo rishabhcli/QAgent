@@ -144,7 +144,7 @@
         "weave": {
           "type": "object",
           "properties": {
-            "enabled": { "default": true, "type": "boolean" },
+            "enabled": { "default": false, "type": "boolean" },
             "project": {
               "default": "qagent",
               "type": "string",

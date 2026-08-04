@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": false
+  },
+  "include": ["scripts/**/*.ts"],
+  "exclude": ["node_modules", "**/dist/**", "**/.next/**", "**/.vite/**", "**/out/**"]
+}

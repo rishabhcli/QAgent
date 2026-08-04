@@ -25,10 +25,18 @@ responses, imported Redis records, MCP clients, and renderer messages are untrus
 8. GitHub branch protection, reviews, checks, merge queues, and permissions remain authoritative.
 9. Electron uses a sandboxed renderer, context isolation, no Node integration, CSP, blocked navigation
    and windows, a custom secure protocol, and schema-validated IPC.
-10. Persistent credentials require an operating-system encrypted safeStorage backend. Linux
-    `basic_text` permits environment or session credentials only.
+10. Persistent credentials require an operating-system encrypted safeStorage backend and, on macOS,
+    a stable signed application identity. Source builds, unsigned macOS packages, and Linux
+    `basic_text` permit environment or session credentials only. Status checks do not initialize the
+    credential vault. Credentials are not exposed to the sandboxed renderer, and repository commands
+    do not inherit ambient provider or host credentials.
 11. Artifacts are atomically written, checksummed, and read through a contained artifact root.
-12. Optional telemetry is locally redacted and cannot block execution.
+12. GitHub pushes use an ephemeral askpass helper and credential-free HTTPS remote configuration.
+    Provider permissions, repository rules, checks, queue state, and final state remain authoritative.
+13. Browserbase requires an authenticated exact-project probe; cloud sessions are bounded,
+    cancellable, action-verified, and retain sanitized failure evidence.
+14. Optional telemetry is locally redacted, queued, acknowledged, flushable, and cannot block
+    execution. Weave project access and trace disclosure are separate gates.
 
 ## Accepted Limitations
 

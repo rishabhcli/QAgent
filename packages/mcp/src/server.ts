@@ -1,5 +1,16 @@
 import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import {
+  IntegrationProviderSchema,
+  IntegrationVerifyRequestSchema,
+  IntegrationVerifyResultSchema,
+  InterventionResolutionSchema,
+  RunActionResultSchema,
+  RunDetailSchema,
+  RunLaunchSchema,
+  type RunActionRequest,
+  type RunActionResult,
+} from '@qagent/contracts';
 import type { LocalRuntime, RunHandle } from '@qagent/core';
 import { createLocalRuntime } from '@qagent/core';
 import { z } from 'zod';
@@ -23,19 +34,6 @@ function requireTrustedRun(runtime: LocalRuntime, runId: string) {
   if (!run) throw new Error('Run was not found');
   requireTrustedProject(runtime, run.projectId);
   return run;
-}
-
-function runDetail(runtime: LocalRuntime, runId: string) {
-  const run = requireTrustedRun(runtime, runId);
-  return {
-    run,
-    events: runtime.engine.getRunEvents(runId),
-    artifacts: runtime.storage.listArtifacts(runId),
-    diagnosis: runtime.storage.getDiagnosis(runId),
-    patch: runtime.storage.getPatch(runId),
-    verification: runtime.storage.getVerification(runId),
-    providerCalls: runtime.storage.listProviderCalls(runId),
-  };
 }
 
 function resourceJson(uri: URL | string, value: unknown) {
@@ -62,6 +60,20 @@ export function createQAgentMcpServer(runtime: LocalRuntime): McpServer {
     websiteUrl: 'https://github.com/rishabhcli/QAgent',
   });
   const handles = new Map<string, RunHandle>();
+  const trackHandle = (handle: RunHandle | null): void => {
+    if (!handle) return;
+    handles.set(handle.id, handle);
+    void handle
+      .result()
+      .catch(() => undefined)
+      .finally(() => handles.delete(handle.id));
+  };
+  const executeAction = async (request: RunActionRequest): Promise<RunActionResult> => {
+    requireTrustedRun(runtime, request.runId);
+    const execution = await runtime.engine.executeRunAction(request);
+    trackHandle(execution.handle);
+    return execution.result;
+  };
 
   server.registerTool(
     'project_list',
@@ -91,19 +103,45 @@ export function createQAgentMcpServer(runtime: LocalRuntime): McpServer {
   );
 
   server.registerTool(
+    'integration_verify',
+    {
+      title: 'Verify QAgent integration',
+      description:
+        'Runs the same live model, browser, GitHub, or Weave verification used by desktop and records grounded remediation.',
+      inputSchema: {
+        provider: IntegrationProviderSchema,
+        projectId: z.uuid().optional(),
+        weaveDisclosureAccepted: z.boolean().default(false),
+      },
+      outputSchema: { verification: IntegrationVerifyResultSchema },
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+    },
+    async ({ provider, projectId, weaveDisclosureAccepted }) => {
+      if (projectId) requireTrustedProject(runtime, projectId);
+      const request = IntegrationVerifyRequestSchema.parse({
+        provider,
+        projectId,
+        requestedBy: 'mcp',
+        weaveDisclosureAccepted,
+      });
+      return jsonResult('verification', await runtime.engine.verifyIntegration(request));
+    }
+  );
+
+  server.registerTool(
     'run_start',
     {
       title: 'Start QAgent run',
       description: 'Starts an asynchronous run for a previously trusted project.',
       inputSchema: { projectId: z.uuid() },
+      outputSchema: { launch: RunLaunchSchema },
       annotations: { destructiveHint: true, openWorldHint: true },
     },
     async ({ projectId }) => {
       requireTrustedProject(runtime, projectId);
       const handle = await runtime.engine.startRun({ projectId, requestedBy: 'mcp' });
-      handles.set(handle.id, handle);
-      void handle.result().finally(() => handles.delete(handle.id));
-      return jsonResult('run', runtime.engine.getRun(handle.id));
+      trackHandle(handle);
+      return jsonResult('launch', await runtime.engine.waitForRunLaunch(handle.id));
     }
   );
 
@@ -147,25 +185,122 @@ export function createQAgentMcpServer(runtime: LocalRuntime): McpServer {
       title: 'Get complete QAgent run detail',
       description:
         'Returns the same durable events, artifacts, diagnosis, patch, verification, and provider provenance used by desktop and CLI.',
-      inputSchema: { runId: z.uuid() },
+      inputSchema: {
+        runId: z.uuid(),
+        afterSequence: z.number().int().min(0).default(0),
+      },
+      outputSchema: { detail: RunDetailSchema },
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
-    async ({ runId }) => jsonResult('detail', runDetail(runtime, runId))
+    async ({ runId, afterSequence }) => {
+      requireTrustedRun(runtime, runId);
+      return jsonResult('detail', runtime.engine.getRunDetail(runId, afterSequence));
+    }
   );
 
   server.registerTool(
     'run_cancel',
     {
       title: 'Cancel QAgent run',
-      description: 'Durably requests cancellation of an active run.',
-      inputSchema: { runId: z.uuid() },
+      description:
+        'Durably requests cancellation only when the run record offers the cancel action.',
+      inputSchema: {
+        runId: z.uuid(),
+        reason: z.string().min(1).max(500).default('Cancellation requested through MCP'),
+      },
+      outputSchema: { action: RunActionResultSchema },
       annotations: { destructiveHint: true, openWorldHint: false },
     },
-    async ({ runId }) => {
-      requireTrustedRun(runtime, runId);
-      await runtime.engine.cancelRun(runId, 'Cancellation requested through MCP');
-      return jsonResult('run', runtime.engine.getRun(runId));
-    }
+    async ({ runId, reason }) =>
+      jsonResult(
+        'action',
+        await executeAction({ action: 'cancel', runId, requestedBy: 'mcp', reason })
+      )
+  );
+
+  server.registerTool(
+    'run_retry',
+    {
+      title: 'Retry QAgent run',
+      description:
+        'Creates a linked retry only when a terminal durable run explicitly offers retry.',
+      inputSchema: { runId: z.uuid() },
+      outputSchema: { action: RunActionResultSchema },
+      annotations: { destructiveHint: true, openWorldHint: true },
+    },
+    async ({ runId }) =>
+      jsonResult('action', await executeAction({ action: 'retry', runId, requestedBy: 'mcp' }))
+  );
+
+  server.registerTool(
+    'run_resume',
+    {
+      title: 'Resume interrupted QAgent run',
+      description:
+        'Resumes the same interrupted run from its durable recovery checkpoint when resume is offered.',
+      inputSchema: { runId: z.uuid() },
+      outputSchema: { action: RunActionResultSchema },
+      annotations: { destructiveHint: true, openWorldHint: true },
+    },
+    async ({ runId }) =>
+      jsonResult('action', await executeAction({ action: 'resume', runId, requestedBy: 'mcp' }))
+  );
+
+  server.registerTool(
+    'run_reconnect',
+    {
+      title: 'Reconnect QAgent publication',
+      description: 'Reconnects the same publication-waiting run without repeating completed work.',
+      inputSchema: {
+        runId: z.uuid(),
+        afterSequence: z.number().int().min(0).default(0),
+      },
+      outputSchema: { action: RunActionResultSchema },
+      annotations: { destructiveHint: true, openWorldHint: true },
+    },
+    async ({ runId, afterSequence }) =>
+      jsonResult(
+        'action',
+        await executeAction({
+          action: 'reconnect',
+          runId,
+          requestedBy: 'mcp',
+          afterSequence,
+        })
+      )
+  );
+
+  server.registerTool(
+    'run_resolve_intervention',
+    {
+      title: 'Resolve QAgent intervention',
+      description:
+        'Records one resolution offered by the active intervention and continues the supported workflow.',
+      inputSchema: {
+        runId: z.uuid(),
+        interventionId: z.uuid(),
+        resolution: InterventionResolutionSchema,
+        note: z.string().min(1).max(2_000).optional(),
+        evidenceArtifactIds: z.array(z.uuid()).default([]),
+      },
+      outputSchema: { action: RunActionResultSchema },
+      annotations: { destructiveHint: true, openWorldHint: true },
+    },
+    async ({ runId, interventionId, resolution, note, evidenceArtifactIds }) =>
+      jsonResult(
+        'action',
+        await executeAction({
+          action: 'resolve_intervention',
+          runId,
+          requestedBy: 'mcp',
+          interventionId,
+          resolution: {
+            kind: resolution,
+            note,
+            evidenceArtifactIds,
+          },
+        })
+      )
   );
 
   server.registerTool(
@@ -324,7 +459,12 @@ export function createQAgentMcpServer(runtime: LocalRuntime): McpServer {
       mimeType: 'application/json',
     },
     async (uri, variables) =>
-      resourceJson(uri, runDetail(runtime, variable(variables.runId, 'runId')))
+      resourceJson(
+        uri,
+        runtime.engine.getRunDetail(
+          requireTrustedRun(runtime, variable(variables.runId, 'runId')).id
+        )
+      )
   );
 
   server.registerResource(
@@ -414,6 +554,8 @@ export function createQAgentMcpServer(runtime: LocalRuntime): McpServer {
 }
 
 export async function startMcpServer(runtime = createLocalRuntime()): Promise<void> {
+  const resumed = await runtime.engine.resumeInterruptedRuns();
+  for (const handle of resumed) void handle.result().catch(() => undefined);
   const server = createQAgentMcpServer(runtime);
   const transport = new StdioServerTransport();
   await server.connect(transport);

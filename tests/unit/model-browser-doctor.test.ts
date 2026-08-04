@@ -3,11 +3,12 @@ import { join } from 'node:path';
 import {
   createModelProvider,
   detectBrowser,
+  DOCTOR_MODEL_PROBE_TIMEOUT_MS,
   runDoctor,
   type DoctorDependencies,
   type ModelProvider,
 } from '@qagent/adapters';
-import { QAgentConfigSchema } from '@qagent/contracts';
+import { QAgentConfigSchema, type DoctorReport } from '@qagent/contracts';
 import { z } from 'zod';
 import { afterEach, describe, expect, it } from 'vitest';
 import { temporaryDirectory, temporaryFixtureRepository } from '../helpers.js';
@@ -100,6 +101,66 @@ describe('browser discovery and Doctor', () => {
     });
   });
 
+  it('authenticates Browserbase without requiring a local Chrome installation', async () => {
+    const config = QAgentConfigSchema.parse({
+      version: 1,
+      test: { commands: [{ executable: 'test' }] },
+      browser: { provider: 'browserbase' },
+      model: { provider: 'openai-compatible', model: 'local-test' },
+      publish: { provider: 'local' },
+    });
+    let projectProbe = '';
+    const report = await runDoctor({
+      qagentHome: '/qagent',
+      config,
+      dependencies: doctorDependencies({
+        environment: {
+          BROWSERBASE_API_KEY: 'browserbase-key',
+          BROWSERBASE_PROJECT_ID: 'browserbase-project',
+        },
+        detectBrowser: async () => {
+          throw new Error('Browserbase Doctor must not inspect local Chrome');
+        },
+        probeBrowserbase: async (_apiKey, projectId) => {
+          projectProbe = projectId;
+        },
+      }),
+    });
+
+    expect(projectProbe).toBe('browserbase-project');
+    expect(report.checks.find((check) => check.id === 'browser')).toMatchObject({
+      status: 'pass',
+      code: 'browserbase.healthy',
+      providerState: 'healthy',
+    });
+  });
+
+  it('keeps Weave project access separate from trace disclosure', async () => {
+    const config = QAgentConfigSchema.parse({
+      version: 1,
+      test: { commands: [{ executable: 'test' }] },
+      model: { provider: 'openai-compatible', model: 'local-test' },
+      publish: { provider: 'local' },
+      telemetry: { weave: { enabled: true, project: 'entity/qagent' } },
+    });
+    const report = await runDoctor({
+      qagentHome: '/qagent',
+      config,
+      dependencies: doctorDependencies({
+        environment: { WANDB_API_KEY: 'weave-key' },
+        probeWeave: async () => 'entity/qagent',
+      }),
+    });
+
+    expect(report.status).toBe('degraded');
+    expect(report.checks.find((check) => check.id === 'weave')).toMatchObject({
+      status: 'warn',
+      code: 'weave.disclosure-required',
+      providerState: 'healthy',
+    });
+    expectActionableFailures(report);
+  });
+
   it('reports grounded local readiness and a bad project path', async () => {
     const repository = await temporaryFixtureRepository();
     const home = await temporaryDirectory('qagent-doctor-');
@@ -114,6 +175,7 @@ describe('browser discovery and Doctor', () => {
       projectPath: repository,
       qagentHome: home,
       config,
+      dependencies: { probeModel: async () => undefined },
     });
     expect(report.status).not.toBe('blocked');
     expect(report.checks.map((check) => check.id)).toEqual([
@@ -125,6 +187,12 @@ describe('browser discovery and Doctor', () => {
     ]);
     expect(report.checks.every((check) => Date.parse(check.checkedAt) > 0)).toBe(true);
     expect(report.checks.find((check) => check.id === 'model')?.status).toBe('pass');
+    expect(report.checks.find((check) => check.id === 'browser')).toMatchObject({
+      status: 'pass',
+      code: 'browser.configured',
+      providerState: 'configured',
+      detail: expect.stringContaining('end-to-end flow remain unverified'),
+    });
 
     const invalid = await runDoctor({
       projectPath: join(home, 'missing'),
@@ -133,6 +201,7 @@ describe('browser discovery and Doctor', () => {
     });
     expect(invalid.status).toBe('blocked');
     expect(invalid.checks.find((check) => check.id === 'project-config')?.status).toBe('fail');
+    expectActionableFailures(invalid);
   });
 
   it('distinguishes missing runtime dependencies and provider credentials', async () => {
@@ -166,6 +235,132 @@ describe('browser discovery and Doctor', () => {
         }),
       ])
     );
+    expectActionableFailures(report);
+  });
+
+  it('blocks readiness when a configured model fails its live probe', async () => {
+    const config = QAgentConfigSchema.parse({
+      version: 1,
+      test: { commands: [{ executable: 'test' }] },
+      model: { provider: 'openai-compatible', model: 'offline-local' },
+      publish: { provider: 'local' },
+    });
+    const report = await runDoctor({
+      qagentHome: '/qagent',
+      config,
+      dependencies: doctorDependencies({
+        probeModel: async () => {
+          throw new Error('connection refused');
+        },
+      }),
+    });
+
+    expect(report.status).toBe('blocked');
+    expect(report.checks.find((check) => check.id === 'model')).toMatchObject({
+      status: 'fail',
+      source: 'structured provider probe',
+    });
+    expect(report.checks.find((check) => check.id === 'model')?.detail).toContain(
+      'connection refused'
+    );
+    expectActionableFailures(report);
+  });
+
+  it('allows a bounded cold model probe to finish without prewarming', async () => {
+    expect(DOCTOR_MODEL_PROBE_TIMEOUT_MS).toBeGreaterThanOrEqual(60_000);
+    const config = QAgentConfigSchema.parse({
+      version: 1,
+      test: { commands: [{ executable: 'test' }] },
+      model: { provider: 'openai-compatible', model: 'cold-local' },
+      publish: { provider: 'local' },
+    });
+    let probeSignal: AbortSignal | null = null;
+    const report = await runDoctor({
+      qagentHome: '/qagent',
+      config,
+      dependencies: doctorDependencies({
+        modelProbeTimeoutMs: 100,
+        probeModel: async (_config, _environment, signal) => {
+          probeSignal = signal;
+          await new Promise<void>((resolve, reject) => {
+            const timeout = setTimeout(resolve, 25);
+            signal.addEventListener(
+              'abort',
+              () => {
+                clearTimeout(timeout);
+                reject(signal.reason);
+              },
+              { once: true }
+            );
+          });
+        },
+      }),
+    });
+
+    expect(probeSignal?.aborted).toBe(false);
+    expect(report.checks.find((check) => check.id === 'model')).toMatchObject({
+      status: 'pass',
+      code: 'model.healthy',
+      correctiveAction: null,
+    });
+  });
+
+  it('keeps a genuine outer model-probe timeout visibly actionable', async () => {
+    const config = QAgentConfigSchema.parse({
+      version: 1,
+      test: { commands: [{ executable: 'test' }] },
+      model: { provider: 'openai-compatible', model: 'stalled-local' },
+      publish: { provider: 'local' },
+    });
+    const report = await runDoctor({
+      qagentHome: '/qagent',
+      config,
+      dependencies: doctorDependencies({
+        modelProbeTimeoutMs: 5,
+        probeModel: async (_config, _environment, signal) =>
+          new Promise<never>((_resolve, reject) => {
+            signal.addEventListener('abort', () => reject(signal.reason), { once: true });
+          }),
+      }),
+    });
+    const model = report.checks.find((check) => check.id === 'model');
+
+    expect(report.status).toBe('blocked');
+    expect(model).toMatchObject({
+      status: 'fail',
+      code: 'model.probe-failed',
+      providerState: 'error',
+      correctiveAction: {
+        type: 'application',
+        action: 'configure_provider',
+      },
+    });
+    expect(model?.detail).toMatch(/timeout/i);
+  });
+
+  it('redacts the exact configured model credential from Doctor probe failures', async () => {
+    const credential = 'opaque-model-credential';
+    const config = QAgentConfigSchema.parse({
+      version: 1,
+      test: { commands: [{ executable: 'test' }] },
+      model: { provider: 'openai', model: 'gpt-test' },
+      publish: { provider: 'local' },
+    });
+    const report = await runDoctor({
+      qagentHome: '/qagent',
+      config,
+      dependencies: doctorDependencies({
+        environment: { OPENAI_API_KEY: credential },
+        probeModel: async () => {
+          throw new Error(`provider echoed ${credential}`);
+        },
+      }),
+    });
+    const model = report.checks.find((check) => check.id === 'model');
+
+    expect(model).toMatchObject({ status: 'fail', code: 'model.probe-failed' });
+    expect(model?.detail).toContain('[REDACTED]');
+    expect(model?.detail).not.toContain(credential);
   });
 
   it('reports an unconfigured detected project and configured Anthropic adapter', async () => {
@@ -201,6 +396,7 @@ describe('browser discovery and Doctor', () => {
       source: 'local project detection',
     });
     expect(report.checks.find((check) => check.id === 'model')?.status).toBe('pass');
+    expectActionableFailures(report);
   });
 
   it('handles non-Error project failures and omits optional checks when not requested', async () => {
@@ -224,6 +420,7 @@ describe('browser discovery and Doctor', () => {
     expect(failed.checks.find((check) => check.id === 'project-config')?.detail).toBe(
       'invalid project'
     );
+    expectActionableFailures(failed);
 
     const minimal = await runDoctor({
       qagentHome: '/qagent',
@@ -233,6 +430,14 @@ describe('browser discovery and Doctor', () => {
     expect(minimal.checks.map((check) => check.id)).toEqual(['node', 'git', 'browser']);
   });
 });
+
+function expectActionableFailures(report: DoctorReport): void {
+  for (const check of report.checks.filter(
+    (candidate) => candidate.status === 'warn' || candidate.status === 'fail'
+  )) {
+    expect(check.correctiveAction, `${check.id} must expose a corrective action`).not.toBeNull();
+  }
+}
 
 function doctorDependencies(
   overrides: Partial<DoctorDependencies> = {}
@@ -247,6 +452,7 @@ function doctorDependencies(
       executablePath: '/browser',
       source: 'configured',
     }),
+    probeModel: async () => undefined,
     ...overrides,
   };
 }

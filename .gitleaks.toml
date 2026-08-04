@@ -1,0 +1,20 @@
+title = "QAgent secret scanning"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Synthetic arbitrary-secret redaction fixture"
+condition = "AND"
+targetRules = ["generic-api-key"]
+regexTarget = "line"
+regexes = ['''arbitrary-zebra-secret-7fe9a62c''']
+paths = ['''tests/unit/storage-observability\.test\.ts$''']
+
+[[allowlists]]
+description = "Synthetic Stripe-shaped persistence redaction fixture"
+condition = "AND"
+targetRules = ["stripe-access-token", "generic-api-key"]
+regexTarget = "line"
+regexes = ['''sk_live_fixture1234''']
+paths = ['''tests/unit/storage-persistence\.test\.ts$''']

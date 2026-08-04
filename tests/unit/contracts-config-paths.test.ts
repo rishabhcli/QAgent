@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, realpath, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   buildInitialConfig,
@@ -33,6 +33,7 @@ describe('configuration contract', () => {
     });
     expect(parsed.browser).toEqual({ provider: 'local', headless: true });
     expect(parsed.publish).toMatchObject({ provider: 'github', autoMerge: true });
+    expect(parsed.telemetry.weave.enabled).toBe(false);
     expect(qagentConfigJsonSchema()).toMatchObject({
       $schema: 'https://json-schema.org/draft/2020-12/schema',
       type: 'object',
@@ -102,6 +103,65 @@ describe('project detection and config writing', () => {
     expect((await detectProject(root)).config).toEqual(config);
     await expect(writeProjectConfig(root, config)).rejects.toThrow(/already exists/);
     await expect(writeProjectConfig(root, config, { force: true })).resolves.toBe(path);
+  });
+
+  it('loads a managed config without writing into the project checkout', async () => {
+    const root = await temporaryDirectory('qagent-managed-project-');
+    const home = await temporaryDirectory('qagent-managed-home-');
+    await writeFile(
+      join(root, 'package.json'),
+      JSON.stringify({ name: 'managed-example', scripts: { test: 'node --test' } })
+    );
+    const detected = await detectProject(root);
+    const config = buildInitialConfig(detected, {
+      provider: 'openai-compatible',
+      model: 'local-model',
+      baseUrl: 'http://127.0.0.1:11434/v1',
+    });
+    const managedPath = join(home, 'projects', 'project.qagent.yml');
+    await writeProjectConfig(root, config, { destinationPath: managedPath });
+
+    expect((await detectProject(root)).config).toBeNull();
+    expect((await detectProject(root, { configPath: managedPath })).config).toEqual(config);
+  });
+
+  it('can inspect detected commands while explicitly repairing an invalid managed config', async () => {
+    const root = await temporaryDirectory('qagent-managed-project-invalid-');
+    const home = await temporaryDirectory('qagent-managed-home-invalid-');
+    await writeFile(
+      join(root, 'package.json'),
+      JSON.stringify({ name: 'managed-example', scripts: { test: 'node --test' } })
+    );
+    const managedPath = join(home, 'projects', 'project.qagent.yml');
+    await mkdir(join(home, 'projects'), { recursive: true });
+    await writeFile(managedPath, 'version: [not valid');
+
+    await expect(detectProject(root, { configPath: managedPath })).rejects.toThrow();
+    const repair = await detectProject(root, {
+      configPath: managedPath,
+      tolerateInvalidConfig: true,
+    });
+    expect(repair).toMatchObject({
+      path: await realpath(root),
+      configPath: managedPath,
+      config: null,
+      needsConfiguration: true,
+      suggestedTestCommands: [expect.objectContaining({ executable: 'npm' })],
+    });
+    expect(repair.trustPreview.exactCommands.test).toEqual(repair.suggestedTestCommands);
+  });
+
+  it('canonicalizes a repository symlink before trust can be recorded', async () => {
+    const root = await temporaryDirectory('qagent-canonical-project-');
+    const aliases = await temporaryDirectory('qagent-project-alias-');
+    await writeFile(
+      join(root, 'package.json'),
+      JSON.stringify({ name: 'canonical-example', scripts: { test: 'node --test' } })
+    );
+    const alias = join(aliases, 'repository');
+    await symlink(root, alias, process.platform === 'win32' ? 'junction' : 'dir');
+
+    expect((await detectProject(alias)).path).toBe(await realpath(root));
   });
 
   it('requires an explicit test command for an unknown project', async () => {

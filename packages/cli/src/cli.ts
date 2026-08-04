@@ -6,8 +6,21 @@ import {
   runDoctor,
   writeProjectConfig,
 } from '@qagent/adapters';
-import type { QAgentConfig, Run, RunEvent } from '@qagent/contracts';
-import { createLocalRuntime, type LocalRuntime } from '@qagent/core';
+import {
+  IntegrationProviderSchema,
+  IntegrationVerifyRequestSchema,
+  InterventionResolutionSchema,
+  type IntegrationProvider,
+  type IntegrationVerifyResult,
+  type InterventionResolution,
+  type QAgentConfig,
+  type Run,
+  type RunActionRequest,
+  type RunActionResult,
+  type RunEvent,
+  type RunLaunch,
+} from '@qagent/contracts';
+import { createLocalRuntime, type LocalRuntime, type RunHandle } from '@qagent/core';
 import { startMcpServer } from '@qagent/mcp';
 import { Command, InvalidArgumentError } from 'commander';
 
@@ -24,6 +37,13 @@ interface InitOptions {
   publish?: QAgentConfig['publish']['provider'];
   testExecutable?: string;
   testArg?: string[];
+}
+
+interface ResolveInterventionOptions {
+  intervention: string;
+  resolution: InterventionResolution;
+  note?: string;
+  evidence?: string[];
 }
 
 export function createCli(): Command {
@@ -130,6 +150,36 @@ export function createCli(): Command {
     });
   });
 
+  const integration = program.command('integration').description('verify provider integrations');
+  integration
+    .command('verify')
+    .argument('<provider>', 'model, browser, github, or weave', parseIntegrationProvider)
+    .option('--project <project-id>', 'trusted project UUID for project-scoped probes')
+    .option(
+      '--weave-disclosure-accepted',
+      'confirm the Weave telemetry disclosure before an end-to-end trace probe'
+    )
+    .action(
+      async (
+        provider: IntegrationProvider,
+        options: { project?: string; weaveDisclosureAccepted?: boolean }
+      ) => {
+        await withRuntime(program, async (runtime) => {
+          const request = IntegrationVerifyRequestSchema.parse({
+            provider,
+            projectId: options.project,
+            requestedBy: 'cli',
+            weaveDisclosureAccepted: options.weaveDisclosureAccepted ?? false,
+          });
+          if (request.projectId && !runtime.storage.getProject(request.projectId)?.trusted) {
+            throw new Error('Trusted project was not found');
+          }
+          const result = await runtime.engine.verifyIntegration(request);
+          output(program, result, formatIntegrationVerification(result));
+        });
+      }
+    );
+
   const run = program.command('run').description('start and inspect durable QA runs');
   run
     .command('start')
@@ -137,11 +187,9 @@ export function createCli(): Command {
     .action(async (projectId: string) => {
       await withRuntime(program, async (runtime) => {
         const handle = await runtime.engine.startRun({ projectId, requestedBy: 'cli' });
-        const completion = handle.result();
-        for await (const event of handle.events()) printEvent(program, event);
-        const result = await completion;
-        output(program, result, `${result.status}: ${result.summary ?? result.error ?? result.id}`);
-        process.exitCode = exitCodeForRun(result);
+        const launch = await runtime.engine.waitForRunLaunch(handle.id);
+        output(program, launch, formatRunLaunch(launch));
+        await followRun(program, handle);
       });
     });
   run
@@ -167,34 +215,113 @@ export function createCli(): Command {
   run
     .command('show')
     .argument('<run-id>')
-    .action(async (runId: string) => {
+    .option(
+      '--after-sequence <sequence>',
+      'return events after this durable cursor',
+      parseSequence,
+      0
+    )
+    .action(async (runId: string, options: { afterSequence: number }) => {
       await withRuntime(program, async (runtime) => {
-        const record = runtime.engine.getRun(runId);
-        if (!record) throw new Error('Run was not found');
-        const detail = {
-          run: record,
-          events: runtime.engine.getRunEvents(runId),
-          artifacts: runtime.storage.listArtifacts(runId),
-          diagnosis: runtime.storage.getDiagnosis(runId),
-          patch: runtime.storage.getPatch(runId),
-          verification: runtime.storage.getVerification(runId),
-          providerCalls: runtime.storage.listProviderCalls(runId),
-        };
+        const detail = runtime.engine.getRunDetail(runId, options.afterSequence);
         output(program, detail, JSON.stringify(detail, null, 2));
       });
     });
   run
     .command('cancel')
     .argument('<run-id>')
+    .option(
+      '--reason <reason>',
+      'why the run is being cancelled',
+      'Cancellation requested through CLI'
+    )
+    .action(async (runId: string, options: { reason: string }) => {
+      await withRuntime(program, async (runtime) => {
+        await executeCliRunAction(program, runtime, {
+          action: 'cancel',
+          runId,
+          requestedBy: 'cli',
+          reason: options.reason,
+        });
+      });
+    });
+  run
+    .command('retry')
+    .argument('<run-id>')
+    .description('retry a terminal run only when its durable record offers retry')
     .action(async (runId: string) => {
       await withRuntime(program, async (runtime) => {
-        await runtime.engine.cancelRun(runId, 'Cancellation requested through CLI');
-        const record = runtime.engine.getRun(runId);
-        output(
+        await executeCliRunAction(program, runtime, {
+          action: 'retry',
+          runId,
+          requestedBy: 'cli',
+        });
+      });
+    });
+  run
+    .command('resume')
+    .argument('<run-id>')
+    .description('resume an interrupted run from its durable recovery checkpoint')
+    .action(async (runId: string) => {
+      await withRuntime(program, async (runtime) => {
+        await executeCliRunAction(program, runtime, {
+          action: 'resume',
+          runId,
+          requestedBy: 'cli',
+        });
+      });
+    });
+  run
+    .command('reconnect')
+    .argument('<run-id>')
+    .description('reconnect a publication-waiting run without repeating completed work')
+    .option(
+      '--after-sequence <sequence>',
+      'stream events after this durable cursor',
+      parseSequence,
+      0
+    )
+    .action(async (runId: string, options: { afterSequence: number }) => {
+      await withRuntime(program, async (runtime) => {
+        await executeCliRunAction(
           program,
-          record,
-          record ? `${record.id}: cancellation requested` : 'Run was not found'
+          runtime,
+          {
+            action: 'reconnect',
+            runId,
+            requestedBy: 'cli',
+            afterSequence: options.afterSequence,
+          },
+          options.afterSequence
         );
+      });
+    });
+  run
+    .command('resolve-intervention')
+    .alias('resolve')
+    .argument('<run-id>')
+    .description('record an offered intervention resolution and continue its supported workflow')
+    .requiredOption('--intervention <intervention-id>', 'active intervention UUID')
+    .requiredOption(
+      '--resolution <resolution>',
+      'offered resolution kind',
+      parseInterventionResolution
+    )
+    .option('--note <note>', 'concise operator note')
+    .option('--evidence <artifact-id...>', 'artifact UUIDs supporting the resolution')
+    .action(async (runId: string, options: ResolveInterventionOptions) => {
+      await withRuntime(program, async (runtime) => {
+        await executeCliRunAction(program, runtime, {
+          action: 'resolve_intervention',
+          runId,
+          requestedBy: 'cli',
+          interventionId: options.intervention,
+          resolution: {
+            kind: options.resolution,
+            note: options.note,
+            evidenceArtifactIds: options.evidence ?? [],
+          },
+        });
       });
     });
 
@@ -274,6 +401,61 @@ function printEvent(program: Command, event: RunEvent): void {
   );
 }
 
+async function executeCliRunAction(
+  program: Command,
+  runtime: LocalRuntime,
+  request: RunActionRequest,
+  afterSequence = 0
+): Promise<RunActionResult> {
+  const execution = await runtime.engine.executeRunAction(request);
+  output(program, execution.result, formatRunActionResult(execution.result));
+  if (!execution.result.accepted) {
+    process.exitCode = 2;
+    return execution.result;
+  }
+  if (execution.handle) await followRun(program, execution.handle, afterSequence);
+  return execution.result;
+}
+
+async function followRun(program: Command, handle: RunHandle, afterSequence = 0): Promise<Run> {
+  const completion = handle.result();
+  for await (const event of handle.events(afterSequence)) printEvent(program, event);
+  const result = await completion;
+  output(program, result, `${result.status}: ${result.summary ?? result.error ?? result.id}`);
+  process.exitCode = exitCodeForRun(result);
+  return result;
+}
+
+function formatRunLaunch(launch: RunLaunch): string {
+  const isolation =
+    launch.isolation.state === 'ready'
+      ? `${launch.isolation.worktreePath} (${launch.isolation.branch})`
+      : `${launch.isolation.state}: ${launch.isolation.canonicalProjectPath}`;
+  return [
+    `Run ${launch.run.id}: ${launch.run.status}`,
+    `Isolation: ${isolation}`,
+    `Policy: dedicated worktree; active checkout mutation disabled`,
+  ].join('\n');
+}
+
+function formatRunActionResult(result: RunActionResult): string {
+  if (!result.accepted) {
+    return `${result.action} rejected for ${result.requestedRunId}: ${result.reason}`;
+  }
+  const run =
+    result.runId === result.requestedRunId
+      ? result.runId
+      : `${result.requestedRunId} -> ${result.runId}`;
+  return `${result.action} accepted: ${run}`;
+}
+
+function formatIntegrationVerification(result: IntegrationVerifyResult): string {
+  const correctiveAction = result.correctiveAction
+    ? `\nAction: ${result.correctiveAction.label}: ${result.correctiveAction.description}`
+    : '';
+  return `${result.provider}: ${result.integration.status}\n${result.integration.detail}${correctiveAction}`;
+}
+
 function formatDoctor(report: Awaited<ReturnType<typeof runDoctor>>): string {
   return [
     `QAgent doctor: ${report.status}`,
@@ -309,4 +491,28 @@ function parsePublishProvider(value: string): QAgentConfig['publish']['provider'
     throw new InvalidArgumentError(`Unsupported publication provider: ${value}`);
   }
   return value;
+}
+
+function parseSequence(value: string): number {
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 0) {
+    throw new InvalidArgumentError(`Sequence must be a non-negative integer: ${value}`);
+  }
+  return parsed;
+}
+
+function parseInterventionResolution(value: string): InterventionResolution {
+  const result = InterventionResolutionSchema.safeParse(value);
+  if (!result.success) {
+    throw new InvalidArgumentError(`Unsupported intervention resolution: ${value}`);
+  }
+  return result.data;
+}
+
+function parseIntegrationProvider(value: string): IntegrationProvider {
+  const result = IntegrationProviderSchema.safeParse(value);
+  if (!result.success) {
+    throw new InvalidArgumentError(`Unsupported integration provider: ${value}`);
+  }
+  return result.data;
 }

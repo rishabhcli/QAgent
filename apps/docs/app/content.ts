@@ -114,7 +114,7 @@ export const documents: Record<string, DocumentPage> = {
         id: 'connect',
         title: '3. Connect a model',
         paragraphs: [
-          'Use the onboarding connection test. Credentials are encrypted with the operating-system key store when available; environment and session credentials remain alternatives. No provider means a visible blocked state, never a mock response.',
+          'Use the onboarding connection test. Signed builds encrypt persistent credentials with the operating-system key store. Source and unsigned macOS builds use environment or session credentials without opening Keychain at startup. No provider means a visible blocked state, never a mock response.',
         ],
       },
       {
@@ -526,6 +526,13 @@ export const documents: Record<string, DocumentPage> = {
         title: 'Model connection fails',
         paragraphs: [
           'Confirm the selected provider, model identifier, endpoint, and credential. QAgent deliberately does not fall back to another provider or a fake result.',
+        ],
+      },
+      {
+        id: 'macos-keychain',
+        title: 'macOS Keychain prompts',
+        paragraphs: [
+          'Source builds and unsigned macOS packages are session-only for credentials and do not initialize Keychain during launch or status checks. A signed release accesses Keychain only when saving or decrypting a persistent credential.',
         ],
       },
       {

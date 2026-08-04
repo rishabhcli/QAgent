@@ -20,8 +20,9 @@ import {
   Terminal,
   Wrench,
   X,
+  ZoomIn,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { type KeyboardEvent as ReactKeyboardEvent, useEffect, useRef, useState } from 'react';
 import patchMascot from './assets/patch-mascot.png';
 import productRun from './assets/qagent-run.png';
 
@@ -57,6 +58,7 @@ type RepairStage = 'idle' | 'test' | 'triage' | 'patch' | 'verify' | 'complete';
 type InterfaceMode = 'desktop' | 'cli' | 'mcp';
 
 const stageOrder: RepairStage[] = ['test', 'triage', 'patch', 'verify', 'complete'];
+const interfaceModes: InterfaceMode[] = ['desktop', 'cli', 'mcp'];
 const stageLabels: Record<RepairStage, string> = {
   idle: 'Standing by',
   test: 'Reproducing',
@@ -80,7 +82,10 @@ export function LandingExperience() {
   const [count, setCount] = useState(0);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [interfaceMode, setInterfaceMode] = useState<InterfaceMode>('desktop');
+  const [shotOpen, setShotOpen] = useState(false);
   const timers = useRef<Array<ReturnType<typeof setTimeout>>>([]);
+  const shotDialogRef = useRef<HTMLElement>(null);
+  const shotReturnFocusRef = useRef<HTMLElement | null>(null);
   const bug = bugs.find((item) => item.id === bugId) ?? bugs[0];
   const stageIndex = stageOrder.indexOf(stage);
   const isRunning = stage !== 'idle' && stage !== 'complete';
@@ -91,6 +96,56 @@ export function LandingExperience() {
     },
     []
   );
+
+  useEffect(() => {
+    if (!shotOpen) return;
+    const dialog = shotDialogRef.current;
+    const backdrop = dialog?.parentElement;
+    const root = backdrop?.parentElement;
+    const siblings = root
+      ? Array.from(root.children).filter(
+          (element): element is HTMLElement =>
+            element instanceof HTMLElement && element !== backdrop
+        )
+      : [];
+    const priorInert = siblings.map((element) => ({ element, inert: element.inert }));
+    siblings.forEach((element) => {
+      element.inert = true;
+    });
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShotOpen(false);
+        return;
+      }
+      if (event.key !== 'Tab' || !dialog) return;
+      const focusable = modalFocusable(dialog);
+      if (focusable.length === 0) {
+        event.preventDefault();
+        return;
+      }
+      const first = focusable.at(0);
+      const last = focusable.at(-1);
+      if (!first || !last) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      priorInert.forEach(({ element, inert }) => {
+        element.inert = inert;
+      });
+      window.requestAnimationFrame(() => shotReturnFocusRef.current?.focus());
+    };
+  }, [shotOpen]);
 
   function clearRun(): void {
     for (const timer of timers.current) clearTimeout(timer);
@@ -108,8 +163,8 @@ export function LandingExperience() {
 
   function runRepair(): void {
     clearRun();
-    setCount(0);
-    setHasInteracted(false);
+    setCount(bug.delta);
+    setHasInteracted(true);
     setRepaired(false);
     setStage('test');
     for (const [index, nextStage] of (
@@ -119,9 +174,13 @@ export function LandingExperience() {
         setTimeout(
           () => {
             setStage(nextStage);
-            if (nextStage === 'complete') setRepaired(true);
+            if (nextStage === 'complete') {
+              setRepaired(true);
+              setCount(0);
+              setHasInteracted(false);
+            }
           },
-          650 * (index + 1)
+          720 * (index + 1)
         )
       );
     }
@@ -135,6 +194,29 @@ export function LandingExperience() {
   function focusLab(): void {
     document.querySelector<HTMLElement>('#try-qagent')?.focus();
     document.querySelector<HTMLElement>('#try-qagent')?.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function navigateInterfaceTabs(
+    event: ReactKeyboardEvent<HTMLButtonElement>,
+    currentMode: InterfaceMode
+  ): void {
+    const currentIndex = interfaceModes.indexOf(currentMode);
+    const nextIndex =
+      event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? interfaceModes.length - 1
+          : event.key === 'ArrowRight'
+            ? (currentIndex + 1) % interfaceModes.length
+            : event.key === 'ArrowLeft'
+              ? (currentIndex - 1 + interfaceModes.length) % interfaceModes.length
+              : -1;
+    if (nextIndex < 0) return;
+    event.preventDefault();
+    const nextMode = interfaceModes[nextIndex];
+    if (!nextMode) return;
+    setInterfaceMode(nextMode);
+    document.querySelector<HTMLButtonElement>(`#interface-tab-${nextMode}`)?.focus();
   }
 
   return (
@@ -153,9 +235,8 @@ export function LandingExperience() {
           <h1 id="landing-title">QAgent</h1>
           <p className="hero-kicker">Find the bug. Patch the cause. Prove the fix.</p>
           <p className="hero-body">
-            Autonomous QA for developers who want the repair and the receipts. QAgent works in an
-            isolated Git worktree, verifies every change, and stops when repository policy says
-            stop.
+            Local QA that repairs in an isolated worktree, verifies the exact failure, and shows
+            every source.
           </p>
           <div className="hero-actions">
             <button
@@ -202,7 +283,7 @@ export function LandingExperience() {
             priority
             sizes="(max-width: 760px) 230px, 420px"
           />
-          <div className="mascot-readout" aria-live="polite">
+          <div className="mascot-readout">
             <span>PATCH / {stageLabels[stage]}</span>
             <span className="readout-blocks" aria-hidden="true">
               <i />
@@ -295,8 +376,8 @@ export function LandingExperience() {
                     <Monitor size={16} aria-hidden="true" />
                     <strong id="fixture-title">Target app</strong>
                   </span>
-                  <span className={`test-state ${resultState(repaired, hasInteracted)}`}>
-                    {resultStateLabel(repaired, hasInteracted)}
+                  <span className={`test-state ${resultState(repaired, hasInteracted, count)}`}>
+                    {resultStateLabel(repaired, hasInteracted, count)}
                   </span>
                 </div>
                 <div className="fixture-browser">
@@ -312,9 +393,9 @@ export function LandingExperience() {
                     </button>
                   </div>
                 </div>
-                <div className="fixture-assertion" aria-live="polite">
+                <div className="fixture-assertion">
                   {hasInteracted ? (
-                    repaired ? (
+                    repaired && count === 1 ? (
                       <>
                         <Check size={16} aria-hidden="true" /> Expected 1, received {count}
                       </>
@@ -338,12 +419,26 @@ export function LandingExperience() {
                     <SquareTerminal size={16} aria-hidden="true" />
                     <strong id="agent-title">Repair stream</strong>
                   </span>
-                  <span className="stage-readout" aria-live="polite">
-                    {stageLabels[stage]}
+                  <span className="stage-readout">{stageLabels[stage]}</span>
+                </div>
+
+                <div className={`lab-agent-hud hud-${stage}`}>
+                  <div className="lab-mascot">
+                    <span className="lab-mascot-beacon" aria-hidden="true" />
+                    <Image src={patchMascot} alt="" aria-hidden="true" sizes="72px" />
+                  </div>
+                  <div>
+                    <span>PATCH / {stageLabels[stage]}</span>
+                    <strong>{stageMessage(stage)}</strong>
+                  </div>
+                  <span className="lab-agent-blocks" aria-hidden="true">
+                    {stageOrder.slice(0, 4).map((item, index) => (
+                      <i className={stageIndex >= index ? 'active' : ''} key={item} />
+                    ))}
                   </span>
                 </div>
 
-                <ol className="repair-timeline" aria-label="Repair stages">
+                <ol className="repair-timeline" aria-label="Repair stages" tabIndex={0}>
                   {stageTimeline.map((item) => {
                     const itemIndex = stageOrder.indexOf(item.id);
                     const active = stage === item.id;
@@ -364,27 +459,50 @@ export function LandingExperience() {
                         </span>
                         <span>
                           <strong>{item.label}</strong>
-                          <small>{stageDetail(item.id, bug)}</small>
+                          {(active || complete) && <small>{stageDetail(item.id, bug)}</small>}
                         </span>
                       </li>
                     );
                   })}
                 </ol>
 
-                <div className={`patch-preview ${stageIndex >= 2 ? 'revealed' : ''}`}>
-                  <div className="patch-heading">
-                    <span>src/counter.mjs</span>
-                    <span>{stageIndex >= 2 ? '1 file changed' : 'Awaiting grounded failure'}</span>
+                {stageIndex >= 2 ? (
+                  <div className="patch-preview revealed">
+                    <div className="patch-heading">
+                      <span>src/counter.mjs</span>
+                      <span>1 file changed</span>
+                    </div>
+                    <pre aria-label="Generated repair diff">
+                      <code>
+                        <span className="diff-context">
+                          {' '}
+                          export function increment(value) {'{'}
+                        </span>
+                        <span className="diff-remove">- return {bug.expression};</span>
+                        <span className="diff-add">+ return value + 1;</span>
+                        <span className="diff-context"> {'}'}</span>
+                      </code>
+                    </pre>
                   </div>
-                  <pre aria-label="Generated repair diff">
-                    <code>
-                      <span className="diff-context"> export function increment(value) {'{'}</span>
-                      <span className="diff-remove">- return {bug.expression};</span>
-                      <span className="diff-add">+ return value + 1;</span>
-                      <span className="diff-context"> {'}'}</span>
-                    </code>
-                  </pre>
-                </div>
+                ) : (
+                  <div className="patch-preview patch-pending" aria-label="Patch not generated">
+                    <div className="patch-heading">
+                      <span>Patch workspace</span>
+                      <span>Waiting</span>
+                    </div>
+                    <div className="patch-pending-signal">
+                      <span aria-hidden="true">
+                        <i />
+                        <i />
+                        <i />
+                      </span>
+                      <strong>
+                        {stage === 'triage' ? 'Localizing the cause' : 'No change proposed yet'}
+                      </strong>
+                      <small>The diff appears only after a grounded failure.</small>
+                    </div>
+                  </div>
+                )}
               </section>
             </div>
 
@@ -396,11 +514,34 @@ export function LandingExperience() {
                     <strong>Repair verified.</strong> The fixture now increments exactly once.
                   </span>
                 </>
-              ) : (
+              ) : stage === 'idle' ? (
                 <>
                   <CircleDot size={19} aria-hidden="true" />
                   <span>
-                    <strong>{bug.symptom}.</strong> {bug.diagnosis}
+                    <strong>{hasInteracted ? 'Failure reproduced.' : 'Fixture ready.'}</strong>{' '}
+                    {hasInteracted ? bug.symptom : 'Run the agent or try the counter yourself.'}
+                  </span>
+                </>
+              ) : stage === 'test' ? (
+                <>
+                  <CircleDot size={19} aria-hidden="true" />
+                  <span>
+                    <strong>Failure captured.</strong> {bug.symptom}
+                  </span>
+                </>
+              ) : stage === 'triage' ? (
+                <>
+                  <ScanSearch size={19} aria-hidden="true" />
+                  <span>
+                    <strong>Cause localized.</strong> {bug.diagnosis}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Wrench size={19} aria-hidden="true" />
+                  <span>
+                    <strong>{stage === 'patch' ? 'Patch bounded.' : 'Proof running.'}</strong>{' '}
+                    {stage === 'patch' ? 'One file changed.' : 'Replaying the failed check.'}
                   </span>
                 </>
               )}
@@ -460,13 +601,26 @@ export function LandingExperience() {
             </div>
           </div>
           <figure className="product-shot">
-            <div className="product-shot-frame">
-              <Image
-                src={productRun}
-                alt="QAgent desktop run detail showing a completed repair, evidence artifacts, and activity timeline"
-                sizes="(max-width: 760px) 100vw, 1100px"
-              />
-            </div>
+            <button
+              className="product-shot-button"
+              type="button"
+              onClick={(event) => {
+                shotReturnFocusRef.current = event.currentTarget;
+                setShotOpen(true);
+              }}
+              aria-label="Enlarge QAgent run evidence"
+            >
+              <div className="product-shot-frame">
+                <Image
+                  src={productRun}
+                  alt="QAgent desktop run detail showing a completed repair, evidence artifacts, and activity timeline"
+                  sizes="(max-width: 760px) 100vw, 1100px"
+                />
+                <span className="product-shot-zoom">
+                  <ZoomIn size={16} aria-hidden="true" /> Inspect run
+                </span>
+              </div>
+            </button>
             <figcaption>
               Real sample-fixture run / local Chromium / deterministic test model / July 22, 2026
             </figcaption>
@@ -482,7 +636,7 @@ export function LandingExperience() {
               <h2 id="interfaces-title">Use the door that fits your work.</h2>
             </div>
             <div className="interface-tabs" role="tablist" aria-label="QAgent interfaces">
-              {(['desktop', 'cli', 'mcp'] as InterfaceMode[]).map((mode) => (
+              {interfaceModes.map((mode) => (
                 <button
                   id={`interface-tab-${mode}`}
                   type="button"
@@ -491,6 +645,8 @@ export function LandingExperience() {
                   aria-controls={`interface-panel-${mode}`}
                   className={interfaceMode === mode ? 'active' : ''}
                   onClick={() => setInterfaceMode(mode)}
+                  onKeyDown={(event) => navigateInterfaceTabs(event, mode)}
+                  tabIndex={interfaceMode === mode ? 0 : -1}
                   key={mode}
                 >
                   {mode === 'desktop' ? (
@@ -505,7 +661,7 @@ export function LandingExperience() {
               ))}
             </div>
           </div>
-          <InterfacePanel mode={interfaceMode} />
+          <InterfacePanel mode={interfaceMode} key={interfaceMode} />
         </div>
       </section>
 
@@ -530,6 +686,33 @@ export function LandingExperience() {
           </div>
         </div>
       </section>
+      {shotOpen && (
+        <div className="shot-dialog-backdrop" onMouseDown={() => setShotOpen(false)}>
+          <section
+            className="shot-dialog"
+            ref={shotDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="QAgent run evidence"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <button
+              className="shot-dialog-close"
+              type="button"
+              aria-label="Close image"
+              onClick={() => setShotOpen(false)}
+              autoFocus
+            >
+              <X size={18} aria-hidden="true" />
+            </button>
+            <Image
+              src={productRun}
+              alt="QAgent desktop run detail showing a completed repair, evidence artifacts, and activity timeline"
+              sizes="100vw"
+            />
+          </section>
+        </div>
+      )}
     </main>
   );
 }
@@ -625,14 +808,31 @@ function stageDetail(stage: Exclude<RepairStage, 'idle' | 'complete'>, bug: (typ
   }
 }
 
-function resultState(repaired: boolean, interacted: boolean): string {
-  if (!interacted) return 'waiting';
-  return repaired ? 'passing' : 'failing';
+function stageMessage(stage: RepairStage): string {
+  if (stage === 'idle') return 'Waiting for a real run';
+  if (stage === 'test') return 'Capturing the failed assertion';
+  if (stage === 'triage') return 'Following the state update';
+  if (stage === 'patch') return 'Writing the smallest valid change';
+  if (stage === 'verify') return 'Replaying the exact failure';
+  return 'Repair proved';
 }
 
-function resultStateLabel(repaired: boolean, interacted: boolean): string {
+function resultState(repaired: boolean, interacted: boolean, count: number): string {
+  if (!interacted) return 'waiting';
+  return repaired && count === 1 ? 'passing' : 'failing';
+}
+
+function resultStateLabel(repaired: boolean, interacted: boolean, count: number): string {
   if (!interacted) return 'Ready';
-  return repaired ? 'Passing' : 'Failing';
+  return repaired && count === 1 ? 'Passing' : 'Failing';
+}
+
+function modalFocusable(root: HTMLElement): HTMLElement[] {
+  return Array.from(
+    root.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )
+  );
 }
 
 function titleCase(value: string): string {

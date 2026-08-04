@@ -6,6 +6,46 @@ interface Migration {
   sql: string;
 }
 
+const finalizedRunTables = [
+  'run_events',
+  'artifacts',
+  'diagnoses',
+  'patches',
+  'verifications',
+  'provider_calls',
+  'run_checkpoints',
+  'stage_attempts',
+  'policy_worker_calls',
+  'specialist_activities',
+  'specialist_critiques',
+  'specialist_decisions',
+  'run_manifest_contexts',
+] as const;
+
+const finalizedRunGuards = [
+  ...(['UPDATE', 'DELETE'] as const).map(
+    (operation) => `
+      CREATE TRIGGER finalized_runs_block_runs_${operation.toLowerCase()}
+      BEFORE ${operation} ON runs
+      WHEN EXISTS (SELECT 1 FROM run_manifests WHERE run_id = OLD.id)
+      BEGIN
+        SELECT RAISE(ABORT, 'run is finalized by its manifest');
+      END;`
+  ),
+  ...finalizedRunTables.flatMap((table) =>
+    (['INSERT', 'UPDATE', 'DELETE'] as const).map((operation) => {
+      const reference = operation === 'INSERT' ? 'NEW' : 'OLD';
+      return `
+        CREATE TRIGGER finalized_runs_block_${table}_${operation.toLowerCase()}
+        BEFORE ${operation} ON ${table}
+        WHEN EXISTS (SELECT 1 FROM run_manifests WHERE run_id = ${reference}.run_id)
+        BEGIN
+          SELECT RAISE(ABORT, 'run is finalized by its manifest');
+        END;`;
+    })
+  ),
+].join('\n');
+
 const migrations: Migration[] = [
   {
     version: 1,
@@ -144,6 +184,257 @@ const migrations: Migration[] = [
     sql: `
       ALTER TABLE verifications
       ADD COLUMN artifact_ids_json TEXT NOT NULL DEFAULT '[]';
+    `,
+  },
+  {
+    version: 3,
+    name: 'durable-run-actions-and-recovery',
+    sql: `
+      ALTER TABLE runs
+      ADD COLUMN attempt INTEGER NOT NULL DEFAULT 1;
+      ALTER TABLE runs
+      ADD COLUMN retry_of_run_id TEXT;
+      ALTER TABLE runs
+      ADD COLUMN available_actions_json TEXT NOT NULL DEFAULT '[]';
+      ALTER TABLE runs
+      ADD COLUMN intervention_json TEXT;
+      ALTER TABLE runs
+      ADD COLUMN last_heartbeat_at TEXT;
+      ALTER TABLE runs
+      ADD COLUMN recovery_count INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE runs
+      ADD COLUMN failure_code TEXT;
+      ALTER TABLE integrations
+      ADD COLUMN requirements_json TEXT NOT NULL DEFAULT '[]';
+      ALTER TABLE integrations
+      ADD COLUMN evidence_json TEXT NOT NULL DEFAULT '[]';
+
+      CREATE TABLE run_checkpoints (
+        run_id TEXT PRIMARY KEY REFERENCES runs(id) ON DELETE CASCADE,
+        kind TEXT NOT NULL,
+        data_json TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+    `,
+  },
+  {
+    version: 4,
+    name: 'truthful-observability-protocol',
+    sql: `
+      ALTER TABLE runs
+      ADD COLUMN last_event_sequence INTEGER NOT NULL DEFAULT 0;
+      UPDATE runs
+      SET last_event_sequence = COALESCE(
+        (SELECT MAX(sequence) FROM run_events WHERE run_events.run_id = runs.id),
+        0
+      );
+      UPDATE runs
+      SET failure_code = CASE
+            WHEN status = 'policy_blocked' THEN 'policy_blocked'
+            ELSE 'unexpected_failure'
+          END
+      WHERE status IN ('failed', 'policy_blocked')
+        AND failure_code IS NULL;
+      UPDATE runs
+      SET available_actions_json = '["resume","cancel"]',
+          failure_code = COALESCE(failure_code, 'interrupted_recovery')
+      WHERE status = 'interrupted';
+
+      ALTER TABLE run_events
+      ADD COLUMN schema_version INTEGER NOT NULL DEFAULT 1;
+      ALTER TABLE run_events
+      ADD COLUMN idempotency_key TEXT;
+      CREATE UNIQUE INDEX run_events_idempotency_unique
+      ON run_events(run_id, idempotency_key)
+      WHERE idempotency_key IS NOT NULL;
+
+      ALTER TABLE artifacts
+      ADD COLUMN state TEXT NOT NULL DEFAULT 'ready';
+      ALTER TABLE artifacts
+      ADD COLUMN ready_at TEXT;
+      ALTER TABLE artifacts
+      ADD COLUMN original_bytes INTEGER;
+      ALTER TABLE artifacts
+      ADD COLUMN omitted_bytes INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE artifacts
+      ADD COLUMN redaction_count INTEGER NOT NULL DEFAULT 0;
+      UPDATE artifacts
+      SET ready_at = created_at, original_bytes = bytes
+      WHERE ready_at IS NULL OR original_bytes IS NULL;
+
+      ALTER TABLE provider_calls
+      ADD COLUMN attempt INTEGER NOT NULL DEFAULT 1;
+      ALTER TABLE provider_calls
+      ADD COLUMN started_at TEXT;
+      ALTER TABLE provider_calls
+      ADD COLUMN completed_at TEXT;
+      ALTER TABLE provider_calls
+      ADD COLUMN duration_ms INTEGER;
+      ALTER TABLE provider_calls
+      ADD COLUMN specialist_role TEXT;
+      ALTER TABLE provider_calls
+      ADD COLUMN evidence_artifact_ids_json TEXT NOT NULL DEFAULT '[]';
+      ALTER TABLE provider_calls
+      ADD COLUMN request_digest TEXT;
+      ALTER TABLE provider_calls
+      ADD COLUMN response_digest TEXT;
+      ALTER TABLE provider_calls
+      ADD COLUMN error_code TEXT;
+      UPDATE provider_calls
+      SET started_at = created_at,
+          completed_at = CASE WHEN status = 'started' THEN NULL ELSE created_at END
+      WHERE started_at IS NULL;
+
+      CREATE TABLE run_projections (
+        run_id TEXT PRIMARY KEY REFERENCES runs(id) ON DELETE CASCADE,
+        schema_version INTEGER NOT NULL,
+        applied_sequence INTEGER NOT NULL,
+        projection_json TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+
+      CREATE TABLE stage_attempts (
+        id TEXT PRIMARY KEY,
+        run_id TEXT NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+        stage TEXT NOT NULL,
+        attempt INTEGER NOT NULL,
+        status TEXT NOT NULL,
+        summary TEXT NOT NULL,
+        waiting_on TEXT,
+        next_retry_at TEXT,
+        last_heartbeat_at TEXT,
+        started_at TEXT NOT NULL,
+        completed_at TEXT,
+        evidence_artifact_ids_json TEXT NOT NULL DEFAULT '[]',
+        UNIQUE(run_id, stage, attempt)
+      );
+      CREATE INDEX stage_attempts_run_status_idx ON stage_attempts(run_id, status);
+
+      CREATE TABLE policy_worker_calls (
+        id TEXT PRIMARY KEY,
+        run_id TEXT NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+        worker TEXT NOT NULL,
+        version TEXT NOT NULL,
+        attempt INTEGER NOT NULL,
+        status TEXT NOT NULL,
+        input_digest TEXT NOT NULL,
+        output_digest TEXT,
+        error TEXT,
+        started_at TEXT NOT NULL,
+        completed_at TEXT
+      );
+      CREATE INDEX policy_worker_calls_run_idx ON policy_worker_calls(run_id, started_at);
+
+      CREATE TABLE specialist_activities (
+        id TEXT PRIMARY KEY,
+        run_id TEXT NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+        role TEXT NOT NULL,
+        status TEXT NOT NULL,
+        summary TEXT NOT NULL,
+        source_kind TEXT NOT NULL,
+        provider_call_id TEXT REFERENCES provider_calls(id) ON DELETE RESTRICT,
+        policy_worker_call_id TEXT REFERENCES policy_worker_calls(id) ON DELETE RESTRICT,
+        occurred_at TEXT NOT NULL,
+        attempt INTEGER NOT NULL,
+        evidence_artifact_ids_json TEXT NOT NULL,
+        handoff_target TEXT,
+        CHECK (
+          (source_kind = 'provider_call' AND provider_call_id IS NOT NULL AND policy_worker_call_id IS NULL)
+          OR
+          (source_kind = 'policy_worker' AND provider_call_id IS NULL AND policy_worker_call_id IS NOT NULL)
+        )
+      );
+      CREATE INDEX specialist_activities_run_idx
+      ON specialist_activities(run_id, occurred_at, id);
+
+      CREATE TABLE specialist_critiques (
+        id TEXT PRIMARY KEY,
+        run_id TEXT NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+        activity_id TEXT NOT NULL REFERENCES specialist_activities(id) ON DELETE CASCADE,
+        role TEXT NOT NULL,
+        verdict TEXT NOT NULL,
+        summary TEXT NOT NULL,
+        source_kind TEXT NOT NULL,
+        provider_call_id TEXT REFERENCES provider_calls(id) ON DELETE RESTRICT,
+        policy_worker_call_id TEXT REFERENCES policy_worker_calls(id) ON DELETE RESTRICT,
+        occurred_at TEXT NOT NULL,
+        attempt INTEGER NOT NULL,
+        evidence_artifact_ids_json TEXT NOT NULL,
+        action_required TEXT,
+        CHECK (
+          (source_kind = 'provider_call' AND provider_call_id IS NOT NULL AND policy_worker_call_id IS NULL)
+          OR
+          (source_kind = 'policy_worker' AND provider_call_id IS NULL AND policy_worker_call_id IS NOT NULL)
+        )
+      );
+      CREATE INDEX specialist_critiques_run_idx
+      ON specialist_critiques(run_id, occurred_at, id);
+
+      CREATE TABLE specialist_decisions (
+        id TEXT PRIMARY KEY,
+        run_id TEXT NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+        role TEXT NOT NULL,
+        action TEXT NOT NULL,
+        summary TEXT NOT NULL,
+        source_kind TEXT NOT NULL,
+        provider_call_id TEXT REFERENCES provider_calls(id) ON DELETE RESTRICT,
+        policy_worker_call_id TEXT REFERENCES policy_worker_calls(id) ON DELETE RESTRICT,
+        occurred_at TEXT NOT NULL,
+        attempt INTEGER NOT NULL,
+        evidence_artifact_ids_json TEXT NOT NULL,
+        handoff_target TEXT,
+        CHECK (
+          (source_kind = 'provider_call' AND provider_call_id IS NOT NULL AND policy_worker_call_id IS NULL)
+          OR
+          (source_kind = 'policy_worker' AND provider_call_id IS NULL AND policy_worker_call_id IS NOT NULL)
+        )
+      );
+      CREATE INDEX specialist_decisions_run_idx
+      ON specialist_decisions(run_id, occurred_at, id);
+
+      CREATE TABLE run_manifest_contexts (
+        run_id TEXT PRIMARY KEY REFERENCES runs(id) ON DELETE CASCADE,
+        config_digest TEXT,
+        config_path TEXT,
+        base_sha TEXT,
+        head_sha TEXT,
+        branch TEXT,
+        worktree_path TEXT,
+        commands_json TEXT NOT NULL DEFAULT '[]',
+        browser_checks_json TEXT NOT NULL DEFAULT '[]',
+        updated_at TEXT NOT NULL
+      );
+
+      CREATE TABLE run_manifests (
+        id TEXT PRIMARY KEY,
+        run_id TEXT NOT NULL UNIQUE REFERENCES runs(id) ON DELETE CASCADE,
+        artifact_id TEXT NOT NULL UNIQUE REFERENCES artifacts(id) ON DELETE RESTRICT,
+        sha256 TEXT NOT NULL,
+        event_sequence INTEGER NOT NULL,
+        created_at TEXT NOT NULL
+      );
+    `,
+  },
+  {
+    version: 5,
+    name: 'immutable-terminal-manifests',
+    sql: finalizedRunGuards,
+  },
+  {
+    version: 6,
+    name: 'immutable-run-manifest-records',
+    sql: `
+      CREATE TRIGGER run_manifests_block_update
+      BEFORE UPDATE ON run_manifests
+      BEGIN
+        SELECT RAISE(ABORT, 'run manifest record is immutable');
+      END;
+
+      CREATE TRIGGER run_manifests_block_delete
+      BEFORE DELETE ON run_manifests
+      BEGIN
+        SELECT RAISE(ABORT, 'run manifest record is immutable');
+      END;
     `,
   },
 ];

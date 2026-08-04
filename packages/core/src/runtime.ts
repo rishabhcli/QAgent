@@ -13,6 +13,8 @@ export interface LocalRuntimeOptions {
   home?: string;
   modelCredentials?: ModelCredentials;
   githubToken?: string;
+  githubApiBaseUrl?: string;
+  allowInsecureGitHubApiEndpoint?: boolean;
   weaveDisclosureAccepted?: boolean;
   weaveEnabled?: boolean;
   weaveProject?: string;
@@ -28,9 +30,11 @@ export interface LocalRuntime {
 
 export function createLocalRuntime(options: LocalRuntimeOptions = {}): LocalRuntime {
   const home = options.home ?? resolveQAgentHome();
-  const storage = new QAgentStorage(join(home, 'qagent.sqlite'));
+  const storage = new QAgentStorage(join(home, 'qagent.sqlite'), {
+    secretValues: [...Object.values(options.modelCredentials ?? {}), options.githubToken],
+  });
   const artifacts = new ArtifactStore(join(home, 'artifacts'), storage);
-  const weaveEnabled = options.weaveEnabled ?? strictEnvFlag('QAGENT_WEAVE_ENABLED', true);
+  const weaveEnabled = options.weaveEnabled ?? strictEnvFlag('QAGENT_WEAVE_ENABLED', false);
   const disclosure =
     options.weaveDisclosureAccepted ?? strictEnvFlag('QAGENT_WEAVE_DISCLOSURE_ACCEPTED', false);
   const traceSink = !weaveEnabled
@@ -44,6 +48,9 @@ export function createLocalRuntime(options: LocalRuntimeOptions = {}): LocalRunt
     qagentHome: home,
     modelCredentials: options.modelCredentials,
     githubToken: options.githubToken,
+    githubApiBaseUrl: options.githubApiBaseUrl ?? process.env.QAGENT_GITHUB_API_URL,
+    allowInsecureGitHubApiEndpoint:
+      options.allowInsecureGitHubApiEndpoint ?? strictEnvFlag('QAGENT_E2E', false),
     traceSink,
   });
   return {

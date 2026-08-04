@@ -7,8 +7,16 @@ const api = {
   selectDirectory: (): Promise<string | null> => ipcRenderer.invoke('qagent:select-directory'),
   credentialStatuses: (): Promise<CredentialStatus[]> =>
     ipcRenderer.invoke('qagent:credentials-status'),
-  setCredential: (provider: string, value: string): Promise<CredentialStatus> =>
-    ipcRenderer.invoke('qagent:credential-set', { provider, value }),
+  setCredential: (
+    provider: string,
+    value: string,
+    options: { deferRestart?: boolean } = {}
+  ): Promise<CredentialStatus> =>
+    ipcRenderer.invoke('qagent:credential-set', {
+      provider,
+      value,
+      deferRestart: options.deferRestart ?? false,
+    }),
   getPreferences: (): Promise<DesktopPreferences> => ipcRenderer.invoke('qagent:preferences-get'),
   setPreferences: (preferences: DesktopPreferences): Promise<DesktopPreferences> =>
     ipcRenderer.invoke('qagent:preferences-set', preferences),

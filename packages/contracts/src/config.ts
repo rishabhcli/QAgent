@@ -68,7 +68,7 @@ export const QAgentConfigSchema = z.object({
     .object({
       weave: z
         .object({
-          enabled: z.boolean().default(true),
+          enabled: z.boolean().default(false),
           project: z.string().min(1).default('qagent'),
           uploadArtifacts: z.boolean().default(false),
         })

@@ -3,13 +3,14 @@ import { rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   detectProject,
+  GitRepository,
   type ModelCompletion,
   type ModelProvider,
   type ModelRequest,
   writeProjectConfig,
 } from '@qagent/adapters';
 import type { QAgentConfig } from '@qagent/contracts';
-import { QAgentEngine } from '@qagent/core';
+import { PolicyBlockedError, QAgentEngine } from '@qagent/core';
 import { ArtifactStore, QAgentStorage } from '@qagent/storage';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
@@ -67,10 +68,15 @@ describe('QAgentEngine recovery and failure boundaries', () => {
     await engine.cancelRun(queued.id);
     expect(engine.getRun(queued.id)).toMatchObject({ status: 'cancelled' });
     expect(engine.listRuns(project.id).map((run) => run.id)).toContain(queued.id);
-    expect(engine.getRunEvents(queued.id).map((event) => event.kind)).toEqual(['run.cancelled']);
+    const cancellationEventKinds = engine.getRunEvents(queued.id).map((event) => event.kind);
+    expect(cancellationEventKinds.filter((kind) => kind === 'terminal.evidence')).toHaveLength(1);
+    expect(cancellationEventKinds.filter((kind) => kind === 'run.cancelled')).toHaveLength(1);
+    expect(cancellationEventKinds.indexOf('terminal.evidence')).toBeLessThan(
+      cancellationEventKinds.indexOf('run.cancelled')
+    );
   });
 
-  it('fails visibly when the default model provider has no credential', async () => {
+  it('requires provider intervention when the default model has no credential', async () => {
     const repository = await temporaryFixtureRepository();
     await updateConfig(repository, (config) => {
       config.test.browserFlows = [];
@@ -90,7 +96,21 @@ describe('QAgentEngine recovery and failure boundaries', () => {
       const result = await (
         await engine.startRun({ projectId: project.id, requestedBy: 'desktop' })
       ).result();
-      expect(result).toMatchObject({ status: 'failed', error: expect.stringContaining('OPENAI') });
+      expect(result).toMatchObject({
+        status: 'waiting_for_intervention',
+        error: expect.stringContaining('OPENAI'),
+        failureCode: 'provider_outage',
+        availableActions: ['resolve_intervention', 'cancel'],
+        intervention: {
+          reason: 'provider_outage',
+          resolutionOptions: ['provider_reconfigured'],
+          requiredAction: {
+            type: 'application',
+            action: 'configure_provider',
+          },
+        },
+      });
+      expectNoTerminalEvent(engine, result.id);
     } finally {
       if (existingKey) process.env.OPENAI_API_KEY = existingKey;
     }
@@ -116,7 +136,7 @@ describe('QAgentEngine recovery and failure boundaries', () => {
       config.test.browserFlows = [];
     });
     const model = new DeterministicRepairModel();
-    const { engine } = await createEngine(model);
+    const { engine, storage } = await createEngine(model);
     const project = await engine.addProject(repository, true);
     const result = await (
       await engine.startRun({ projectId: project.id, requestedBy: 'desktop' })
@@ -125,9 +145,14 @@ describe('QAgentEngine recovery and failure boundaries', () => {
     expect(result.status).toBe('succeeded');
     expect(result.summary).toMatch(/No defects found/);
     expect(model.calls).toEqual([]);
+    expect(storage.listEvents(result.id)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: 'trace.status', payload: { state: 'local' } }),
+      ])
+    );
   });
 
-  it('records provider failure without substituting a fake model', async () => {
+  it('records actionable provider intervention without substituting a fake model', async () => {
     const repository = await temporaryFixtureRepository();
     await updateConfig(repository, (config) => {
       config.test.browserFlows = [];
@@ -145,8 +170,21 @@ describe('QAgentEngine recovery and failure boundaries', () => {
       await engine.startRun({ projectId: project.id, requestedBy: 'cli' })
     ).result();
 
-    expect(result.status).toBe('failed');
-    expect(result.error).toBe('provider is unavailable');
+    expect(result).toMatchObject({
+      status: 'waiting_for_intervention',
+      failureCode: 'provider_outage',
+      availableActions: ['resolve_intervention', 'cancel'],
+      intervention: {
+        reason: 'provider_outage',
+        resolutionOptions: ['provider_reconfigured'],
+        requiredAction: {
+          type: 'application',
+          action: 'configure_provider',
+        },
+      },
+    });
+    expect(result.error).toContain('openai/gpt-5-mini is unavailable');
+    expect(result.error).toContain('provider is unavailable');
     expect(storage.listProviderCalls(result.id)).toEqual([
       expect.objectContaining({
         provider: 'unavailable-test-provider',
@@ -155,6 +193,7 @@ describe('QAgentEngine recovery and failure boundaries', () => {
       }),
     ]);
     expect(storage.getPatch(result.id)).toBeNull();
+    expectNoTerminalEvent(engine, result.id);
   });
 
   it('retries a rejected patch and verifies the next bounded attempt', async () => {
@@ -212,10 +251,12 @@ describe('QAgentEngine recovery and failure boundaries', () => {
     const result = await handle.result();
     expect(result.status).toBe('cancelled');
     expect(result.error).toContain('Test cancellation');
-    expect(engine.getRunEvents(result.id).at(-1)?.kind).toBe('run.cancelled');
+    expect(
+      engine.getRunEvents(result.id).filter((event) => event.kind === 'run.cancelled')
+    ).toHaveLength(1);
   }, 30_000);
 
-  it('permits only one active mutation run per project', async () => {
+  it('requires policy intervention for a second concurrent mutation run', async () => {
     const repository = await temporaryFixtureRepository();
     await updateConfig(repository, (config) => {
       config.test.commands = [
@@ -237,11 +278,142 @@ describe('QAgentEngine recovery and failure boundaries', () => {
     }
     const second = await engine.startRun({ projectId: project.id, requestedBy: 'cli' });
     const blocked = await second.result();
-    expect(blocked.status).toBe('policy_blocked');
+    expect(blocked).toMatchObject({
+      status: 'waiting_for_intervention',
+      failureCode: 'policy_blocked',
+      availableActions: ['resolve_intervention', 'cancel'],
+      intervention: {
+        reason: 'policy_blocked',
+        resolutionOptions: ['policy_acknowledged'],
+        requiredAction: {
+          type: 'application',
+          action: 'review_policy',
+        },
+      },
+    });
     expect(blocked.error).toMatch(/already mutating/);
+    expectNoTerminalEvent(engine, blocked.id);
     await first.cancel('Lease test complete');
     expect((await first.result()).status).toBe('cancelled');
   }, 30_000);
+
+  it('interrupts safely when its project lease renewal is rejected', async () => {
+    const repository = await temporaryFixtureRepository();
+    await updateConfig(repository, (config) => {
+      config.test.browserFlows = [];
+    });
+    const home = await temporaryDirectory('qagent-lease-loss-');
+    const storage = new RejectFirstRenewalStorage(join(home, 'qagent.sqlite'));
+    openStorage.push(storage);
+    const engine = new QAgentEngine({
+      storage,
+      artifactStore: new ArtifactStore(join(home, 'artifacts'), storage),
+      qagentHome: home,
+      modelProviderFactory: () => new DeterministicRepairModel(),
+    });
+    const project = await engine.addProject(repository, true);
+    const result = await (
+      await engine.startRun({ projectId: project.id, requestedBy: 'desktop' })
+    ).result();
+
+    expect(result).toMatchObject({
+      status: 'interrupted',
+      failureCode: 'interrupted_recovery',
+      availableActions: ['resume', 'cancel'],
+      intervention: null,
+      recoveryCount: 1,
+    });
+    expect(result.error).toContain('project mutation lease was lost');
+    expect(storage.getRunCheckpoint(result.id)).toBeNull();
+    expectNoTerminalEvent(engine, result.id);
+    expect(
+      engine.getRunEvents(result.id).filter((event) => event.kind === 'run.interrupted')
+    ).toHaveLength(1);
+    expect(storage.acquireLease(project.id, result.id)).toBe(true);
+    storage.releaseLease(project.id, result.id);
+  });
+
+  it('requires early policy intervention and terminalizes only after verification', async () => {
+    const repository = await temporaryFixtureRepository();
+    await updateConfig(repository, (config) => {
+      config.test.browserFlows = [];
+    });
+
+    const preflight = await createEngineWithGitRepository(new PreflightPolicyBlockGitRepository());
+    const preflightProject = await preflight.engine.addProject(repository, true);
+    const preflightBlocked = await (
+      await preflight.engine.startRun({
+        projectId: preflightProject.id,
+        requestedBy: 'desktop',
+      })
+    ).result();
+    expect(preflightBlocked).toMatchObject({
+      status: 'waiting_for_intervention',
+      failureCode: 'policy_blocked',
+      availableActions: ['resolve_intervention', 'cancel'],
+      intervention: {
+        reason: 'policy_blocked',
+        resolutionOptions: ['policy_acknowledged'],
+        requiredAction: {
+          type: 'application',
+          action: 'review_policy',
+        },
+      },
+    });
+    expect(preflight.storage.getRunCheckpoint(preflightBlocked.id)).toBeNull();
+    expectNoTerminalEvent(preflight.engine, preflightBlocked.id);
+
+    const isolated = await createEngineWithGitRepository(
+      new WorktreeCheckpointPolicyBlockGitRepository()
+    );
+    const isolatedProject = await isolated.engine.addProject(repository, true);
+    const isolatedBlocked = await (
+      await isolated.engine.startRun({
+        projectId: isolatedProject.id,
+        requestedBy: 'desktop',
+      })
+    ).result();
+    expect(isolatedBlocked).toMatchObject({
+      status: 'waiting_for_intervention',
+      failureCode: 'policy_blocked',
+      availableActions: ['resolve_intervention', 'cancel'],
+      intervention: {
+        reason: 'policy_blocked',
+        resolutionOptions: ['policy_acknowledged'],
+        requiredAction: {
+          type: 'application',
+          action: 'review_policy',
+        },
+      },
+    });
+    expect(isolated.storage.getRunCheckpoint(isolatedBlocked.id)?.kind).toBe('worktree_created');
+    expectNoTerminalEvent(isolated.engine, isolatedBlocked.id);
+
+    const postCheckpoint = await createEngineWithGitRepository(
+      new PostCheckpointPolicyBlockGitRepository()
+    );
+    const postCheckpointProject = await postCheckpoint.engine.addProject(repository, true);
+    const terminal = await (
+      await postCheckpoint.engine.startRun({
+        projectId: postCheckpointProject.id,
+        requestedBy: 'desktop',
+      })
+    ).result();
+    expect(terminal).toMatchObject({
+      status: 'policy_blocked',
+      failureCode: 'policy_blocked',
+      availableActions: ['retry'],
+      intervention: null,
+    });
+    expect(terminal.error).toContain('Post-checkpoint policy block');
+    expect(postCheckpoint.storage.getRunCheckpoint(terminal.id)?.kind).toBe('verification_passed');
+    expect(
+      postCheckpoint.engine
+        .getRunEvents(terminal.id)
+        .filter((event) => event.kind === 'run.policy_blocked')
+    ).toHaveLength(1);
+    expectSingleTerminalEvent(postCheckpoint.engine, terminal.id, 'run.policy_blocked');
+  });
 
   it('resumes a durable interrupted run after restart', async () => {
     const repository = await temporaryFixtureRepository();
@@ -272,10 +444,67 @@ describe('QAgentEngine recovery and failure boundaries', () => {
     const result = await handles[0]!.result();
     expect(result.id).toBe(interrupted.id);
     expect(result.status).toBe('succeeded');
-    expect(engine.getRunEvents(result.id)[0]?.payload).toEqual({ message: 'Resuming durable run' });
+    expect(
+      engine.getRunEvents(result.id).find((event) => event.kind === 'run.interrupted')?.payload
+    ).toEqual({
+      message: 'The previous runtime stopped; durable recovery is starting.',
+      recoveryCount: 1,
+    });
   });
 
-  it('policy-blocks missing configuration and browser availability', async () => {
+  it('does not mutate a legacy terminal run while scanning for restart recovery', async () => {
+    const home = await temporaryDirectory('qagent-legacy-terminal-');
+    const databasePath = join(home, 'qagent.sqlite');
+    const storage = new QAgentStorage(databasePath);
+    openStorage.push(storage);
+    const project = storage.createProject({
+      name: 'Legacy terminal project',
+      path: await temporaryDirectory('qagent-legacy-terminal-project-'),
+      trusted: true,
+    });
+    const run = storage.createRun({ projectId: project.id, requestedBy: 'desktop' });
+    storage.settleRunOnce(
+      run.id,
+      'failed',
+      {
+        kind: 'run.failed',
+        stage: 'preflight',
+        payload: { message: 'Legacy terminal failure' },
+        provenance: {
+          source: 'local',
+          provider: 'Legacy QAgent runtime',
+          capturedAt: new Date().toISOString(),
+        },
+        artifactIds: [],
+      },
+      {
+        failureCode: 'unexpected_failure',
+        availableActions: ['retry'],
+      }
+    );
+    const eventsBeforeRestart = storage.listEvents(run.id);
+    const artifactsBeforeRestart = storage.listArtifacts(run.id);
+    expect(eventsBeforeRestart.at(-1)?.kind).toBe('run.failed');
+    expect(storage.getRunManifest(run.id)).toBeNull();
+
+    storage.close();
+    openStorage.splice(openStorage.indexOf(storage), 1);
+    const reopened = new QAgentStorage(databasePath);
+    openStorage.push(reopened);
+    const restarted = new QAgentEngine({
+      storage: reopened,
+      artifactStore: new ArtifactStore(join(home, 'artifacts'), reopened),
+      qagentHome: home,
+    });
+
+    await expect(restarted.resumeInterruptedRuns()).resolves.toEqual([]);
+    expect(reopened.listEvents(run.id)).toEqual(eventsBeforeRestart);
+    expect(reopened.listEvents(run.id).at(-1)?.kind).toBe('run.failed');
+    expect(reopened.listArtifacts(run.id)).toEqual(artifactsBeforeRestart);
+    expect(reopened.getRunManifest(run.id)).toBeNull();
+  });
+
+  it('requires actionable intervention for missing configuration and browser', async () => {
     const missingConfig = await temporaryFixtureRepository();
     await rm(join(missingConfig, '.qagent.yml'));
     await git(missingConfig, ['add', '-u']);
@@ -293,8 +522,21 @@ describe('QAgentEngine recovery and failure boundaries', () => {
     const missing = await (
       await engine.startRun({ projectId: project.id, requestedBy: 'cli' })
     ).result();
-    expect(missing.status).toBe('policy_blocked');
+    expect(missing).toMatchObject({
+      status: 'waiting_for_intervention',
+      failureCode: 'configuration_invalid',
+      availableActions: ['resolve_intervention', 'cancel'],
+      intervention: {
+        reason: 'configuration_invalid',
+        resolutionOptions: ['policy_acknowledged'],
+        requiredAction: {
+          type: 'application',
+          action: 'configure_project',
+        },
+      },
+    });
     expect(missing.error).toMatch(/valid .qagent.yml/);
+    expectNoTerminalEvent(engine, missing.id);
 
     const browserRepository = await temporaryFixtureRepository();
     const unavailable = await createEngine(new DeterministicRepairModel(), async () => null);
@@ -302,10 +544,55 @@ describe('QAgentEngine recovery and failure boundaries', () => {
     const browserRun = await (
       await unavailable.engine.startRun({ projectId: browserProject.id, requestedBy: 'desktop' })
     ).result();
-    expect(browserRun.status).toBe('policy_blocked');
+    expect(browserRun).toMatchObject({
+      status: 'waiting_for_intervention',
+      failureCode: 'browser_startup_failure',
+      availableActions: ['resolve_intervention', 'cancel'],
+      intervention: {
+        reason: 'browser_startup_failure',
+        resolutionOptions: ['browser_installed'],
+        requiredAction: {
+          type: 'application',
+          action: 'install_browser',
+        },
+      },
+    });
     expect(browserRun.error).toMatch(/No Chrome-compatible browser/);
+    expect(unavailable.storage.getIntegration('browser')).toMatchObject({
+      status: 'unconfigured',
+      detail: expect.stringContaining(browserRun.id),
+      provenance: {
+        source: 'local',
+        provider: 'QAgent browser configuration',
+      },
+    });
+    expectNoTerminalEvent(unavailable.engine, browserRun.id);
   });
 });
+
+function expectNoTerminalEvent(engine: QAgentEngine, runId: string): void {
+  expect(
+    engine
+      .getRunEvents(runId)
+      .filter((event) =>
+        ['run.completed', 'run.failed', 'run.cancelled', 'run.policy_blocked'].includes(event.kind)
+      )
+  ).toHaveLength(0);
+}
+
+function expectSingleTerminalEvent(
+  engine: QAgentEngine,
+  runId: string,
+  expectedKind: 'run.completed' | 'run.failed' | 'run.cancelled' | 'run.policy_blocked'
+): void {
+  const terminalEvents = engine
+    .getRunEvents(runId)
+    .filter((event) =>
+      ['run.completed', 'run.failed', 'run.cancelled', 'run.policy_blocked'].includes(event.kind)
+    );
+  expect(terminalEvents).toHaveLength(1);
+  expect(terminalEvents[0]?.kind).toBe(expectedKind);
+}
 
 class RetryRepairModel implements ModelProvider {
   readonly provider = 'test';
@@ -331,6 +618,30 @@ class RetryRepairModel implements ModelProvider {
   }
 }
 
+class RejectFirstRenewalStorage extends QAgentStorage {
+  override renewLease(): boolean {
+    return false;
+  }
+}
+
+class PreflightPolicyBlockGitRepository extends GitRepository {
+  override async inspect(): Promise<never> {
+    throw new PolicyBlockedError('Preflight policy block');
+  }
+}
+
+class WorktreeCheckpointPolicyBlockGitRepository extends GitRepository {
+  override async gatherContext(): Promise<never> {
+    throw new PolicyBlockedError('Isolated-worktree policy block');
+  }
+}
+
+class PostCheckpointPolicyBlockGitRepository extends GitRepository {
+  override async commit(): Promise<never> {
+    throw new PolicyBlockedError('Post-checkpoint policy block');
+  }
+}
+
 async function createEngine(
   model: ModelProvider,
   browserDetector: QAgentEngineConstructorOptions['browserDetector'] = async () => null
@@ -346,6 +657,22 @@ async function createEngine(
       qagentHome: home,
       browserDetector,
       modelProviderFactory: () => model,
+    }),
+  };
+}
+
+async function createEngineWithGitRepository(gitRepository: GitRepository) {
+  const home = await temporaryDirectory('qagent-policy-boundary-');
+  const storage = new QAgentStorage(join(home, 'qagent.sqlite'));
+  openStorage.push(storage);
+  return {
+    storage,
+    engine: new QAgentEngine({
+      storage,
+      artifactStore: new ArtifactStore(join(home, 'artifacts'), storage),
+      qagentHome: home,
+      gitRepository,
+      modelProviderFactory: () => new DeterministicRepairModel(),
     }),
   };
 }

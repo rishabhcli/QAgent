@@ -2,7 +2,18 @@ import { readFile } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import started from 'electron-squirrel-startup';
-import { app, BrowserWindow, dialog, ipcMain, Menu, net, protocol, session, shell } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  type IpcMainInvokeEvent,
+  Menu,
+  net,
+  protocol,
+  session,
+  shell,
+} from 'electron';
 import { z } from 'zod';
 import { type DesktopPreferences, WorkerRequestSchema } from './ipc.js';
 import { CredentialStore, PreferencesStore } from './secure-store.js';
@@ -15,7 +26,10 @@ protocol.registerSchemesAsPrivileged([
   },
 ]);
 
+const UPDATE_REPOSITORY = 'rishabhcli/QAgent';
+
 if (started) app.quit();
+if (process.platform === 'win32') app.setAppUserModelId('com.squirrel.qagent.QAgent');
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
 if (process.env.QAGENT_DEBUG_STARTUP === 'true') {
   process.stderr.write(`[qagent] single instance lock ${hasSingleInstanceLock}\n`);
@@ -24,6 +38,8 @@ if (!hasSingleInstanceLock) app.quit();
 
 let mainWindow: BrowserWindow | null = null;
 let worker: EngineWorkerHost | null = null;
+let workerShutdown: Promise<void> | null = null;
+let workerShutdownComplete = false;
 const debugStartup = (stage: string): void => {
   if (process.env.QAGENT_DEBUG_STARTUP === 'true') process.stderr.write(`[qagent] ${stage}\n`);
 };
@@ -39,7 +55,15 @@ app.whenReady().then(async () => {
   debugStartup('app ready');
   const userData = app.getPath('userData');
   debugStartup(`user data ${userData}`);
-  const credentials = new CredentialStore(join(userData, 'credentials.json'));
+  const buildMetadata = await readBuildMetadata();
+  const credentials = new CredentialStore(
+    join(userData, 'credentials.json'),
+    process.env,
+    undefined,
+    {
+      persistentStorageAllowed: process.platform !== 'darwin' || buildMetadata?.signed === true,
+    }
+  );
   const preferencesStore = new PreferencesStore(join(userData, 'preferences.json'));
   const preferences = await preferencesStore.read();
   worker = new EngineWorkerHost(userData, credentials, preferences);
@@ -51,10 +75,13 @@ app.whenReady().then(async () => {
   createWindow();
   debugStartup('window created');
 
-  if (await autoUpdateEnabled()) {
-    const { updateElectronApp } = await import('update-electron-app');
-    updateElectronApp();
-  }
+  void startAutoUpdates(buildMetadata).catch((error: unknown) => {
+    debugStartup(
+      `auto-update disabled after initialization failure: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  });
 });
 
 app.on('activate', () => {
@@ -65,28 +92,103 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
-app.on('before-quit', () => worker?.stop());
+app.on('before-quit', (event) => {
+  if (workerShutdownComplete) return;
+  event.preventDefault();
+  if (workerShutdown) return;
+  workerShutdown = Promise.resolve(worker?.shutdown())
+    .catch((error: unknown) => {
+      debugStartup(
+        `engine shutdown failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+    })
+    .finally(() => {
+      workerShutdownComplete = true;
+      app.quit();
+    });
+});
 app.on('will-quit', () => debugStartup('will quit'));
 app.on('quit', (_event, exitCode) => debugStartup(`quit ${exitCode}`));
 
 const BuildMetadataSchema = z.object({
-  version: z.literal(1),
-  platform: z.string(),
-  arch: z.string(),
+  version: z.literal(3),
+  appVersion: z.string().min(1),
+  releaseTag: z.string().min(1).nullable(),
+  commitSha: z.string().regex(/^[a-f0-9]{40}$/),
+  sourceDirty: z.boolean(),
+  platform: z.enum(['darwin', 'win32', 'linux']),
+  arch: z.enum(['arm64', 'x64']),
   signed: z.boolean(),
+  notarized: z.boolean(),
+  releaseChannel: z.enum(['stable', 'prerelease']),
+  updateRepository: z.literal(UPDATE_REPOSITORY),
   updateEnabled: z.boolean(),
 });
 
-async function autoUpdateEnabled(): Promise<boolean> {
-  if (!app.isPackaged || !['darwin', 'win32'].includes(process.platform)) return false;
+type BuildMetadata = z.infer<typeof BuildMetadataSchema>;
+
+async function readBuildMetadata(): Promise<BuildMetadata | null> {
+  if (!app.isPackaged) return null;
   try {
-    const metadata = BuildMetadataSchema.parse(
+    return BuildMetadataSchema.parse(
       JSON.parse(await readFile(join(process.resourcesPath, 'build-metadata.json'), 'utf8'))
     );
-    return metadata.signed && metadata.updateEnabled && metadata.platform === process.platform;
   } catch {
+    return null;
+  }
+}
+
+function autoUpdateEnabled(metadata: BuildMetadata | null): boolean {
+  if (
+    !metadata ||
+    process.env.QAGENT_DISABLE_AUTO_UPDATE === 'true' ||
+    !['darwin', 'win32'].includes(process.platform)
+  ) {
     return false;
   }
+  return (
+    metadata.updateEnabled &&
+    !metadata.sourceDirty &&
+    metadata.signed &&
+    (process.platform !== 'darwin' || metadata.notarized) &&
+    process.platform === 'darwin' &&
+    metadata.releaseChannel === 'stable' &&
+    metadata.appVersion === app.getVersion() &&
+    metadata.releaseTag === `v${app.getVersion()}` &&
+    metadata.platform === process.platform &&
+    metadata.arch === process.arch
+  );
+}
+
+async function startAutoUpdates(metadata: BuildMetadata | null): Promise<void> {
+  if (!autoUpdateEnabled(metadata)) return;
+  if (process.platform === 'win32' && process.argv.includes('--squirrel-firstrun')) {
+    await new Promise((resolveDelay) => setTimeout(resolveDelay, 10_000));
+  }
+  const { updateElectronApp, UpdateSourceType } = await import('update-electron-app');
+  updateElectronApp({
+    updateSource: {
+      type: UpdateSourceType.ElectronPublicUpdateService,
+      repo: UPDATE_REPOSITORY,
+    },
+    updateInterval: '1 hour',
+    logger: updaterLogger,
+  });
+}
+
+const updaterLogger = {
+  log: (...values: unknown[]) => logUpdaterMessage(values),
+  info: (...values: unknown[]) => logUpdaterMessage(values),
+  warn: (...values: unknown[]) => logUpdaterMessage(values),
+  error: (...values: unknown[]) => logUpdaterMessage(values),
+};
+
+function logUpdaterMessage(values: unknown[]): void {
+  debugStartup(
+    `updater ${values
+      .map((value) => (value instanceof Error ? value.message : String(value)))
+      .join(' ')}`
+  );
 }
 
 function createWindow(): void {
@@ -114,11 +216,12 @@ function createWindow(): void {
   });
   worker?.attach(mainWindow.webContents);
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('https://')) void shell.openExternal(url);
+    const external = externalHttpsUrl(url);
+    if (external) void shell.openExternal(external);
     return { action: 'deny' };
   });
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    const allowed = url.startsWith('qagent://app/') || url === MAIN_WINDOW_VITE_DEV_SERVER_URL;
+    const allowed = isApplicationUrl(url) || url === MAIN_WINDOW_VITE_DEV_SERVER_URL;
     if (!allowed) event.preventDefault();
   });
   mainWindow.once('ready-to-show', () => mainWindow?.show());
@@ -164,11 +267,11 @@ function hardenSession(): void {
 
 function registerIpc(credentials: CredentialStore, preferencesStore: PreferencesStore): void {
   ipcMain.handle('qagent:request', async (event, input: unknown) => {
-    assertMainFrame(event.senderFrame?.url ?? '');
+    assertMainFrame(event);
     return worker?.request(WorkerRequestSchema.parse(input));
   });
   ipcMain.handle('qagent:select-directory', async (event) => {
-    assertMainFrame(event.senderFrame?.url ?? '');
+    assertMainFrame(event);
     const options: Electron.OpenDialogOptions = {
       title: 'Choose a web project',
       properties: ['openDirectory'],
@@ -179,48 +282,104 @@ function registerIpc(credentials: CredentialStore, preferencesStore: Preferences
     return result.canceled ? null : (result.filePaths[0] ?? null);
   });
   ipcMain.handle('qagent:credentials-status', async (event) => {
-    assertMainFrame(event.senderFrame?.url ?? '');
+    assertMainFrame(event);
     return credentials.statuses();
   });
   ipcMain.handle('qagent:credential-set', async (event, input: unknown) => {
-    assertMainFrame(event.senderFrame?.url ?? '');
+    assertMainFrame(event);
     const value = z
       .object({
         provider: z.enum(['openai', 'anthropic', 'google', 'github', 'weave', 'browserbase']),
         value: z.string().max(16_384),
+        deferRestart: z.boolean().default(false),
       })
       .parse(input);
+    const previousValue = (await credentials.values())[value.provider] ?? '';
     const status = await credentials.set(value.provider, value.value);
-    await worker?.restart(await preferencesStore.read());
+    if (!value.deferRestart) {
+      try {
+        await worker?.restart(await preferencesStore.read());
+      } catch (error) {
+        await credentials.set(value.provider, previousValue);
+        throw error;
+      }
+    }
     return status;
   });
   ipcMain.handle('qagent:preferences-get', async (event) => {
-    assertMainFrame(event.senderFrame?.url ?? '');
+    assertMainFrame(event);
     return preferencesStore.read();
   });
   ipcMain.handle('qagent:preferences-set', async (event, input: unknown) => {
-    assertMainFrame(event.senderFrame?.url ?? '');
+    assertMainFrame(event);
     const preferences = z
-      .object({ weaveDisclosureAccepted: z.boolean(), weaveEnabled: z.boolean() })
+      .object({
+        weaveDisclosureAccepted: z.boolean(),
+        weaveEnabled: z.boolean(),
+        browserbaseProjectId: z.string().trim().max(256),
+      })
       .parse(input) as DesktopPreferences;
-    await preferencesStore.write(preferences);
+    const previous = await preferencesStore.read();
     await worker?.restart(preferences);
+    try {
+      await preferencesStore.write(preferences);
+    } catch (error) {
+      await worker?.restart(previous);
+      throw error;
+    }
     return preferences;
   });
   ipcMain.handle('qagent:open-external', async (event, input: unknown) => {
-    assertMainFrame(event.senderFrame?.url ?? '');
-    const url = z.url().parse(input);
-    if (!url.startsWith('https://')) throw new Error('Only HTTPS links may be opened');
+    assertMainFrame(event);
+    const url = externalHttpsUrl(z.url().parse(input));
+    if (!url) throw new Error('Only credential-free HTTPS links may be opened');
     await shell.openExternal(url);
   });
 }
 
-function assertMainFrame(url: string): void {
-  const allowed =
-    url.startsWith('qagent://app/') ||
-    url.startsWith('http://localhost:') ||
-    url.startsWith('http://127.0.0.1:');
-  if (!allowed) throw new Error('IPC request did not originate from the QAgent main frame');
+function assertMainFrame(event: IpcMainInvokeEvent): void {
+  const frame = event.senderFrame;
+  if (
+    !mainWindow ||
+    event.sender !== mainWindow.webContents ||
+    !frame ||
+    frame !== mainWindow.webContents.mainFrame
+  ) {
+    throw new Error('IPC request did not originate from the QAgent main frame');
+  }
+  const url = new URL(frame.url);
+  const productionOrigin =
+    url.protocol === 'qagent:' && url.hostname === 'app' && !url.username && !url.password;
+  const developmentOrigin =
+    !app.isPackaged && MAIN_WINDOW_VITE_DEV_SERVER_URL
+      ? url.origin === new URL(MAIN_WINDOW_VITE_DEV_SERVER_URL).origin
+      : false;
+  if (!productionOrigin && !developmentOrigin) {
+    throw new Error('IPC request did not originate from the QAgent application origin');
+  }
+}
+
+function isApplicationUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return (
+      url.protocol === 'qagent:' &&
+      url.hostname === 'app' &&
+      url.username === '' &&
+      url.password === ''
+    );
+  } catch {
+    return false;
+  }
+}
+
+function externalHttpsUrl(value: string): string | null {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && !url.username && !url.password ? url.toString() : null;
+  } catch {
+    return null;
+  }
 }
 
 function buildMenu(): Menu {

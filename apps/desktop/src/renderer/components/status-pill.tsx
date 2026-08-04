@@ -11,6 +11,9 @@ interface Props {
     | 'unconfigured'
     | 'healthy'
     | 'end-to-end-verified'
+    | 'checking'
+    | 'started'
+    | 'disabled'
     | 'error';
 }
 
@@ -24,9 +27,9 @@ export function StatusPill({ status }: Props) {
       ? CheckCircle2
       : status === 'failed' || status === 'error' || status === 'blocked'
         ? XCircle
-        : status === 'running'
+        : status === 'running' || status === 'started'
           ? CircleDot
-          : status === 'queued'
+          : status === 'queued' || status === 'checking'
             ? Clock3
             : status === 'policy_blocked' || status === 'degraded'
               ? AlertCircle

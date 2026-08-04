@@ -36,12 +36,19 @@ export default async function DocumentationPage({ params }: { params: Promise<{ 
           <BookOpen size={15} aria-hidden="true" />
           Documentation
         </div>
+        <div className="sidebar-current" aria-label="Current page">
+          {document.title}
+        </div>
         <nav aria-label="Documentation">
           {navigation.map((group) => (
             <section className="nav-group" key={group.label}>
               <h2>{group.label}</h2>
               {group.items.map((item) => (
-                <Link href={`/${item.slug}/`} key={item.slug}>
+                <Link
+                  href={`/${item.slug}/`}
+                  key={item.slug}
+                  aria-current={item.slug === slug ? 'page' : undefined}
+                >
                   {item.title}
                 </Link>
               ))}

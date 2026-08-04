@@ -21,12 +21,14 @@ const state = {
   anthropicOptions: [] as Array<{ apiKey: string }>,
   anthropicResponse: {
     content: [
-      { type: 'text', text: 'Response: {"answer":"anthropic"}' },
+      { type: 'text', text: '{"answer":"anthropic"}' },
       { type: 'tool_use', id: 'ignored' },
     ],
+    stop_reason: 'end_turn',
     usage: { input_tokens: 10, output_tokens: 5 },
   } as {
     content: Array<{ type: string; text?: string; id?: string }>;
+    stop_reason?: string | null;
     usage: { input_tokens: number; output_tokens: number };
   },
   googleOptions: [] as Array<{ apiKey: string }>,
@@ -41,6 +43,8 @@ const state = {
   chatCreate: vi.fn(),
   anthropicCreate: vi.fn(),
   googleGenerate: vi.fn(),
+  openAIError: null as Error | null,
+  openAIWaitForAbort: false,
 };
 
 const factories: ModelClientFactories = {
@@ -50,6 +54,14 @@ const factories: ModelClientFactories = {
       responses: {
         create: async (input, requestOptions) => {
           state.responseCreate(input, requestOptions);
+          if (state.openAIError) throw state.openAIError;
+          if (state.openAIWaitForAbort) {
+            return new Promise<never>((_resolve, reject) => {
+              const signal = requestOptions.signal;
+              if (signal?.aborted) reject(signal.reason);
+              else signal?.addEventListener('abort', () => reject(signal.reason), { once: true });
+            });
+          }
           return state.openAIResponse;
         },
       },
@@ -103,9 +115,10 @@ beforeEach(() => {
   };
   state.anthropicResponse = {
     content: [
-      { type: 'text', text: 'Response: {"answer":"anthropic"}' },
+      { type: 'text', text: '{"answer":"anthropic"}' },
       { type: 'tool_use', id: 'ignored' },
     ],
+    stop_reason: 'end_turn',
     usage: { input_tokens: 10, output_tokens: 5 },
   };
   state.googleResponse = {
@@ -116,9 +129,35 @@ beforeEach(() => {
   state.chatCreate.mockClear();
   state.anthropicCreate.mockClear();
   state.googleGenerate.mockClear();
+  state.openAIError = null;
+  state.openAIWaitForAbort = false;
 });
 
 describe('hosted model adapters', () => {
+  it('requires HTTPS for remote compatible endpoints and permits loopback HTTP', () => {
+    expect(() =>
+      createModelProvider({
+        provider: 'openai-compatible',
+        model: 'remote-model',
+        baseUrl: 'http://models.example.test/v1',
+      })
+    ).toThrow('must use HTTPS');
+    expect(() =>
+      createModelProvider({
+        provider: 'openai-compatible',
+        model: 'remote-model',
+        baseUrl: 'https://user:password@models.example.test/v1',
+      })
+    ).toThrow('must use HTTPS');
+    expect(() =>
+      createModelProvider({
+        provider: 'openai-compatible',
+        model: 'local-model',
+        baseUrl: 'http://127.0.0.1:11434/v1',
+      })
+    ).not.toThrow();
+  });
+
   it('uses OpenAI Responses strict JSON schema output and usage provenance', async () => {
     const provider = createModelProvider(
       { provider: 'openai', model: 'gpt-test' },
@@ -136,13 +175,14 @@ describe('hosted model adapters', () => {
         model: 'gpt-test',
         instructions: 'System',
         input: 'Prompt',
+        store: false,
         text: { format: expect.objectContaining({ type: 'json_schema', strict: true }) },
       }),
-      { signal: undefined }
+      { signal: expect.any(AbortSignal) }
     );
   });
 
-  it('extracts Anthropic text blocks and ignores non-text blocks', async () => {
+  it('uses Anthropic JSON schema output and ignores non-text blocks', async () => {
     const provider = createModelProvider(
       { provider: 'anthropic', model: 'claude-test' },
       { anthropic: 'session-anthropic' },
@@ -158,9 +198,16 @@ describe('hosted model adapters', () => {
       expect.objectContaining({
         model: 'claude-test',
         max_tokens: 16_000,
+        system: 'System',
         messages: [{ role: 'user', content: 'Prompt' }],
+        output_config: {
+          format: {
+            type: 'json_schema',
+            schema: expect.objectContaining({ type: 'object' }),
+          },
+        },
       }),
-      { signal: undefined }
+      { signal: expect.any(AbortSignal) }
     );
   });
 
@@ -181,14 +228,18 @@ describe('hosted model adapters', () => {
       expect.objectContaining({
         model: 'gemini-test',
         contents: 'Prompt',
-        config: expect.objectContaining({ responseMimeType: 'application/json' }),
+        config: expect.objectContaining({
+          responseMimeType: 'application/json',
+          responseJsonSchema: expect.objectContaining({ type: 'object' }),
+          abortSignal: expect.any(AbortSignal),
+        }),
       })
     );
   });
 
-  it('supports OpenAI-compatible fenced JSON, local defaults, and nullable usage', async () => {
+  it('uses strict OpenAI-compatible JSON schema, deterministic sampling, and local defaults', async () => {
     state.compatibleResponse = {
-      choices: [{ message: { content: 'before [1, 2, 3]' } }],
+      choices: [{ message: { content: '[1, 2, 3]' } }],
     };
     const arrayProvider = createModelProvider(
       { provider: 'openai-compatible', model: 'ollama-test' },
@@ -207,9 +258,29 @@ describe('hosted model adapters', () => {
       apiKey: 'local',
       baseURL: 'http://127.0.0.1:11434/v1',
     });
+    expect(state.chatCreate).toHaveBeenLastCalledWith(
+      {
+        model: 'ollama-test',
+        messages: [
+          { role: 'system', content: 'System' },
+          { role: 'user', content: 'Prompt' },
+        ],
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
+            name: 'numbers',
+            schema: expect.objectContaining({ type: 'array' }),
+            strict: true,
+          },
+        },
+        temperature: 0,
+      },
+      { signal: expect.any(AbortSignal) }
+    );
+    expect(state.chatCreate.mock.calls.at(-1)?.[0]).not.toHaveProperty('seed');
 
     state.compatibleResponse = {
-      choices: [{ message: { content: '```json\n{"answer":"compatible"}\n```' } }],
+      choices: [{ message: { content: '{"answer":"compatible"}' } }],
       usage: { prompt_tokens: 9, completion_tokens: 4 },
     };
     await expect(
@@ -231,6 +302,20 @@ describe('hosted model adapters', () => {
     });
   });
 
+  it('rejects decorated OpenAI-compatible output instead of extracting embedded JSON', async () => {
+    state.compatibleResponse = {
+      choices: [{ message: { content: '```json\n{"answer":"compatible"}\n```' } }],
+    };
+    const provider = createModelProvider(
+      { provider: 'openai-compatible', model: 'strict-compatible' },
+      {},
+      factories
+    );
+
+    await expect(complete(provider)).rejects.toThrow(/returned invalid structured output/);
+    expect(state.chatCreate).toHaveBeenCalledTimes(1);
+  });
+
   it('rejects provider output that does not match the declared schema', async () => {
     state.openAIResponse = { output_text: '{"answer":42}' };
     const provider = createModelProvider(
@@ -239,6 +324,54 @@ describe('hosted model adapters', () => {
       factories
     );
     await expect(complete(provider)).rejects.toThrow();
+  });
+
+  it('bounds provider calls and distinguishes caller cancellation from timeout', async () => {
+    state.openAIWaitForAbort = true;
+    const provider = createModelProvider(
+      { provider: 'openai', model: 'gpt-test' },
+      { openai: 'session-openai' },
+      factories
+    );
+    await expect(
+      provider.complete({
+        purpose: 'other',
+        system: 'System',
+        prompt: 'Prompt',
+        schemaName: 'answer',
+        schema,
+        timeoutMs: 5,
+      })
+    ).rejects.toThrow(/timed out after 5ms/);
+
+    const controller = new AbortController();
+    controller.abort();
+    await expect(
+      provider.complete({
+        purpose: 'other',
+        system: 'System',
+        prompt: 'Prompt',
+        schemaName: 'answer',
+        schema,
+        signal: controller.signal,
+      })
+    ).rejects.toThrow(/request was cancelled/);
+  });
+
+  it('redacts credentials from provider failures', async () => {
+    state.openAIError = new Error(
+      'Authorization: Bearer sk-abcdefghijklmnop api_key=another-secret-value'
+    );
+    const provider = createModelProvider(
+      { provider: 'openai', model: 'gpt-test' },
+      { openai: 'session-openai' },
+      factories
+    );
+    const failure = await complete(provider).catch((error: unknown) => error);
+    expect(failure).toBeInstanceOf(Error);
+    expect((failure as Error).message).toContain('[REDACTED]');
+    expect((failure as Error).message).not.toContain('sk-abcdefghijklmnop');
+    expect((failure as Error).message).not.toContain('another-secret-value');
   });
 });
 

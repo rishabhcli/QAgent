@@ -1,22 +1,16 @@
-import { access, readFile, readdir, writeFile } from 'node:fs/promises';
-import { basename, join, resolve } from 'node:path';
-import type { CommandSpec, QAgentConfig } from '@qagent/contracts';
-import { QAgentConfigSchema } from '@qagent/contracts';
+import { access, mkdir, readFile, readdir, realpath, writeFile } from 'node:fs/promises';
+import { basename, dirname, join, resolve } from 'node:path';
+import type {
+  CommandSpec,
+  ProjectInspection,
+  ProjectStack as ContractProjectStack,
+  QAgentConfig,
+} from '@qagent/contracts';
+import { ProjectInspectionSchema, QAgentConfigSchema } from '@qagent/contracts';
 import YAML from 'yaml';
 
-export type ProjectStack = 'node' | 'python' | 'ruby' | 'go' | 'java' | 'dotnet' | 'unknown';
-
-export interface DetectedProject {
-  name: string;
-  path: string;
-  stack: ProjectStack;
-  configPath: string | null;
-  config: QAgentConfig | null;
-  suggestedTestCommands: CommandSpec[];
-  suggestedVerifyCommands: CommandSpec[];
-  suggestedStartCommand: CommandSpec | null;
-  needsConfiguration: boolean;
-}
+export type ProjectStack = ContractProjectStack;
+export type DetectedProject = ProjectInspection;
 
 async function exists(path: string): Promise<boolean> {
   try {
@@ -31,7 +25,9 @@ function command(executable: string, args: string[], timeoutMs = 120_000): Comma
   return { executable, args, cwd: '.', env: {}, timeoutMs };
 }
 
-async function detectNode(root: string): Promise<Omit<DetectedProject, 'name' | 'path'>> {
+async function detectNode(
+  root: string
+): Promise<Omit<DetectedProject, 'name' | 'path' | 'trustPreview'>> {
   const manifest = JSON.parse(await readFile(join(root, 'package.json'), 'utf8')) as {
     scripts?: Record<string, string>;
   };
@@ -64,7 +60,9 @@ async function detectNode(root: string): Promise<Omit<DetectedProject, 'name' | 
   };
 }
 
-async function detectWithoutConfig(root: string): Promise<Omit<DetectedProject, 'name' | 'path'>> {
+async function detectWithoutConfig(
+  root: string
+): Promise<Omit<DetectedProject, 'name' | 'path' | 'trustPreview'>> {
   if (await exists(join(root, 'package.json'))) return detectNode(root);
   if (
     (await exists(join(root, 'pyproject.toml'))) ||
@@ -106,7 +104,10 @@ async function detectWithoutConfig(root: string): Promise<Omit<DetectedProject, 
   };
 }
 
-function detected(stack: ProjectStack, test: CommandSpec): Omit<DetectedProject, 'name' | 'path'> {
+function detected(
+  stack: ProjectStack,
+  test: CommandSpec
+): Omit<DetectedProject, 'name' | 'path' | 'trustPreview'> {
   return {
     stack,
     configPath: null,
@@ -118,13 +119,30 @@ function detected(stack: ProjectStack, test: CommandSpec): Omit<DetectedProject,
   };
 }
 
-export async function detectProject(projectPath: string): Promise<DetectedProject> {
-  const root = resolve(projectPath);
-  const configPath = join(root, '.qagent.yml');
+export async function detectProject(
+  projectPath: string,
+  options: { configPath?: string | null; tolerateInvalidConfig?: boolean } = {}
+): Promise<DetectedProject> {
+  const requestedPath = resolve(projectPath);
+  const root = await realpath(resolve(projectPath));
+  const configPath = options.configPath ? resolve(options.configPath) : join(root, '.qagent.yml');
   if (await exists(configPath)) {
-    const parsed = QAgentConfigSchema.parse(YAML.parse(await readFile(configPath, 'utf8')));
     const detectedProject = await detectWithoutConfig(root);
-    return {
+    let parsed: QAgentConfig;
+    try {
+      parsed = QAgentConfigSchema.parse(YAML.parse(await readFile(configPath, 'utf8')));
+    } catch (error) {
+      if (!options.tolerateInvalidConfig) throw error;
+      return inspection(requestedPath, {
+        ...detectedProject,
+        name: basename(root),
+        path: root,
+        configPath,
+        config: null,
+        needsConfiguration: true,
+      });
+    }
+    return inspection(requestedPath, {
       ...detectedProject,
       name: parsed.project.name ?? basename(root),
       path: root,
@@ -135,18 +153,46 @@ export async function detectProject(projectPath: string): Promise<DetectedProjec
         parsed.verify.commands.length > 0 ? parsed.verify.commands : parsed.test.commands,
       suggestedStartCommand: parsed.target.start ?? null,
       needsConfiguration: false,
-    };
+    });
   }
   const detectedProject = await detectWithoutConfig(root);
-  return { ...detectedProject, name: basename(root), path: root };
+  return inspection(requestedPath, { ...detectedProject, name: basename(root), path: root });
+}
+
+function inspection(
+  requestedPath: string,
+  detectedProject: Omit<DetectedProject, 'trustPreview'>
+): DetectedProject {
+  return ProjectInspectionSchema.parse({
+    ...detectedProject,
+    trustPreview: {
+      requestedPath,
+      canonicalPath: detectedProject.path,
+      configPath: detectedProject.configPath,
+      exactCommands: {
+        test: detectedProject.suggestedTestCommands,
+        verify: detectedProject.suggestedVerifyCommands,
+        start: detectedProject.suggestedStartCommand,
+      },
+      policyBoundary: {
+        commandsExecuteWithUserPrivileges: true,
+        mutationsUseDedicatedWorktree: true,
+        activeCheckoutMutationAllowed: false,
+        trustRequiredBeforeExecution: true,
+      },
+    },
+  });
 }
 
 export async function writeProjectConfig(
   projectPath: string,
   config: QAgentConfig,
-  options: { force?: boolean } = {}
+  options: { force?: boolean; destinationPath?: string } = {}
 ): Promise<string> {
-  const path = join(resolve(projectPath), '.qagent.yml');
+  const path = options.destinationPath
+    ? resolve(options.destinationPath)
+    : join(resolve(projectPath), '.qagent.yml');
+  await mkdir(dirname(path), { recursive: true });
   if (!options.force && (await exists(path))) throw new Error('.qagent.yml already exists');
   const parsed = QAgentConfigSchema.parse(config);
   const document = `# yaml-language-server: $schema=https://qagent.dev/schema/v1.json\n${YAML.stringify(parsed)}`;
@@ -172,6 +218,6 @@ export function buildInitialConfig(
     browser: { provider: 'local', headless: true },
     model,
     publish: { provider: 'github', baseBranch: 'main', autoMerge: true },
-    telemetry: { weave: { enabled: true, project: 'qagent', uploadArtifacts: false } },
+    telemetry: { weave: { enabled: false, project: 'qagent', uploadArtifacts: false } },
   });
 }

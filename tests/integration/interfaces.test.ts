@@ -79,11 +79,13 @@ describe('CLI and MCP contract parity', () => {
     seeded.storage.updateRun(externallyRunning.id, { status: 'running' });
     seeded.close();
 
-    const cliCancelled = (await cliJson(fixture.home, ['run', 'cancel', cliQueued.id])) as {
-      status: string;
-      completedAt: string | null;
-    };
-    expect(cliCancelled).toMatchObject({ status: 'cancelled', completedAt: expect.any(String) });
+    const cliCancellation = await cliJson(fixture.home, ['run', 'cancel', cliQueued.id]);
+    expect(cliCancellation).toMatchObject({
+      action: 'cancel',
+      requestedRunId: cliQueued.id,
+      runId: cliQueued.id,
+      accepted: true,
+    });
 
     const session = await mcpSession(fixture.home);
     try {
@@ -91,7 +93,25 @@ describe('CLI and MCP contract parity', () => {
         name: 'run_cancel',
         arguments: { runId: mcpQueued.id },
       });
-      expect(mcpCancellation.structuredContent?.run).toMatchObject({
+      expect(mcpCancellation.structuredContent?.action).toMatchObject({
+        action: 'cancel',
+        requestedRunId: mcpQueued.id,
+        runId: mcpQueued.id,
+        accepted: true,
+      });
+      const cliRun = await session.client.callTool({
+        name: 'run_get',
+        arguments: { runId: cliQueued.id },
+      });
+      const mcpRun = await session.client.callTool({
+        name: 'run_get',
+        arguments: { runId: mcpQueued.id },
+      });
+      expect(cliRun.structuredContent?.run).toMatchObject({
+        status: 'cancelled',
+        completedAt: expect.any(String),
+      });
+      expect(mcpRun.structuredContent?.run).toMatchObject({
         status: 'cancelled',
         completedAt: expect.any(String),
       });
@@ -103,17 +123,122 @@ describe('CLI and MCP contract parity', () => {
         name: 'run_events',
         arguments: { runId: mcpQueued.id, afterSequence: 0 },
       });
-      expect(eventKinds(cliEvents.structuredContent?.events)).toEqual(['run.cancelled']);
-      expect(eventKinds(mcpEvents.structuredContent?.events)).toEqual(['run.cancelled']);
+      const cliEventKinds = eventKinds(cliEvents.structuredContent?.events);
+      const mcpEventKinds = eventKinds(mcpEvents.structuredContent?.events);
+      expect(cliEventKinds).toEqual(mcpEventKinds);
+      expect(cliEventKinds).toContain('run.cancelled');
 
       const externalRequest = await session.client.callTool({
         name: 'run_cancel',
         arguments: { runId: externallyRunning.id },
       });
-      expect(externalRequest.structuredContent?.run).toMatchObject({
+      expect(externalRequest.structuredContent?.action).toMatchObject({
+        action: 'cancel',
+        requestedRunId: externallyRunning.id,
+        runId: externallyRunning.id,
+        accepted: true,
+      });
+      const externalRun = await session.client.callTool({
+        name: 'run_get',
+        arguments: { runId: externallyRunning.id },
+      });
+      expect(externalRun.structuredContent?.run).toMatchObject({
         status: 'running',
         cancelRequestedAt: expect.any(String),
         completedAt: null,
+      });
+    } finally {
+      await session.close();
+    }
+  });
+
+  it('offers the same contract-backed workflow actions and rejects unavailable work', async () => {
+    const fixture = await interfaceFixture();
+    const cliResult = await cliJson(fixture.home, ['run', 'retry', fixture.runId]);
+    expect(cliResult).toMatchObject({
+      action: 'retry',
+      requestedRunId: fixture.runId,
+      runId: fixture.runId,
+      accepted: false,
+      reason: expect.stringContaining('not available'),
+    });
+
+    const session = await mcpSession(fixture.home);
+    try {
+      const tools = await session.client.listTools();
+      expect(tools.tools.map((tool) => tool.name)).toEqual(
+        expect.arrayContaining([
+          'run_start',
+          'run_detail',
+          'run_retry',
+          'run_resume',
+          'run_reconnect',
+          'run_cancel',
+          'run_resolve_intervention',
+        ])
+      );
+      const mcpResult = await session.client.callTool({
+        name: 'run_retry',
+        arguments: { runId: fixture.runId },
+      });
+      expect(mcpResult.structuredContent?.action).toMatchObject({
+        action: 'retry',
+        requestedRunId: fixture.runId,
+        runId: fixture.runId,
+        accepted: false,
+        reason: expect.stringContaining('not available'),
+      });
+
+      const detail = await session.client.callTool({
+        name: 'run_detail',
+        arguments: { runId: fixture.runId, afterSequence: 1 },
+      });
+      expect(detail.structuredContent?.detail).toMatchObject({
+        run: { id: fixture.runId },
+        cursor: { runId: fixture.runId, afterSequence: 1 },
+      });
+    } finally {
+      await session.close();
+    }
+  });
+
+  it('returns the same grounded integration verification and remediation', async () => {
+    const fixture = await interfaceFixture();
+    const cliVerification = (await cliJson(fixture.home, ['integration', 'verify', 'model'])) as {
+      provider: string;
+      integration: { id: string; provider: string; status: string; detail: string };
+      disclosureRequired: boolean;
+      correctiveAction: unknown;
+    };
+    expect(cliVerification).toMatchObject({
+      provider: 'model',
+      integration: {
+        provider: 'model',
+        status: 'unconfigured',
+        detail: expect.stringContaining('valid model configuration'),
+      },
+      disclosureRequired: false,
+      correctiveAction: expect.objectContaining({ type: 'application' }),
+    });
+
+    const session = await mcpSession(fixture.home);
+    try {
+      const tools = await session.client.listTools();
+      expect(tools.tools.map((tool) => tool.name)).toContain('integration_verify');
+      const result = await session.client.callTool({
+        name: 'integration_verify',
+        arguments: { provider: 'model' },
+      });
+      expect(result.structuredContent?.verification).toMatchObject({
+        provider: cliVerification.provider,
+        integration: {
+          id: cliVerification.integration.id,
+          provider: cliVerification.integration.provider,
+          status: cliVerification.integration.status,
+          detail: cliVerification.integration.detail,
+        },
+        disclosureRequired: cliVerification.disclosureRequired,
+        correctiveAction: cliVerification.correctiveAction,
       });
     } finally {
       await session.close();
@@ -166,6 +291,8 @@ async function interfaceFixture() {
     stage: 'complete',
     summary: 'Grounded interface fixture complete.',
     branch: 'qagent/interface-fixture',
+    availableActions: [],
+    failureCode: null,
     completedAt: timestamp,
   });
   runtime.storage.appendEvent(run.id, {

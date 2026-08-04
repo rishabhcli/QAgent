@@ -12,7 +12,8 @@ on:
 
 permissions:
   actions: read
-  contents: write
+  artifact-metadata: write
+  contents: read
   id-token: write
   attestations: write
   security-events: write
@@ -29,6 +30,29 @@ jobs:
         with:
           ref: ${{ inputs.tag || github.ref }}
           fetch-depth: 0
+      - name: Verify tag, version, and provenance commit
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^v0\.2\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]
+          tag_commit="$(git rev-parse "$RELEASE_TAG^0")"
+          checked_out_commit="$(git rev-parse HEAD^0)"
+          test "$tag_commit" = "$checked_out_commit"
+          if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+            event_commit="$(git rev-parse "$GITHUB_SHA^0")"
+            test "$tag_commit" = "$event_commit"
+          fi
+          node <<'NODE'
+          const desktop = require('./apps/desktop/package.json');
+          const root = require('./package.json');
+          const tag = process.env.RELEASE_TAG;
+          if (root.version !== desktop.version || tag !== 'v' + root.version) {
+            throw new Error(
+              'Release tag ' + tag + ' does not match workspace version ' + root.version
+            );
+          }
+          NODE
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v6
         with:
@@ -47,7 +71,8 @@ jobs:
       - name: Scan Git history for secrets
         run: >-
           docker run --rm -v "${PWD}:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1
-          detect --source /repo --no-banner --redact --exit-code 1
+          detect --source /repo --config /repo/.gitleaks.toml
+          --no-banner --redact --exit-code 1
 
   codeql:
     name: CodeQL ${{ matrix.language }}
@@ -135,6 +160,10 @@ jobs:
             os: ubuntu-24.04
             platform: linux
             arch: x64
+    env:
+      QAGENT_HAS_MAC_SIGNING: ${{ secrets.APPLE_CERTIFICATE_BASE64 != '' && secrets.APPLE_CERTIFICATE_PASSWORD != '' && secrets.APPLE_KEYCHAIN_PASSWORD != '' && secrets.QAGENT_MAC_SIGN_IDENTITY != '' }}
+      QAGENT_HAS_MAC_NOTARIZATION: ${{ secrets.APPLE_ID != '' && secrets.APPLE_APP_SPECIFIC_PASSWORD != '' && secrets.APPLE_TEAM_ID != '' }}
+      QAGENT_HAS_WINDOWS_SIGNING: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 != '' && secrets.WINDOWS_CERTIFICATE_PASSWORD != '' }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -146,9 +175,9 @@ jobs:
           cache: pnpm
       - name: Install Linux package tools
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y fakeroot rpm
+        run: sudo apt-get update && sudo apt-get install -y fakeroot rpm xvfb zip unzip
       - name: Import Apple signing certificate
-        if: runner.os == 'macOS' && env.APPLE_CERTIFICATE_BASE64 != ''
+        if: runner.os == 'macOS' && env.QAGENT_HAS_MAC_SIGNING == 'true'
         env:
           APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
@@ -163,7 +192,7 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" qagent-build.keychain
           echo "QAGENT_MAC_SIGN_IDENTITY=$SIGNING_IDENTITY" >> "$GITHUB_ENV"
       - name: Import Windows signing certificate
-        if: runner.os == 'Windows' && env.WINDOWS_CERTIFICATE_BASE64 != ''
+        if: runner.os == 'Windows' && env.QAGENT_HAS_WINDOWS_SIGNING == 'true'
         shell: pwsh
         env:
           WINDOWS_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
@@ -172,8 +201,12 @@ jobs:
           $path = Join-Path $env:RUNNER_TEMP 'qagent.pfx'
           [IO.File]::WriteAllBytes($path, [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE_BASE64))
           "QAGENT_WINDOWS_CERTIFICATE_FILE=$path" | Out-File -FilePath $env:GITHUB_ENV -Append
-          "QAGENT_WINDOWS_CERTIFICATE_PASSWORD=$env:WINDOWS_CERTIFICATE_PASSWORD" | Out-File -FilePath $env:GITHUB_ENV -Append
       - run: pnpm install --frozen-lockfile
+      - name: Install packaged-smoke browser
+        run: pnpm exec playwright install chromium
+      - name: Install packaged-smoke Linux dependencies
+        if: runner.os == 'Linux'
+        run: pnpm exec playwright install-deps chromium
       - run: pnpm build:packages
       - run: pnpm --filter @qagent/desktop build:worker
       - run: pnpm --filter @qagent/desktop exec electron-forge make --arch=${{ matrix.arch }}
@@ -181,16 +214,149 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          QAGENT_WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+          QAGENT_ENABLE_AUTO_UPDATE: 'true'
+          QAGENT_RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+      - name: Verify signed macOS application
+        if: runner.os == 'macOS' && env.QAGENT_HAS_MAC_SIGNING == 'true'
+        run: >-
+          codesign --verify --deep --strict --verbose=2
+          "apps/desktop/out/QAgent-darwin-${{ matrix.arch }}/QAgent.app"
+      - name: Verify notarized macOS application
+        if: >-
+          runner.os == 'macOS' &&
+          env.QAGENT_HAS_MAC_SIGNING == 'true' &&
+          env.QAGENT_HAS_MAC_NOTARIZATION == 'true'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: xcrun stapler validate "apps/desktop/out/QAgent-darwin-${{ matrix.arch }}/QAgent.app"
+      - name: Verify signed Windows application
+        if: runner.os == 'Windows' && env.QAGENT_HAS_WINDOWS_SIGNING == 'true'
+        shell: pwsh
+        run: |
+          $app = "apps/desktop/out/QAgent-win32-${{ matrix.arch }}/QAgent.exe"
+          $signature = Get-AuthenticodeSignature $app
+          if ($signature.Status -ne 'Valid') {
+            throw "Packaged application signature is $($signature.Status)"
+          }
       - run: pnpm release:collect --platform=${{ matrix.platform }} --arch=${{ matrix.arch }}
+      - name: Validate final ZIP and RPM structure
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$(find "release/${{ matrix.platform }}-${{ matrix.arch }}" -name '*.zip' -print -quit)"
+          test -n "$archive"
+          unzip -t "$archive"
+          if [[ "${{ matrix.platform }}" == "linux" ]]; then
+            rpm="$(find "release/${{ matrix.platform }}-${{ matrix.arch }}" -name '*.rpm' -print -quit)"
+            test -n "$rpm"
+            rpm -qpl "$rpm" >/dev/null
+          fi
+      - name: Validate final Windows ZIP structure
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $archive = Get-ChildItem "release/${{ matrix.platform }}-${{ matrix.arch }}" -Filter '*.zip' | Select-Object -First 1
+          if (-not $archive) { throw 'Windows ZIP artifact was not found' }
+          $destination = Join-Path $env:RUNNER_TEMP 'qagent-zip-check'
+          Expand-Archive -Path $archive.FullName -DestinationPath $destination
+          $app = Get-ChildItem $destination -Filter 'QAgent.exe' -Recurse | Select-Object -First 1
+          if (-not $app) { throw 'Windows ZIP does not contain QAgent.exe' }
+      - name: Verify signed Windows installer
+        if: runner.os == 'Windows' && env.QAGENT_HAS_WINDOWS_SIGNING == 'true'
+        shell: pwsh
+        run: |
+          $installers = Get-ChildItem "release/${{ matrix.platform }}-${{ matrix.arch }}" -Filter '*.exe'
+          if ($installers.Count -ne 1) { throw "Expected one final Windows installer" }
+          $signature = Get-AuthenticodeSignature $installers[0].FullName
+          if ($signature.Status -ne 'Valid') {
+            throw "Final installer signature is $($signature.Status)"
+          }
+      - name: Smoke macOS application from final DMG
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          dmg="$(find "release/${{ matrix.platform }}-${{ matrix.arch }}" -name '*.dmg' -print -quit)"
+          mount="$RUNNER_TEMP/qagent-dmg"
+          mkdir -p "$mount"
+          hdiutil attach "$dmg" -nobrowse -readonly -mountpoint "$mount"
+          trap 'hdiutil detach "$mount"' EXIT
+          pnpm release:smoke-installed -- \
+            "--executable=$mount/QAgent.app/Contents/MacOS/QAgent" \
+            "--artifact=$dmg" \
+            "--target=${{ matrix.platform }}-${{ matrix.arch }}" \
+            "--output=release/installed-smoke-${{ matrix.platform }}-${{ matrix.arch }}" \
+            --mode=surface
+      - name: Install and smoke final Windows installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem "release/${{ matrix.platform }}-${{ matrix.arch }}" -Filter '*.exe' | Select-Object -First 1
+          if (-not $setup) { throw 'Windows installer was not found' }
+          $installer = Start-Process -FilePath $setup.FullName -ArgumentList '--silent' -PassThru
+          if (-not $installer.WaitForExit(120000)) {
+            Stop-Process -Id $installer.Id -Force -ErrorAction SilentlyContinue
+            throw 'Windows installer did not exit within 120 seconds'
+          }
+          $installer.Refresh()
+          if ($installer.ExitCode -ne 0) {
+            throw "Windows installer exited with code $($installer.ExitCode)"
+          }
+          Get-Process QAgent -ErrorAction SilentlyContinue | Stop-Process -Force
+          Start-Sleep -Seconds 2
+          $app = Get-ChildItem "$env:LOCALAPPDATA\qagent\app-*\QAgent.exe" |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -First 1
+          if (-not $app) { throw 'Installed application executable was not found' }
+          pnpm release:smoke-installed -- `
+            "--executable=$($app.FullName)" `
+            "--artifact=$($setup.FullName)" `
+            "--target=${{ matrix.platform }}-${{ matrix.arch }}" `
+            "--output=release/installed-smoke-${{ matrix.platform }}-${{ matrix.arch }}" `
+            --mode=surface
+      - name: Install and smoke final Linux package
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          deb="$(find "release/${{ matrix.platform }}-${{ matrix.arch }}" -name '*.deb' -print -quit)"
+          sudo apt-get install -y "$deb"
+          package="$(dpkg-deb -f "$deb" Package)"
+          executable="$(dpkg -L "$package" | awk '/\/(qagent|QAgent)$/ { print; exit }')"
+          test -n "$executable"
+          xvfb-run --auto-servernum pnpm release:smoke-installed -- \
+            "--executable=$executable" \
+            "--artifact=$deb" \
+            "--target=${{ matrix.platform }}-${{ matrix.arch }}" \
+            "--output=release/installed-smoke-${{ matrix.platform }}-${{ matrix.arch }}" \
+            --mode=surface
+      - name: Attest packaged artifacts and smoke evidence
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            release/${{ matrix.platform }}-${{ matrix.arch }}/**
+            release/installed-smoke-${{ matrix.platform }}-${{ matrix.arch }}/**
       - uses: actions/upload-artifact@v7
         with:
           name: qagent-${{ matrix.target }}
-          path: release/${{ matrix.platform }}-${{ matrix.arch }}/
+          path: |
+            release/${{ matrix.platform }}-${{ matrix.arch }}/
+            release/installed-smoke-${{ matrix.platform }}-${{ matrix.arch }}/
           if-no-files-found: error
 
   publish:
     runs-on: ubuntu-24.04
     needs: package
+    permissions:
+      actions: read
+      artifact-metadata: write
+      attestations: write
+      contents: write
+      id-token: write
     steps:
       - uses: actions/checkout@v6
         with:
@@ -200,23 +366,66 @@ jobs:
         with:
           node-version: '24'
           cache: pnpm
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v8
         with:
           pattern: qagent-*
           path: release/artifacts
           merge-multiple: true
       - run: pnpm install --frozen-lockfile
       - run: pnpm release:sbom
-      - name: Create checksums
-        working-directory: release
-        run: find artifacts -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
-      - uses: actions/attest-build-provenance@v3
+      - name: Verify manifests and create checksums
+        env:
+          QAGENT_RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: pnpm release:finalize
+      - name: Verify package-job attestations
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          find release/artifacts -type f -print0 | sort -z |
+            while IFS= read -r -d '' artifact; do
+              gh attestation verify "$artifact" --repo "$GITHUB_REPOSITORY"
+            done
+      - name: Attest release SBOM
+        uses: actions/attest@v4
         with:
-          subject-path: release/artifacts/**
-      - name: Create GitHub prerelease
+          subject-checksums: release/SHA256SUMS.txt
+          sbom-path: release/qagent.cdx.json
+      - name: Attest aggregate release evidence
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            release/SHA256SUMS.txt
+            release/release-evidence.json
+            release/RELEASE_TRUST.md
+            release/qagent.cdx.json
+            CHANGELOG.md
+      - name: Create GitHub release
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
-        run: >-
-          gh release create "$RELEASE_TAG" release/artifacts/* release/SHA256SUMS.txt
-          release/qagent.cdx.json CHANGELOG.md --verify-tag --prerelease --generate-notes
+        run: |
+          set -euo pipefail
+          mapfile -d '' assets < <(
+            node -e '
+              const path = require("node:path");
+              const evidence = require("./release/release-evidence.json");
+              for (const artifact of evidence.artifacts) {
+                process.stdout.write(path.resolve("release", artifact.path) + "\0");
+              }
+            '
+          )
+          test "${#assets[@]}" -gt 0
+          release_flags=()
+          if [[ "$RELEASE_TAG" == *-* ]]; then
+            release_flags+=(--prerelease --latest=false)
+          fi
+          gh release create "$RELEASE_TAG" "${assets[@]}" \
+            release/SHA256SUMS.txt release/release-evidence.json release/qagent.cdx.json \
+            CHANGELOG.md --verify-tag --notes-file release/RELEASE_TRUST.md \
+            --generate-notes "${release_flags[@]}"
+      - name: Verify published release attestations
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: gh release verify "$RELEASE_TAG"

@@ -12,25 +12,6 @@ jobs:
   smoke:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
-    env:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-      QAGENT_OPENAI_BASE_URL: ${{ secrets.QAGENT_OPENAI_BASE_URL }}
-      QAGENT_OPENAI_MODEL: ${{ vars.QAGENT_OPENAI_MODEL }}
-      QAGENT_SMOKE_OPENAI_MODEL: ${{ vars.QAGENT_SMOKE_OPENAI_MODEL }}
-      QAGENT_SMOKE_ANTHROPIC_MODEL: ${{ vars.QAGENT_SMOKE_ANTHROPIC_MODEL }}
-      QAGENT_SMOKE_GOOGLE_MODEL: ${{ vars.QAGENT_SMOKE_GOOGLE_MODEL }}
-      GITHUB_TOKEN: ${{ secrets.QAGENT_SMOKE_GITHUB_TOKEN || github.token }}
-      BROWSERBASE_API_KEY: ${{ secrets.BROWSERBASE_API_KEY }}
-      BROWSERBASE_PROJECT_ID: ${{ secrets.BROWSERBASE_PROJECT_ID }}
-      WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
-      WEAVE_PROJECT: ${{ vars.WEAVE_PROJECT }}
-      QAGENT_SMOKE_WEAVE_DISCLOSURE_ACCEPTED: ${{ vars.QAGENT_SMOKE_WEAVE_DISCLOSURE_ACCEPTED }}
-      REDIS_URL: ${{ secrets.REDIS_URL }}
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      DAYTONA_API_KEY: ${{ secrets.DAYTONA_API_KEY }}
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v6
@@ -40,6 +21,27 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Probe configured adapters
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          QAGENT_OPENAI_BASE_URL: ${{ secrets.QAGENT_OPENAI_BASE_URL }}
+          QAGENT_OPENAI_MODEL: ${{ vars.QAGENT_OPENAI_MODEL }}
+          QAGENT_SMOKE_OPENAI_MODEL: ${{ vars.QAGENT_SMOKE_OPENAI_MODEL }}
+          QAGENT_SMOKE_ANTHROPIC_MODEL: ${{ vars.QAGENT_SMOKE_ANTHROPIC_MODEL }}
+          QAGENT_SMOKE_GOOGLE_MODEL: ${{ vars.QAGENT_SMOKE_GOOGLE_MODEL }}
+          QAGENT_SMOKE_GITHUB_PR_NUMBER: ${{ vars.QAGENT_SMOKE_GITHUB_PR_NUMBER }}
+          GITHUB_TOKEN: ${{ secrets.QAGENT_SMOKE_GITHUB_TOKEN || github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          BROWSERBASE_API_KEY: ${{ secrets.BROWSERBASE_API_KEY }}
+          BROWSERBASE_PROJECT_ID: ${{ secrets.BROWSERBASE_PROJECT_ID }}
+          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+          WEAVE_PROJECT: ${{ vars.WEAVE_PROJECT }}
+          QAGENT_SMOKE_WEAVE_DISCLOSURE_ACCEPTED: ${{ vars.QAGENT_SMOKE_WEAVE_DISCLOSURE_ACCEPTED }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          DAYTONA_API_KEY: ${{ secrets.DAYTONA_API_KEY }}
         run: pnpm test:adapters
       - uses: actions/upload-artifact@v7
         if: always()
