@@ -44,7 +44,7 @@
     "@vitejs/plugin-react": "6.0.4",
     "electron": "43.2.0",
     "tsup": "8.5.1",
-    "typescript": "5.9.3",
+    "typescript": "7.0.2",
     "vite": "8.1.5"
   }
 }
