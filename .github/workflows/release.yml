@@ -26,7 +26,7 @@ jobs:
   verify:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tag || github.ref }}
           fetch-depth: 0
@@ -82,7 +82,7 @@ jobs:
       matrix:
         language: [javascript-typescript, actions]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tag || github.ref }}
       - uses: github/codeql-action/init@v4
@@ -107,7 +107,7 @@ jobs:
       matrix:
         os: [ubuntu-24.04, windows-2025, macos-26]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tag || github.ref }}
       - uses: pnpm/action-setup@v6
@@ -165,7 +165,7 @@ jobs:
       QAGENT_HAS_MAC_NOTARIZATION: ${{ secrets.APPLE_ID != '' && secrets.APPLE_APP_SPECIFIC_PASSWORD != '' && secrets.APPLE_TEAM_ID != '' }}
       QAGENT_HAS_WINDOWS_SIGNING: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 != '' && secrets.WINDOWS_CERTIFICATE_PASSWORD != '' }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tag || github.ref }}
       - uses: pnpm/action-setup@v6
@@ -358,7 +358,7 @@ jobs:
       contents: write
       id-token: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tag || github.ref }}
       - uses: pnpm/action-setup@v6
