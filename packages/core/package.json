@@ -20,7 +20,7 @@
     "@qagent/adapters": "workspace:*",
     "@qagent/contracts": "workspace:*",
     "@qagent/storage": "workspace:*",
-    "zod": "4.4.3"
+    "zod": "4.5.4"
   },
   "devDependencies": {
     "tsup": "8.5.1",
