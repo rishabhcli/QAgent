@@ -18,8 +18,8 @@
   },
   "dependencies": {
     "@qagent/contracts": "workspace:*",
-    "better-sqlite3": "13.0.1",
-    "drizzle-orm": "0.45.2"
+    "better-sqlite3": "13.0.3",
+    "drizzle-orm": "0.45.4"
   },
   "devDependencies": {
     "@types/better-sqlite3": "7.6.13",
